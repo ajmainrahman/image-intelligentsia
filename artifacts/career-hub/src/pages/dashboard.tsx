@@ -1,7 +1,7 @@
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetTopSkills, getGetTopSkillsQueryKey, useGetRecentActivity, getGetRecentActivityQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map } from "lucide-react";
+import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map as MapIcon } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Dashboard() {
@@ -84,13 +84,13 @@ export default function Dashboard() {
                 </div>
               ) : activity && activity.length > 0 ? (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-border">
-                  {activity.map((item, i) => (
-                    <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                  {activity.map((item) => (
+                    <div key={`${item.type}-${item.id}`} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-background bg-muted text-muted-foreground shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm">
                         {item.type === "goal" && <Target className="h-3.5 w-3.5" />}
                         {item.type === "progress" && <BookOpen className="h-3.5 w-3.5" />}
                         {item.type === "job" && <Briefcase className="h-3.5 w-3.5" />}
-                        {item.type === "roadmap" && <Map className="h-3.5 w-3.5" />}
+                        {item.type === "roadmap" && <MapIcon className="h-3.5 w-3.5" />}
                         {item.type === "reminder" && <BellRing className="h-3.5 w-3.5" />}
                       </div>
                       <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl border bg-card shadow-sm group-hover:border-primary/20 transition-colors">

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, 
   Target, 
   BookOpen, 
-  Map, 
+  Map as MapIcon, 
   Briefcase, 
   BellRing
 } from "lucide-react";
@@ -13,7 +13,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/progress", label: "Progress", icon: BookOpen },
-  { href: "/roadmap", label: "Roadmap", icon: Map },
+  { href: "/roadmap", label: "Roadmap", icon: MapIcon },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/reminders", label: "Reminders", icon: BellRing },
 ];

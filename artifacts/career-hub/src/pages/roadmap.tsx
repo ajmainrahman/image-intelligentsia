@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Map, Plus, Pencil, Trash2, CheckCircle2, Circle, Clock } from "lucide-react";
+import { Map as MapIcon, Plus, Pencil, Trash2, CheckCircle2, Circle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -299,7 +299,7 @@ export default function RoadmapPage() {
         {isLoading ? (
           <div className="space-y-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="flex gap-4">
+              <div key={`sk-${i}`} className="flex gap-4">
                 <Skeleton className="h-6 w-6 rounded-full shrink-0" />
                 <Skeleton className="h-24 w-full rounded-xl" />
               </div>
@@ -312,7 +312,7 @@ export default function RoadmapPage() {
             
             <div className="space-y-8">
               {itemsByPhase[activePhase].map((item) => (
-                <div key={item.id} className="flex gap-4 group">
+                <div key={`roadmap-${item.id}`} className="flex gap-4 group">
                   <div className="mt-1 bg-card rounded-full ring-4 ring-card">
                     {getStatusIcon(item.status)}
                   </div>
@@ -350,7 +350,7 @@ export default function RoadmapPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl bg-muted/10">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-              <Map className="h-6 w-6" />
+              <MapIcon className="h-6 w-6" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No milestones in this phase</h3>
             <p className="text-muted-foreground text-sm max-w-sm mb-6">
