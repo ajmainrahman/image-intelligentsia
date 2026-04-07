@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Career Hub API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: goals
+    description: Career goal management
+  - name: progress
+    description: Learning and progress tracking
+  - name: roadmap
+    description: Long-term roadmap planning
+  - name: jobs
+    description: Job descriptions and keyword extraction
+  - name: reminders
+    description: Reminders and tasks
+  - name: dashboard
+    description: Dashboard summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,434 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /goals:
+    get:
+      operationId: listGoals
+      tags: [goals]
+      summary: List all career goals
+      responses:
+        "200":
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goal"
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Create a career goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoalBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}:
+    get:
+      operationId: getGoal
+      tags: [goals]
+      summary: Get a goal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Goal details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    put:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoalBody"
+      responses:
+        "200":
+          description: Updated goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /progress:
+    get:
+      operationId: listProgress
+      tags: [progress]
+      summary: List progress entries
+      responses:
+        "200":
+          description: Progress list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressEntry"
+    post:
+      operationId: createProgress
+      tags: [progress]
+      summary: Log a progress entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgressBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressEntry"
+
+  /progress/{id}:
+    put:
+      operationId: updateProgress
+      tags: [progress]
+      summary: Update a progress entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgressBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressEntry"
+    delete:
+      operationId: deleteProgress
+      tags: [progress]
+      summary: Delete a progress entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /roadmap:
+    get:
+      operationId: listRoadmapItems
+      tags: [roadmap]
+      summary: List roadmap milestones
+      responses:
+        "200":
+          description: Roadmap items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoadmapItem"
+    post:
+      operationId: createRoadmapItem
+      tags: [roadmap]
+      summary: Create a roadmap milestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoadmapItemBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoadmapItem"
+
+  /roadmap/{id}:
+    put:
+      operationId: updateRoadmapItem
+      tags: [roadmap]
+      summary: Update a roadmap milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoadmapItemBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoadmapItem"
+    delete:
+      operationId: deleteRoadmapItem
+      tags: [roadmap]
+      summary: Delete a roadmap milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List saved job descriptions
+      responses:
+        "200":
+          description: Job list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Save a job description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    put:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    delete:
+      operationId: deleteJob
+      tags: [jobs]
+      summary: Delete a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /reminders:
+    get:
+      operationId: listReminders
+      tags: [reminders]
+      summary: List all reminders
+      responses:
+        "200":
+          description: Reminders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+    post:
+      operationId: createReminder
+      tags: [reminders]
+      summary: Create a reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReminderBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+
+  /reminders/{id}:
+    put:
+      operationId: updateReminder
+      tags: [reminders]
+      summary: Update a reminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReminderBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+    delete:
+      operationId: deleteReminder
+      tags: [reminders]
+      summary: Delete a reminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/top-skills:
+    get:
+      operationId: getTopSkills
+      tags: [dashboard]
+      summary: Get most common skills from job descriptions
+      responses:
+        "200":
+          description: Top skills list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SkillFrequency"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent activity across all sections
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +473,376 @@ components:
       required:
         - status
 
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        targetRole:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, paused]
+        targetYear:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - targetRole
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateGoalBody:
+      type: object
+      properties:
+        title:
+          type: string
+        targetRole:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, completed, paused]
+        targetYear:
+          type: integer
+          nullable: true
+      required:
+        - title
+        - targetRole
+        - status
+
+    ProgressEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+          enum: [course, tool, project, certification, reading, other]
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [not_started, in_progress, completed]
+        toolOrResource:
+          type: string
+          nullable: true
+        goalId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateProgressBody:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [course, tool, project, certification, reading, other]
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [not_started, in_progress, completed]
+        toolOrResource:
+          type: string
+          nullable: true
+        goalId:
+          type: integer
+          nullable: true
+      required:
+        - title
+        - category
+        - status
+
+    RoadmapItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        yearTarget:
+          type: integer
+        phase:
+          type: string
+          enum: [short_term, mid_term, long_term]
+        status:
+          type: string
+          enum: [planned, in_progress, completed]
+        goalId:
+          type: integer
+          nullable: true
+        order:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - yearTarget
+        - phase
+        - status
+        - order
+        - createdAt
+        - updatedAt
+
+    CreateRoadmapItemBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        yearTarget:
+          type: integer
+        phase:
+          type: string
+          enum: [short_term, mid_term, long_term]
+        status:
+          type: string
+          enum: [planned, in_progress, completed]
+        goalId:
+          type: integer
+          nullable: true
+        order:
+          type: integer
+      required:
+        - title
+        - yearTarget
+        - phase
+        - status
+        - order
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        company:
+          type: string
+          nullable: true
+        description:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [saved, applied, interviewing, rejected, offered]
+        url:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - keywords
+        - skills
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateJobBody:
+      type: object
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+          nullable: true
+        description:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [saved, applied, interviewing, rejected, offered]
+        url:
+          type: string
+          nullable: true
+      required:
+        - title
+        - description
+        - keywords
+        - skills
+        - status
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          nullable: true
+        priority:
+          type: string
+          enum: [low, medium, high]
+        completed:
+          type: boolean
+        category:
+          type: string
+          enum: [apply, learn, network, review, other]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - priority
+        - completed
+        - category
+        - createdAt
+        - updatedAt
+
+    CreateReminderBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          nullable: true
+        priority:
+          type: string
+          enum: [low, medium, high]
+        completed:
+          type: boolean
+        category:
+          type: string
+          enum: [apply, learn, network, review, other]
+      required:
+        - title
+        - priority
+        - completed
+        - category
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalGoals:
+          type: integer
+        activeGoals:
+          type: integer
+        progressCompleted:
+          type: integer
+        progressInProgress:
+          type: integer
+        totalJobs:
+          type: integer
+        appliedJobs:
+          type: integer
+        pendingReminders:
+          type: integer
+        roadmapCompleted:
+          type: integer
+        roadmapTotal:
+          type: integer
+      required:
+        - totalGoals
+        - activeGoals
+        - progressCompleted
+        - progressInProgress
+        - totalJobs
+        - appliedJobs
+        - pendingReminders
+        - roadmapCompleted
+        - roadmapTotal
+
+    SkillFrequency:
+      type: object
+      properties:
+        skill:
+          type: string
+        count:
+          type: integer
+      required:
+        - skill
+        - count
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [goal, progress, job, reminder, roadmap]
+        title:
+          type: string
+        action:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - title
+        - action
+        - createdAt

@@ -25,3 +25,40 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## Artifacts
+
+### Career Hub (`artifacts/career-hub`)
+- **Type**: React + Vite web app
+- **Preview path**: `/`
+- **Purpose**: Personal career planning dashboard for job preparation (Data Scientist, Data Analyst, ML Engineer)
+
+#### Features
+- **Dashboard**: Summary stats (goals, progress, jobs, reminders), top skills from job descriptions, recent activity timeline
+- **Goals**: Track career goals with target roles, status, and target year
+- **Progress**: Log learning activities — courses, AI tools (Google AI Studio, ChatGPT), projects, certifications
+- **Roadmap**: 5-10 year visual timeline split into short/mid/long term phases
+- **Jobs**: Save job descriptions, extract keywords and required skills, track application status
+- **Reminders**: Task reminders with priority, due dates, and categories
+
+#### Tech
+- React 19 + Vite, TailwindCSS, shadcn/ui components
+- TanStack Query for data fetching
+- Wouter for routing
+- react-hook-form + zod for forms
+- framer-motion for animations
+
+### API Server (`artifacts/api-server`)
+- **Type**: Express 5 API
+- **Preview path**: `/api`
+- **Purpose**: Backend API for Career Hub
+
+#### Database Tables
+- `goals` — career goals
+- `progress_entries` — learning progress entries
+- `roadmap_items` — long-term roadmap milestones
+- `jobs` — saved job descriptions with keywords/skills arrays
+- `reminders` — task reminders with due dates
+
+#### Utility
+- `artifacts/api-server/src/lib/serialize.ts` — converts Date objects to ISO strings before Zod validation
