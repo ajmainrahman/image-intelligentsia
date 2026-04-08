@@ -1,18 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Target, 
-  BookOpen, 
-  Map as MapIcon, 
-  Briefcase, 
-  BellRing
+import {
+  LayoutDashboard,
+  Target,
+  BookOpen,
+  Map as MapIcon,
+  Briefcase,
+  BellRing,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/goals", label: "Goals", icon: Target },
-  { href: "/progress", label: "Progress", icon: BookOpen },
+  { href: "/progress", label: "Learning", icon: BookOpen },
   { href: "/roadmap", label: "Roadmap", icon: MapIcon },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/reminders", label: "Reminders", icon: BellRing },
@@ -22,40 +23,68 @@ export function Sidebar() {
   const [location] = useLocation();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground shadow-sm">
-            <Target className="h-5 w-5" />
+    <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      {/* Brand */}
+      <div className="flex flex-col px-5 pt-6 pb-5 border-b border-sidebar-border gap-1">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="h-8 w-8 rounded-lg bg-sidebar-primary/20 flex items-center justify-center shrink-0 ring-1 ring-sidebar-primary/30">
+            <Sparkles className="h-4 w-4 text-sidebar-primary" />
           </div>
-          <span className="font-bold text-lg tracking-tight">Career Hub</span>
+          <span
+            className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            imageintelligentsia
+          </span>
         </div>
+        <p className="text-[10.5px] text-sidebar-foreground/40 italic leading-snug pl-0.5">
+          The model is still training.
+          <br />
+          Watch this space.
+        </p>
       </div>
-      
-      <nav className="p-4 space-y-1">
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-          
+          const isActive =
+            location === item.href ||
+            (item.href !== "/" && location.startsWith(item.href));
+
           return (
-            <Link 
+            <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors group",
-                isActive 
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" 
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group",
+                isActive
+                  ? "bg-sidebar-primary/15 text-sidebar-primary shadow-sm"
+                  : "text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground/90"
               )}
             >
-              <item.icon className={cn(
-                "h-4 w-4 transition-colors",
-                isActive ? "text-sidebar-primary" : "group-hover:text-sidebar-foreground"
-              )} />
+              <item.icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-colors duration-150",
+                  isActive
+                    ? "text-sidebar-primary"
+                    : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+                )}
+              />
               {item.label}
+              {isActive && (
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
+              )}
             </Link>
           );
         })}
       </nav>
+
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-sidebar-border">
+        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed">
+          © 2025 imageintelligentsia
+        </p>
+      </div>
     </aside>
   );
 }
