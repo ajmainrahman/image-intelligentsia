@@ -1,0 +1,15 @@
+node_modules
+.git
+.github
+.cache
+.local
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+lib
+scripts
+artifacts/api-server
