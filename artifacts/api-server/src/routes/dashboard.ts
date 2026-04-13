@@ -5,7 +5,7 @@ import {
   GetTopSkillsResponse,
   GetRecentActivityResponse,
 } from "@workspace/api-zod";
-import { serializeRow } from "../lib/serialize";
+import { serializeRow } from "../lib/serialize.js";
 
 const router: IRouter = Router();
 

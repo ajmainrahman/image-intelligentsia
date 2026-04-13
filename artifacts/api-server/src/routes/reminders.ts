@@ -9,7 +9,7 @@ import {
   DeleteReminderParams,
   ListRemindersResponse,
 } from "@workspace/api-zod";
-import { serializeRow, serializeRows } from "../lib/serialize";
+import { serializeRow, serializeRows } from "../lib/serialize.js";
 
 const router: IRouter = Router();
 
