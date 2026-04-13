@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "framework": null,
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter @workspace/career-hub run build",
   "outputDirectory": "artifacts/career-hub/dist/public",
