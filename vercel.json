@@ -3,7 +3,7 @@
   "framework": null,
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter @workspace/career-hub run build",
-  "outputDirectory": "artifacts/career-hub/dist/public",
+  "outputDirectory": "public",
   "env": {
     "BASE_PATH": "/"
   },
