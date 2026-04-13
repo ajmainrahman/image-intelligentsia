@@ -82,7 +82,7 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
                 </div>
-              ) : activity && activity.length > 0 ? (
+              ) : Array.isArray(activity) && activity.length > 0 ? (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-border">
                   {activity.map((item) => (
                     <div key={`${item.type}-${item.id}`} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
