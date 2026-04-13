@@ -26,6 +26,19 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
 
+## Replit Workflows
+
+- **Start application** — Runs the Career Hub frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
+- **API Server** — Runs the Express API server (`PORT=8080 pnpm --filter @workspace/api-server run dev`), served at `/api`
+
+## Environment Variables (Secrets)
+
+All secrets are configured in Replit Secrets:
+- `DATABASE_URL` — Neon PostgreSQL connection string
+- `SESSION_SECRET` — Session signing secret
+- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` — Individual DB connection parts
+- `PORT` — Set to `20829` (frontend service port)
+
 ## Artifacts
 
 ### Career Hub (`artifacts/career-hub`)
