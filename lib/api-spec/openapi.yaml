@@ -36,6 +36,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /healthz/db:
+    get:
+      operationId: dbHealthCheck
+      tags: [health]
+      summary: Database connectivity check
+      responses:
+        "200":
+          description: Database is reachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DbHealthStatus"
+        "503":
+          description: Database is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DbHealthStatus"
+
   /goals:
     get:
       operationId: listGoals
@@ -472,6 +491,23 @@ components:
           type: string
       required:
         - status
+
+    DbHealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        db:
+          type: string
+          enum: [connected, unreachable]
+        latencyMs:
+          type: integer
+        error:
+          type: string
+      required:
+        - status
+        - db
 
     Goal:
       type: object

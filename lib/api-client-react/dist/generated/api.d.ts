@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { ActivityItem, CreateGoalBody, CreateJobBody, CreateProgressBody, CreateReminderBody, CreateRoadmapItemBody, DashboardSummary, Goal, HealthStatus, Job, ProgressEntry, Reminder, RoadmapItem, SkillFrequency } from "./api.schemas";
+import type { ActivityItem, CreateGoalBody, CreateJobBody, CreateProgressBody, CreateReminderBody, CreateRoadmapItemBody, DashboardSummary, DbHealthStatus, Goal, HealthStatus, Job, ProgressEntry, Reminder, RoadmapItem, SkillFrequency } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -24,6 +24,29 @@ export type HealthCheckQueryError = ErrorType<unknown>;
  */
 export declare function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(options?: {
     query?: UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary Database connectivity check
+ */
+export declare const getDbHealthCheckUrl: () => string;
+export declare const dbHealthCheck: (options?: RequestInit) => Promise<DbHealthStatus>;
+export declare const getDbHealthCheckQueryKey: () => readonly ["/api/healthz/db"];
+export declare const getDbHealthCheckQueryOptions: <TData = Awaited<ReturnType<typeof dbHealthCheck>>, TError = ErrorType<DbHealthStatus>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof dbHealthCheck>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof dbHealthCheck>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type DbHealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof dbHealthCheck>>>;
+export type DbHealthCheckQueryError = ErrorType<DbHealthStatus>;
+/**
+ * @summary Database connectivity check
+ */
+export declare function useDbHealthCheck<TData = Awaited<ReturnType<typeof dbHealthCheck>>, TError = ErrorType<DbHealthStatus>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof dbHealthCheck>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

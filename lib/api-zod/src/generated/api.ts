@@ -15,13 +15,23 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Database connectivity check
+ */
+export const DbHealthCheckResponse = zod.object({
+  status: zod.enum(["ok", "error"]),
+  db: zod.enum(["connected", "unreachable"]),
+  latencyMs: zod.number().optional(),
+  error: zod.string().optional(),
+});
+
+/**
  * @summary List all career goals
  */
 export const ListGoalsResponseItem = zod.object({
   id: zod.number(),
   title: zod.string(),
   targetRole: zod.string(),
-  description: zod.string().nullish(),
+  description: zod.string().optional(),
   status: zod.enum(["active", "completed", "paused"]),
   targetYear: zod.number().nullish(),
   createdAt: zod.string(),
@@ -51,7 +61,7 @@ export const GetGoalResponse = zod.object({
   id: zod.number(),
   title: zod.string(),
   targetRole: zod.string(),
-  description: zod.string().nullish(),
+  description: zod.string().optional(),
   status: zod.enum(["active", "completed", "paused"]),
   targetYear: zod.number().nullish(),
   createdAt: zod.string(),
@@ -77,7 +87,7 @@ export const UpdateGoalResponse = zod.object({
   id: zod.number(),
   title: zod.string(),
   targetRole: zod.string(),
-  description: zod.string().nullish(),
+  description: zod.string().optional(),
   status: zod.enum(["active", "completed", "paused"]),
   targetYear: zod.number().nullish(),
   createdAt: zod.string(),

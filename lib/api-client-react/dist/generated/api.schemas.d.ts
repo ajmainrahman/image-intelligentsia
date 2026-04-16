@@ -8,6 +8,22 @@
 export interface HealthStatus {
     status: string;
 }
+export type DbHealthStatusStatus = (typeof DbHealthStatusStatus)[keyof typeof DbHealthStatusStatus];
+export declare const DbHealthStatusStatus: {
+    readonly ok: "ok";
+    readonly error: "error";
+};
+export type DbHealthStatusDb = (typeof DbHealthStatusDb)[keyof typeof DbHealthStatusDb];
+export declare const DbHealthStatusDb: {
+    readonly connected: "connected";
+    readonly unreachable: "unreachable";
+};
+export interface DbHealthStatus {
+    status: DbHealthStatusStatus;
+    db: DbHealthStatusDb;
+    latencyMs?: number;
+    error?: string;
+}
 export type GoalStatus = (typeof GoalStatus)[keyof typeof GoalStatus];
 export declare const GoalStatus: {
     readonly active: "active";

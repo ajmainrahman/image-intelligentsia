@@ -24,6 +24,7 @@ import type {
   CreateReminderBody,
   CreateRoadmapItemBody,
   DashboardSummary,
+  DbHealthStatus,
   Goal,
   HealthStatus,
   Job,
@@ -109,6 +110,81 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Database connectivity check
+ */
+export const getDbHealthCheckUrl = () => {
+  return `/api/healthz/db`;
+};
+
+export const dbHealthCheck = async (
+  options?: RequestInit,
+): Promise<DbHealthStatus> => {
+  return customFetch<DbHealthStatus>(getDbHealthCheckUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDbHealthCheckQueryKey = () => {
+  return [`/api/healthz/db`] as const;
+};
+
+export const getDbHealthCheckQueryOptions = <
+  TData = Awaited<ReturnType<typeof dbHealthCheck>>,
+  TError = ErrorType<DbHealthStatus>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof dbHealthCheck>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDbHealthCheckQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof dbHealthCheck>>> = ({
+    signal,
+  }) => dbHealthCheck({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof dbHealthCheck>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DbHealthCheckQueryResult = NonNullable<
+  Awaited<ReturnType<typeof dbHealthCheck>>
+>;
+export type DbHealthCheckQueryError = ErrorType<DbHealthStatus>;
+
+/**
+ * @summary Database connectivity check
+ */
+
+export function useDbHealthCheck<
+  TData = Awaited<ReturnType<typeof dbHealthCheck>>,
+  TError = ErrorType<DbHealthStatus>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof dbHealthCheck>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDbHealthCheckQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

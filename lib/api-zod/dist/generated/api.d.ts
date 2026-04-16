@@ -17,13 +17,32 @@ export declare const HealthCheckResponse: zod.ZodObject<{
     status: string;
 }>;
 /**
+ * @summary Database connectivity check
+ */
+export declare const DbHealthCheckResponse: zod.ZodObject<{
+    status: zod.ZodEnum<["ok", "error"]>;
+    db: zod.ZodEnum<["connected", "unreachable"]>;
+    latencyMs: zod.ZodOptional<zod.ZodNumber>;
+    error: zod.ZodOptional<zod.ZodString>;
+}, "strip", zod.ZodTypeAny, {
+    status: "ok" | "error";
+    db: "connected" | "unreachable";
+    error?: string | undefined;
+    latencyMs?: number | undefined;
+}, {
+    status: "ok" | "error";
+    db: "connected" | "unreachable";
+    error?: string | undefined;
+    latencyMs?: number | undefined;
+}>;
+/**
  * @summary List all career goals
  */
 export declare const ListGoalsResponseItem: zod.ZodObject<{
     id: zod.ZodNumber;
     title: zod.ZodString;
     targetRole: zod.ZodString;
-    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    description: zod.ZodOptional<zod.ZodString>;
     status: zod.ZodEnum<["active", "completed", "paused"]>;
     targetYear: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     createdAt: zod.ZodString;
@@ -35,7 +54,7 @@ export declare const ListGoalsResponseItem: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }, {
     status: "active" | "completed" | "paused";
@@ -44,14 +63,14 @@ export declare const ListGoalsResponseItem: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }>;
 export declare const ListGoalsResponse: zod.ZodArray<zod.ZodObject<{
     id: zod.ZodNumber;
     title: zod.ZodString;
     targetRole: zod.ZodString;
-    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    description: zod.ZodOptional<zod.ZodString>;
     status: zod.ZodEnum<["active", "completed", "paused"]>;
     targetYear: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     createdAt: zod.ZodString;
@@ -63,7 +82,7 @@ export declare const ListGoalsResponse: zod.ZodArray<zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }, {
     status: "active" | "completed" | "paused";
@@ -72,7 +91,7 @@ export declare const ListGoalsResponse: zod.ZodArray<zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }>, "many">;
 /**
@@ -111,7 +130,7 @@ export declare const GetGoalResponse: zod.ZodObject<{
     id: zod.ZodNumber;
     title: zod.ZodString;
     targetRole: zod.ZodString;
-    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    description: zod.ZodOptional<zod.ZodString>;
     status: zod.ZodEnum<["active", "completed", "paused"]>;
     targetYear: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     createdAt: zod.ZodString;
@@ -123,7 +142,7 @@ export declare const GetGoalResponse: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }, {
     status: "active" | "completed" | "paused";
@@ -132,7 +151,7 @@ export declare const GetGoalResponse: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }>;
 /**
@@ -168,7 +187,7 @@ export declare const UpdateGoalResponse: zod.ZodObject<{
     id: zod.ZodNumber;
     title: zod.ZodString;
     targetRole: zod.ZodString;
-    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    description: zod.ZodOptional<zod.ZodString>;
     status: zod.ZodEnum<["active", "completed", "paused"]>;
     targetYear: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     createdAt: zod.ZodString;
@@ -180,7 +199,7 @@ export declare const UpdateGoalResponse: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }, {
     status: "active" | "completed" | "paused";
@@ -189,7 +208,7 @@ export declare const UpdateGoalResponse: zod.ZodObject<{
     targetRole: string;
     createdAt: string;
     updatedAt: string;
-    description?: string | null | undefined;
+    description?: string | undefined;
     targetYear?: number | null | undefined;
 }>;
 /**
