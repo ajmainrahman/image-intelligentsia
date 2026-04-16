@@ -30,6 +30,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 - **Start application** — Runs the Career Hub frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
 - **API Server** — Runs the Express API server (`PORT=8080 pnpm --filter @workspace/api-server run dev`), served at `/api`
+- Frontend Vite config binds to `0.0.0.0`, uses the workflow-provided `PORT`, enables Replit preview hosts, and proxies `/api` to the local API server on port `8080`.
 
 ## Environment Variables (Secrets)
 
@@ -88,6 +89,7 @@ Simple name + email sign-in. No passwords or hashing dependency. Session stored 
 - `POST /api/auth/signout` — client-side only (clears localStorage)
 - Frontend context: `artifacts/career-hub/src/contexts/auth-context.tsx`
 - Sign-in page: `artifacts/career-hub/src/pages/signin.tsx`
+- JWT signing uses a development-only fallback secret; production requires `JWT_SECRET` to be configured.
 
 ## Vercel / Neon DB Fix
 

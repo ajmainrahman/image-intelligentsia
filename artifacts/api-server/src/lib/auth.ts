@@ -1,7 +1,15 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "career-hub-secret-change-in-production";
+const JWT_SECRET =
+  process.env.JWT_SECRET ??
+  (process.env.NODE_ENV === "production"
+    ? undefined
+    : "career-hub-development-secret");
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set in production.");
+}
 
 export interface AuthRequest extends Request {
   userId?: number;
