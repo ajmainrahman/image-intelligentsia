@@ -1,9 +1,12 @@
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
+import pinoHttp_ from "pino-http";
 import { logger } from "./lib/logger.js";
 import router from "./routes/index.js";
+
+// pino-http uses CJS exports; this handles both ESM and CJS interop
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pinoHttp = ((pinoHttp_ as any).default ?? pinoHttp_) as typeof pinoHttp_;
 
 const app = express();
 
@@ -28,15 +31,23 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error(err);
-  const status =
-    (err as { status?: number }).status ??
-    (err as { statusCode?: number }).statusCode ??
-    500;
-  const message =
-    err instanceof Error ? err.message : "Internal server error";
-  res.status(status).json({ error: message });
-});
+app.use(
+  (
+    err: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    logger.error(err);
+    const statusCode =
+      (err as { status?: number }).status ??
+      (err as { statusCode?: number }).statusCode ??
+      500;
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    res.statusCode = statusCode;
+    res.json({ error: message });
+  },
+);
 
 export default app;

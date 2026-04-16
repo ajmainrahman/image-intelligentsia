@@ -56780,8 +56780,9 @@ router8.use(dashboard_default);
 var routes_default = router8;
 
 // src/app.ts
+var pinoHttp = import_pino_http.default.default ?? import_pino_http.default;
 var app = (0, import_express9.default)();
-app.use((0, import_pino_http.default)({ logger }));
+app.use(pinoHttp({ logger }));
 var allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()) : [];
 app.use(
   (0, import_cors.default)({
@@ -56796,12 +56797,15 @@ app.use(
 app.use(import_express9.default.json());
 app.use(import_express9.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
-app.use((err, _req, res, _next) => {
-  logger.error(err);
-  const status = err.status ?? err.statusCode ?? 500;
-  const message = err instanceof Error ? err.message : "Internal server error";
-  res.status(status).json({ error: message });
-});
+app.use(
+  (err, _req, res, _next) => {
+    logger.error(err);
+    const statusCode = err.status ?? err.statusCode ?? 500;
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.statusCode = statusCode;
+    res.json({ error: message });
+  }
+);
 var app_default = app;
 
 // src/index.ts
