@@ -22,7 +22,7 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -99,7 +99,7 @@ export function Sidebar() {
           </div>
         )}
         <button
-          onClick={signOut}
+          onClick={logout}
           className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors duration-150"
         >
           <LogOut className="h-3.5 w-3.5 shrink-0" />

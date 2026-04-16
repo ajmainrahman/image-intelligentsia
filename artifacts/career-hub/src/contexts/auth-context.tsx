@@ -8,9 +8,9 @@ export type AuthUser = {
 
 type AuthContextValue = {
   user: AuthUser | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
-  signOut: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,26 +43,26 @@ async function callAuth(action: "signin" | "signup" | "signout", body?: object):
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const data = await callAuth("signin", { email, password });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string) => {
     const data = await callAuth("signup", { name, email, password });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
 
-  const signOut = useCallback(() => {
+  const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
     callAuth("signout").catch(() => {});
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
