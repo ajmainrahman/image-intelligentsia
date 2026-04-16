@@ -28,7 +28,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Replit Workflows
 
-- **Start application** — Runs the Career Hub frontend (`PORT=5000 pnpm --filter @workspace/career-hub run dev`), served at `/`
+- **Start application** — Runs the Career Hub frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
 - **API Server** — Runs the Express API server (`PORT=8080 pnpm --filter @workspace/api-server run dev`), served at `/api`
 
 ## Environment Variables (Secrets)
@@ -36,7 +36,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 All secrets are configured in Replit Secrets:
 - `DATABASE_URL` — Replit built-in PostgreSQL connection string
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` — Individual DB connection parts
-- `PORT` — Set to `5000` (frontend service port)
+- `PORT` — Set to `20829` (frontend service port)
 
 For Vercel deployment, additionally set:
 - `DATABASE_URL` — production PostgreSQL connection string (e.g. Neon)
