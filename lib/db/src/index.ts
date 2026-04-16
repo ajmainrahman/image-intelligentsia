@@ -1,8 +1,6 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
-
-const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -10,18 +8,8 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+export const sql = neon(process.env.DATABASE_URL);
 
-const isLocalhost =
-  databaseUrl.includes("localhost") ||
-  databaseUrl.includes("127.0.0.1") ||
-  databaseUrl.includes("@db:");
-
-export const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: isLocalhost ? false : { rejectUnauthorized: false },
-});
-
-export const db = drizzle(pool, { schema });
+export const db = drizzle(sql, { schema });
 
 export * from "./schema";

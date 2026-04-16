@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { HealthCheckResponse, DbHealthCheckResponse } from "@workspace/api-zod";
-import { pool } from "@workspace/db";
+import { sql } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -12,9 +12,7 @@ router.get("/healthz", (_req, res) => {
 router.get("/healthz/db", async (_req, res): Promise<void> => {
   const start = Date.now();
   try {
-    const client = await pool.connect();
-    await client.query("SELECT 1");
-    client.release();
+    await sql`SELECT 1`;
     const latencyMs = Date.now() - start;
     const data = DbHealthCheckResponse.parse({ status: "ok", db: "connected", latencyMs });
     res.status(200).json(data);
