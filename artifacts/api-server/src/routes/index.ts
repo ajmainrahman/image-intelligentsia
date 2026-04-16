@@ -8,7 +8,7 @@ import remindersRouter from "./reminders.js";
 import dashboardRouter from "./dashboard.js";
 import authRouter from "./auth.js";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
