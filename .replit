@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [[artifacts]]
 id = "artifacts/api-server"
@@ -66,3 +66,6 @@ timeoutMs = 20000
 
 [userenv.shared]
 PORT = "20829"
+
+[nix]
+channel = "stable-25_05"
