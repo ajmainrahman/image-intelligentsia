@@ -8,7 +8,8 @@ export type AuthUser = {
 
 type AuthContextValue = {
   user: AuthUser | null;
-  signIn: (name: string, email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
 };
 
@@ -25,22 +26,30 @@ function loadStoredUser(): AuthUser | null {
   }
 }
 
+async function callAuth(path: string, body: object): Promise<AuthUser> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as { error?: string }).error ?? "Request failed");
+  }
+  return data as AuthUser;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
 
-  const signIn = useCallback(async (name: string, email: string) => {
-    const res = await fetch("/api/auth/signin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email }),
-    });
+  const signIn = useCallback(async (email: string, password: string) => {
+    const data = await callAuth("/api/auth/signin", { email, password });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    setUser(data);
+  }, []);
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error((data as { error?: string }).error ?? "Sign in failed");
-    }
-
-    const data = (await res.json()) as AuthUser;
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const data = await callAuth("/api/auth/signup", { name, email, password });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
@@ -52,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

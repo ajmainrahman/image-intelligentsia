@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
 
 if (!process.env.DATABASE_URL) {
@@ -8,8 +8,14 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const sql = neon(process.env.DATABASE_URL);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL.includes("neon.tech")
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 
-export const db = drizzle(sql, { schema });
+export const db = drizzle(pool, { schema });
 
+export { sql } from "drizzle-orm";
 export * from "./schema";
