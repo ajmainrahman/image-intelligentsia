@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/career-hub run build",
+  "buildCommand": "pnpm --filter @workspace/db push-force && pnpm --filter @workspace/career-hub run build",
   "outputDirectory": "public",
   "env": {
     "BASE_PATH": "/"

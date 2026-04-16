@@ -75,6 +75,19 @@ For Vercel deployment, additionally set:
 - `roadmap_items` — long-term roadmap milestones
 - `jobs` — saved job descriptions with keywords/skills arrays
 - `reminders` — task reminders with due dates
+- `users` — registered users (id, name, email)
 
 #### Utility
 - `artifacts/api-server/src/lib/serialize.ts` — converts Date objects to ISO strings before Zod validation
+
+## Auth
+
+Simple name + email sign-in. No passwords. Session stored in localStorage.
+- `POST /api/auth/signin` — finds or creates user by email, returns user object
+- `POST /api/auth/signout` — client-side only (clears localStorage)
+- Frontend context: `artifacts/career-hub/src/contexts/auth-context.tsx`
+- Sign-in page: `artifacts/career-hub/src/pages/signin.tsx`
+
+## Vercel / Neon DB Fix
+
+`vercel.json` buildCommand runs `pnpm --filter @workspace/db push-force` before building the frontend. This ensures all DB tables are created/updated in Neon on every deploy.

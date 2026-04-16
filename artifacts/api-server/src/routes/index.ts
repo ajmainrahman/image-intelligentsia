@@ -6,10 +6,12 @@ import roadmapRouter from "./roadmap.js";
 import jobsRouter from "./jobs.js";
 import remindersRouter from "./reminders.js";
 import dashboardRouter from "./dashboard.js";
+import authRouter from "./auth.js";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use(goalsRouter);
 router.use(progressRouter);
 router.use(roadmapRouter);

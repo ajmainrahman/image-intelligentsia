@@ -7,7 +7,9 @@ import {
   Map as MapIcon,
   Briefcase,
   BellRing,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +22,7 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -81,8 +84,28 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed">
+      <div className="px-4 py-4 border-t border-sidebar-border space-y-3">
+        {user && (
+          <div className="flex items-center gap-2 px-1">
+            <div className="h-6 w-6 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-semibold text-sidebar-primary uppercase">
+                {user.name.charAt(0)}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-sidebar-foreground truncate">{user.name}</p>
+              <p className="text-[10px] text-sidebar-foreground/40 truncate">{user.email}</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors duration-150"
+        >
+          <LogOut className="h-3.5 w-3.5 shrink-0" />
+          Sign out
+        </button>
+        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1">
           © 2025 imageintelligentsia
         </p>
       </div>
