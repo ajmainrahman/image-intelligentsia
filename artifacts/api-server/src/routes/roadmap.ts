@@ -1,84 +1,79 @@
-import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { Router } from "express";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, roadmapTable } from "@workspace/db";
-import {
-  CreateRoadmapItemBody,
-  UpdateRoadmapItemBody,
-  UpdateRoadmapItemParams,
-  UpdateRoadmapItemResponse,
-  DeleteRoadmapItemParams,
-  ListRoadmapItemsResponse,
-} from "@workspace/api-zod";
-import { serializeRow, serializeRows } from "../lib/serialize.js";
+import { requireAuth, type AuthRequest } from "../lib/auth.js";
 
-const router: IRouter = Router();
+const router = Router();
 
-router.get("/roadmap", async (_req, res, next): Promise<void> => {
-  try {
-    const items = await db.select().from(roadmapTable).orderBy(roadmapTable.yearTarget, roadmapTable.order);
-    res.json(ListRoadmapItemsResponse.parse(serializeRows(items)));
-  } catch (err) {
-    next(err);
-  }
+const RoadmapBody = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  yearTarget: z.number().int().min(2000).max(2100),
+  phase: z.enum(["short_term", "mid_term", "long_term"]).default("short_term"),
+  status: z.enum(["planned", "in_progress", "completed"]).default("planned"),
+  goalId: z.number().int().nullable().optional(),
+  order: z.number().int().default(0),
 });
 
-router.post("/roadmap", async (req, res, next): Promise<void> => {
+router.get("/roadmap", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const parsed = CreateRoadmapItemBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-    const [item] = await db.insert(roadmapTable).values(parsed.data).returning();
-    res.status(201).json(ListRoadmapItemsResponse.element.parse(serializeRow(item)));
-  } catch (err) {
-    next(err);
-  }
+    const items = await db.select().from(roadmapTable)
+      .where(eq(roadmapTable.userId, req.userId!))
+      .orderBy(roadmapTable.order);
+    res.json(items.map(serializeRoadmapItem));
+  } catch (err) { next(err); }
 });
 
-router.put("/roadmap/:id", async (req, res, next): Promise<void> => {
+router.post("/roadmap", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const params = UpdateRoadmapItemParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
-    const parsed = UpdateRoadmapItemBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-    const [item] = await db
-      .update(roadmapTable)
+    const parsed = RoadmapBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const [item] = await db.insert(roadmapTable).values({ ...parsed.data, userId: req.userId! }).returning();
+    res.status(201).json(serializeRoadmapItem(item));
+  } catch (err) { next(err); }
+});
+
+router.put("/roadmap/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const parsed = RoadmapBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const [item] = await db.update(roadmapTable)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(roadmapTable.id, params.data.id))
+      .where(and(eq(roadmapTable.id, id), eq(roadmapTable.userId, req.userId!)))
       .returning();
-    if (!item) {
-      res.status(404).json({ error: "Roadmap item not found" });
-      return;
-    }
-    res.json(UpdateRoadmapItemResponse.parse(serializeRow(item)));
-  } catch (err) {
-    next(err);
-  }
+    if (!item) { res.status(404).json({ error: "Item not found" }); return; }
+    res.json(serializeRoadmapItem(item));
+  } catch (err) { next(err); }
 });
 
-router.delete("/roadmap/:id", async (req, res, next): Promise<void> => {
+router.delete("/roadmap/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const params = DeleteRoadmapItemParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
-    const [item] = await db.delete(roadmapTable).where(eq(roadmapTable.id, params.data.id)).returning();
-    if (!item) {
-      res.status(404).json({ error: "Roadmap item not found" });
-      return;
-    }
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const [item] = await db.delete(roadmapTable)
+      .where(and(eq(roadmapTable.id, id), eq(roadmapTable.userId, req.userId!)))
+      .returning();
+    if (!item) { res.status(404).json({ error: "Item not found" }); return; }
     res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 });
+
+function serializeRoadmapItem(r: typeof roadmapTable.$inferSelect) {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    yearTarget: r.yearTarget,
+    phase: r.phase,
+    status: r.status,
+    goalId: r.goalId,
+    order: r.order,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+  };
+}
 
 export default router;

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 import {
   LayoutDashboard,
   Target,
@@ -7,6 +8,8 @@ import {
   Map as MapIcon,
   Briefcase,
   BellRing,
+  LogOut,
+  TrendingUp,
 } from "lucide-react";
 
 const navItems = [
@@ -20,38 +23,31 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      {/* Brand */}
       <div className="flex flex-col px-5 pt-6 pb-5 border-b border-sidebar-border gap-1">
         <div className="flex items-center gap-3 mb-1">
-          <img
-            src="/logo.svg"
-            alt="Image Intelligentsia logo"
-            className="h-9 w-9 shrink-0 rounded-xl"
-          />
-          <span
-            className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Image Intelligentsia
+          <div className="h-9 w-9 shrink-0 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+            <TrendingUp className="h-5 w-5" />
+          </div>
+          <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none">
+            Career Hub
           </span>
         </div>
-        <p className="text-[10.5px] text-sidebar-foreground/40 italic leading-snug pl-0.5">
-          The model is still training.
-          <br />
-          Watch this space.
-        </p>
+        {user && (
+          <p className="text-[11px] text-sidebar-foreground/50 leading-snug pl-0.5 truncate">
+            {user.name}
+          </p>
+        )}
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive =
             location === item.href ||
             (item.href !== "/" && location.startsWith(item.href));
-
           return (
             <Link
               key={item.href}
@@ -80,10 +76,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1">
-          © 2025 Image Intelligentsia
+      <div className="px-3 py-4 border-t border-sidebar-border">
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-destructive transition-all duration-150 group"
+        >
+          <LogOut className="h-4 w-4 shrink-0 text-sidebar-foreground/40 group-hover:text-destructive" />
+          Sign out
+        </button>
+        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1 mt-3">
+          © 2025 Career Hub
         </p>
       </div>
     </aside>

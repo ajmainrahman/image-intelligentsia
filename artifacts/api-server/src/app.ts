@@ -47,7 +47,6 @@ app.use((req, _res, next) => {
 });
 
 app.use("/api", router);
-app.use(router);
 
 app.use(
   (

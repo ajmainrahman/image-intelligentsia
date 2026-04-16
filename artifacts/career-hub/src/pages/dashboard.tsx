@@ -1,13 +1,47 @@
-import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetTopSkills, getGetTopSkillsQueryKey, useGetRecentActivity, getGetRecentActivityQueryKey } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map as MapIcon } from "lucide-react";
 import { format } from "date-fns";
 
+type Summary = {
+  totalGoals: number;
+  activeGoals: number;
+  progressCompleted: number;
+  progressInProgress: number;
+  totalJobs: number;
+  appliedJobs: number;
+  pendingReminders: number;
+  roadmapCompleted: number;
+  roadmapTotal: number;
+};
+
+type Skill = { skill: string; count: number };
+
+type ActivityItem = {
+  id: number;
+  type: string;
+  title: string;
+  action: string;
+  createdAt: string;
+};
+
 export default function Dashboard() {
-  const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
-  const { data: skills, isLoading: isLoadingSkills } = useGetTopSkills({ query: { queryKey: getGetTopSkillsQueryKey() } });
-  const { data: activity, isLoading: isLoadingActivity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
+  const { data: summary, isLoading: isLoadingSummary } = useQuery<Summary>({
+    queryKey: ["dashboard-summary"],
+    queryFn: () => api<Summary>("/dashboard/summary"),
+  });
+
+  const { data: skills, isLoading: isLoadingSkills } = useQuery<Skill[]>({
+    queryKey: ["dashboard-skills"],
+    queryFn: () => api<Skill[]>("/dashboard/top-skills"),
+  });
+
+  const { data: activity, isLoading: isLoadingActivity } = useQuery<ActivityItem[]>({
+    queryKey: ["dashboard-activity"],
+    queryFn: () => api<ActivityItem[]>("/dashboard/recent-activity"),
+  });
 
   return (
     <div className="space-y-8 page-enter">
@@ -32,7 +66,6 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground mt-1">of {summary.totalGoals} total goals</p>
             </CardContent>
           </Card>
-          
           <Card className="hover-elevate">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Learning Progress</CardTitle>
@@ -43,7 +76,6 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground mt-1">{summary.progressInProgress} currently in progress</p>
             </CardContent>
           </Card>
-
           <Card className="hover-elevate">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Jobs Applied</CardTitle>
@@ -54,7 +86,6 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground mt-1">of {summary.totalJobs} saved jobs</p>
             </CardContent>
           </Card>
-
           <Card className="hover-elevate">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Pending Reminders</CardTitle>
@@ -79,9 +110,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {isLoadingActivity ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-                </div>
+                <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
               ) : Array.isArray(activity) && activity.length > 0 ? (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-border">
                   {activity.map((item) => (
@@ -127,9 +156,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {isLoadingSkills ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-full" />)}
-                </div>
+                <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : skills && skills.length > 0 ? (
                 <div className="space-y-3">
                   {skills.map((skill, index) => (
@@ -139,7 +166,7 @@ export default function Dashboard() {
                         <span className="font-medium text-sm">{skill.skill}</span>
                       </div>
                       <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                        {skill.count} job{skill.count !== 1 ? 's' : ''}
+                        {skill.count} job{skill.count !== 1 ? "s" : ""}
                       </span>
                     </div>
                   ))}
@@ -165,8 +192,8 @@ export default function Dashboard() {
                       You have completed {summary.roadmapCompleted} of {summary.roadmapTotal} roadmap milestones.
                     </p>
                     <div className="mt-4 h-2 w-full bg-primary/10 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full transition-all duration-1000" 
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-1000"
                         style={{ width: `${summary.roadmapTotal > 0 ? (summary.roadmapCompleted / summary.roadmapTotal) * 100 : 0}%` }}
                       />
                     </div>

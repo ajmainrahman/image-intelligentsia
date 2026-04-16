@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, TrendingUp } from "lucide-react";
 
 type View = "login" | "register";
 
-interface PasswordInputProps {
+function PasswordInput({
+  value,
+  onChange,
+  placeholder = "••••••••",
+  required,
+}: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   required?: boolean;
-}
-
-function PasswordInput({ value, onChange, placeholder = "••••••••", required }: PasswordInputProps) {
+}) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -38,7 +41,6 @@ function PasswordInput({ value, onChange, placeholder = "•••••••�
 export default function SignInPage() {
   const { login, register } = useAuth();
   const [view, setView] = useState<View>("login");
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,10 +69,7 @@ export default function SignInPage() {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
+    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true);
     try {
       await register(name, email, password);
@@ -85,11 +84,11 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.svg" alt="Image Intelligentsia" className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-lg" />
-          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Image Intelligentsia
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 italic">The model is still training.</p>
+          <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground mb-4 shadow-lg">
+            <TrendingUp className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Career Hub</h1>
+          <p className="text-sm text-muted-foreground mt-1">Your personal career planning dashboard</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
@@ -126,9 +125,7 @@ export default function SignInPage() {
             {view === "login" ? (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Email address
-                  </label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Email address</label>
                   <input
                     type="email"
                     value={email}
@@ -140,9 +137,7 @@ export default function SignInPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Password
-                  </label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Password</label>
                   <PasswordInput value={password} onChange={setPassword} required />
                 </div>
                 <button
@@ -157,9 +152,7 @@ export default function SignInPage() {
             ) : (
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Full name
-                  </label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Full name</label>
                   <input
                     type="text"
                     value={name}
@@ -171,9 +164,7 @@ export default function SignInPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Email address
-                  </label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Email address</label>
                   <input
                     type="email"
                     value={email}
@@ -185,15 +176,9 @@ export default function SignInPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Password{" "}
-                    <span className="text-muted-foreground/60">(min 6 characters)</span>
+                    Password <span className="text-muted-foreground/60">(min 6 characters)</span>
                   </label>
-                  <PasswordInput
-                    value={password}
-                    onChange={setPassword}
-                    placeholder="Min. 6 characters"
-                    required
-                  />
+                  <PasswordInput value={password} onChange={setPassword} placeholder="Min. 6 characters" required />
                 </div>
                 <button
                   type="submit"

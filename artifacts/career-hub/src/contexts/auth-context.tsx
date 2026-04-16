@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { api, setToken, clearToken, getToken } from "@/lib/api";
 
 export type AuthUser = {
   id: number;
@@ -14,51 +15,47 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const STORAGE_KEY = "career_hub_user";
+const USER_KEY = "career_hub_user";
 
 function loadStoredUser(): AuthUser | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!getToken()) return null;
+    const raw = localStorage.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as AuthUser) : null;
   } catch {
     return null;
   }
 }
 
-async function callAuth(action: "signin" | "signup" | "signout", body?: object): Promise<AuthUser> {
-  const url = `/api/auth/${action}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (res.ok) {
-    return data as AuthUser;
-  }
-  throw new Error((data as { error?: string }).error ?? `Request failed (${res.status})`);
-}
+type AuthResponse = { token: string; user: AuthUser };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await callAuth("signin", { email, password });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    setUser(data);
+    const data = await api<AuthResponse>("/auth/signin", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    setToken(data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    setUser(data.user);
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
-    const data = await callAuth("signup", { name, email, password });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    setUser(data);
+    const data = await api<AuthResponse>("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
+    });
+    setToken(data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    setUser(data.user);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    clearToken();
+    localStorage.removeItem(USER_KEY);
     setUser(null);
-    callAuth("signout").catch(() => {});
   }, []);
 
   return (

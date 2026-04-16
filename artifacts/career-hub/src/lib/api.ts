@@ -1,0 +1,36 @@
+const TOKEN_KEY = "career_hub_token";
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+export async function api<T = unknown>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`/api${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options?.headers ?? {}),
+    },
+  });
+
+  if (res.status === 204) return undefined as T;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as { error?: string }).error ?? `Request failed (${res.status})`);
+  }
+  return data as T;
+}

@@ -1,9 +1,8 @@
 import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
 
 export const progressTable = pgTable("progress_entries", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   category: text("category").notNull().default("other"),
   description: text("description"),
@@ -14,6 +13,4 @@ export const progressTable = pgTable("progress_entries", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const insertProgressSchema = createInsertSchema(progressTable).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertProgress = z.infer<typeof insertProgressSchema>;
 export type ProgressEntry = typeof progressTable.$inferSelect;

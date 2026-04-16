@@ -1,9 +1,8 @@
 import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
 
 export const roadmapTable = pgTable("roadmap_items", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   yearTarget: integer("year_target").notNull(),
@@ -15,6 +14,4 @@ export const roadmapTable = pgTable("roadmap_items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const insertRoadmapSchema = createInsertSchema(roadmapTable).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertRoadmapItem = z.infer<typeof insertRoadmapSchema>;
 export type RoadmapItem = typeof roadmapTable.$inferSelect;

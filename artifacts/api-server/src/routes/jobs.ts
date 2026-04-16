@@ -1,104 +1,81 @@
-import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { Router } from "express";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, jobsTable } from "@workspace/db";
-import {
-  CreateJobBody,
-  UpdateJobBody,
-  GetJobParams,
-  GetJobResponse,
-  UpdateJobParams,
-  UpdateJobResponse,
-  DeleteJobParams,
-  ListJobsResponse,
-} from "@workspace/api-zod";
-import { serializeRow, serializeRows } from "../lib/serialize.js";
+import { requireAuth, type AuthRequest } from "../lib/auth.js";
 
-const router: IRouter = Router();
+const router = Router();
 
-router.get("/jobs", async (_req, res, next): Promise<void> => {
-  try {
-    const jobs = await db.select().from(jobsTable).orderBy(jobsTable.createdAt);
-    res.json(ListJobsResponse.parse(serializeRows(jobs)));
-  } catch (err) {
-    next(err);
-  }
+const JobBody = z.object({
+  title: z.string().min(1),
+  company: z.string().nullable().optional(),
+  description: z.string().min(1),
+  keywords: z.array(z.string()).default([]),
+  skills: z.array(z.string()).default([]),
+  notes: z.string().nullable().optional(),
+  status: z.enum(["saved", "applied", "interviewing", "rejected", "offered"]).default("saved"),
+  url: z.string().url().nullable().optional(),
 });
 
-router.post("/jobs", async (req, res, next): Promise<void> => {
+router.get("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const parsed = CreateJobBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-    const [job] = await db.insert(jobsTable).values(parsed.data).returning();
-    res.status(201).json(GetJobResponse.parse(serializeRow(job)));
-  } catch (err) {
-    next(err);
-  }
+    const jobs = await db.select().from(jobsTable)
+      .where(eq(jobsTable.userId, req.userId!))
+      .orderBy(jobsTable.createdAt);
+    res.json(jobs.map(serializeJob));
+  } catch (err) { next(err); }
 });
 
-router.get("/jobs/:id", async (req, res, next): Promise<void> => {
+router.post("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const params = GetJobParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
-    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
-    if (!job) {
-      res.status(404).json({ error: "Job not found" });
-      return;
-    }
-    res.json(GetJobResponse.parse(serializeRow(job)));
-  } catch (err) {
-    next(err);
-  }
+    const parsed = JobBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const [job] = await db.insert(jobsTable).values({ ...parsed.data, userId: req.userId! }).returning();
+    res.status(201).json(serializeJob(job));
+  } catch (err) { next(err); }
 });
 
-router.put("/jobs/:id", async (req, res, next): Promise<void> => {
+router.put("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const params = UpdateJobParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
-    const parsed = UpdateJobBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-    const [job] = await db
-      .update(jobsTable)
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const parsed = JobBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const [job] = await db.update(jobsTable)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(jobsTable.id, params.data.id))
+      .where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!)))
       .returning();
-    if (!job) {
-      res.status(404).json({ error: "Job not found" });
-      return;
-    }
-    res.json(UpdateJobResponse.parse(serializeRow(job)));
-  } catch (err) {
-    next(err);
-  }
+    if (!job) { res.status(404).json({ error: "Job not found" }); return; }
+    res.json(serializeJob(job));
+  } catch (err) { next(err); }
 });
 
-router.delete("/jobs/:id", async (req, res, next): Promise<void> => {
+router.delete("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const params = DeleteJobParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
-    const [job] = await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id)).returning();
-    if (!job) {
-      res.status(404).json({ error: "Job not found" });
-      return;
-    }
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const [job] = await db.delete(jobsTable)
+      .where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!)))
+      .returning();
+    if (!job) { res.status(404).json({ error: "Job not found" }); return; }
     res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 });
+
+function serializeJob(j: typeof jobsTable.$inferSelect) {
+  return {
+    id: j.id,
+    title: j.title,
+    company: j.company,
+    description: j.description,
+    keywords: j.keywords,
+    skills: j.skills,
+    notes: j.notes,
+    status: j.status,
+    url: j.url,
+    createdAt: j.createdAt.toISOString(),
+    updatedAt: j.updatedAt.toISOString(),
+  };
+}
 
 export default router;

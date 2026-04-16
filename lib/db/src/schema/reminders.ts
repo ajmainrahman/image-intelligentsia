@@ -1,9 +1,8 @@
-import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const remindersTable = pgTable("reminders", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   dueDate: timestamp("due_date", { withTimezone: true }),
@@ -14,6 +13,4 @@ export const remindersTable = pgTable("reminders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const insertReminderSchema = createInsertSchema(remindersTable).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertReminder = z.infer<typeof insertReminderSchema>;
 export type Reminder = typeof remindersTable.$inferSelect;

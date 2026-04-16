@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PageWrapper } from "@/components/layout/page-wrapper";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { Loader2 } from "lucide-react";
 
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -13,6 +14,7 @@ const JobsPage = lazy(() => import("@/pages/jobs"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const RoadmapPage = lazy(() => import("@/pages/roadmap"));
 const RemindersPage = lazy(() => import("@/pages/reminders"));
+const SignInPage = lazy(() => import("@/pages/signin"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +35,17 @@ function PageLoader() {
   );
 }
 
-function Router() {
+function AppRoutes() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SignInPage />
+      </Suspense>
+    );
+  }
+
   return (
     <PageWrapper>
       <Suspense fallback={<PageLoader />}>
@@ -55,10 +67,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppRoutes />
+          </WouterRouter>
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
