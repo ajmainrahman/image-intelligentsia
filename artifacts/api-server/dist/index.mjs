@@ -28143,6 +28143,254 @@ var require_pino = __commonJS({
   }
 });
 
+// ../../node_modules/.pnpm/get-caller-file@2.0.5/node_modules/get-caller-file/index.js
+var require_get_caller_file = __commonJS({
+  "../../node_modules/.pnpm/get-caller-file@2.0.5/node_modules/get-caller-file/index.js"(exports, module) {
+    "use strict";
+    module.exports = function getCallerFile(position) {
+      if (position === void 0) {
+        position = 2;
+      }
+      if (position >= Error.stackTraceLimit) {
+        throw new TypeError("getCallerFile(position) requires position be less then Error.stackTraceLimit but position was: `" + position + "` and Error.stackTraceLimit was: `" + Error.stackTraceLimit + "`");
+      }
+      var oldPrepareStackTrace = Error.prepareStackTrace;
+      Error.prepareStackTrace = function(_, stack2) {
+        return stack2;
+      };
+      var stack = new Error().stack;
+      Error.prepareStackTrace = oldPrepareStackTrace;
+      if (stack !== null && typeof stack === "object") {
+        return stack[position] ? stack[position].getFileName() : void 0;
+      }
+    };
+  }
+});
+
+// ../../node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js
+var require_logger = __commonJS({
+  "../../node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js"(exports, module) {
+    "use strict";
+    var { pino: pino2, symbols: { stringifySym, chindingsSym } } = require_pino();
+    var serializers = require_pino_std_serializers();
+    var getCallerFile = require_get_caller_file();
+    var startTime = /* @__PURE__ */ Symbol("startTime");
+    var reqObject = /* @__PURE__ */ Symbol("reqObject");
+    function pinoLogger(opts, stream) {
+      if (opts && opts._writableState) {
+        stream = opts;
+        opts = null;
+      }
+      opts = Object.assign({}, opts);
+      opts.customAttributeKeys = opts.customAttributeKeys || {};
+      const reqKey = opts.customAttributeKeys.req || "req";
+      const resKey = opts.customAttributeKeys.res || "res";
+      const errKey = opts.customAttributeKeys.err || "err";
+      const requestIdKey = opts.customAttributeKeys.reqId || "reqId";
+      const responseTimeKey = opts.customAttributeKeys.responseTime || "responseTime";
+      delete opts.customAttributeKeys;
+      const customProps = opts.customProps || void 0;
+      opts.wrapSerializers = "wrapSerializers" in opts ? opts.wrapSerializers : true;
+      if (opts.wrapSerializers) {
+        opts.serializers = Object.assign({}, opts.serializers);
+        const requestSerializer = opts.serializers[reqKey] || opts.serializers.req || serializers.req;
+        const responseSerializer = opts.serializers[resKey] || opts.serializers.res || serializers.res;
+        const errorSerializer = opts.serializers[errKey] || opts.serializers.err || serializers.err;
+        opts.serializers[reqKey] = serializers.wrapRequestSerializer(requestSerializer);
+        opts.serializers[resKey] = serializers.wrapResponseSerializer(responseSerializer);
+        opts.serializers[errKey] = serializers.wrapErrorSerializer(errorSerializer);
+      }
+      delete opts.wrapSerializers;
+      if (opts.useLevel && opts.customLogLevel) {
+        throw new Error("You can't pass 'useLevel' and 'customLogLevel' together");
+      }
+      function getValidLogLevel(level, defaultValue = "info") {
+        if (level && typeof level === "string") {
+          const logLevel = level.trim();
+          if (validLogLevels.includes(logLevel) === true) {
+            return logLevel;
+          }
+        }
+        return defaultValue;
+      }
+      function getLogLevelFromCustomLogLevel(customLogLevel2, useLevel2, res, err, req) {
+        return customLogLevel2 ? getValidLogLevel(customLogLevel2(req, res, err), useLevel2) : useLevel2;
+      }
+      const customLogLevel = opts.customLogLevel;
+      delete opts.customLogLevel;
+      const theStream = opts.stream || stream;
+      delete opts.stream;
+      const autoLogging = opts.autoLogging !== false;
+      const autoLoggingIgnore = opts.autoLogging && opts.autoLogging.ignore ? opts.autoLogging.ignore : null;
+      delete opts.autoLogging;
+      const onRequestReceivedObject = getFunctionOrDefault(opts.customReceivedObject, void 0);
+      const receivedMessage = getFunctionOrDefault(opts.customReceivedMessage, void 0);
+      const onRequestSuccessObject = getFunctionOrDefault(opts.customSuccessObject, defaultSuccessfulRequestObjectProvider);
+      const successMessage = getFunctionOrDefault(opts.customSuccessMessage, defaultSuccessfulRequestMessageProvider);
+      const onRequestErrorObject = getFunctionOrDefault(opts.customErrorObject, defaultFailedRequestObjectProvider);
+      const errorMessage = getFunctionOrDefault(opts.customErrorMessage, defaultFailedRequestMessageProvider);
+      delete opts.customSuccessfulMessage;
+      delete opts.customErroredMessage;
+      const quietReqLogger = !!opts.quietReqLogger;
+      const quietResLogger = !!opts.quietResLogger;
+      const logger2 = wrapChild(opts, theStream);
+      const validLogLevels = Object.keys(logger2.levels.values).concat("silent");
+      const useLevel = getValidLogLevel(opts.useLevel);
+      delete opts.useLevel;
+      const genReqId = reqIdGenFactory(opts.genReqId);
+      const result = (req, res, next) => {
+        return loggingMiddleware(logger2, req, res, next);
+      };
+      result.logger = logger2;
+      return result;
+      function onResFinished(res, logger3, err) {
+        let log = logger3;
+        const responseTime = Date.now() - res[startTime];
+        const req = res[reqObject];
+        const level = getLogLevelFromCustomLogLevel(customLogLevel, useLevel, res, err, req);
+        if (level === "silent") {
+          return;
+        }
+        const customPropBindings = typeof customProps === "function" ? customProps(req, res) : customProps;
+        if (customPropBindings) {
+          const customPropBindingStr = logger3[stringifySym](customPropBindings).replace(/[{}]/g, "");
+          const customPropBindingsStr = logger3[chindingsSym];
+          if (!customPropBindingsStr.includes(customPropBindingStr)) {
+            log = logger3.child(customPropBindings);
+          }
+        }
+        if (err || res.err || res.statusCode >= 500) {
+          const error40 = err || res.err || new Error("failed with status code " + res.statusCode);
+          log[level](
+            onRequestErrorObject(req, res, error40, {
+              [resKey]: res,
+              [errKey]: error40,
+              [responseTimeKey]: responseTime
+            }),
+            errorMessage(req, res, error40, responseTime)
+          );
+          return;
+        }
+        log[level](
+          onRequestSuccessObject(req, res, {
+            [resKey]: res,
+            [responseTimeKey]: responseTime
+          }),
+          successMessage(req, res, responseTime)
+        );
+      }
+      function loggingMiddleware(logger3, req, res, next) {
+        let shouldLogSuccess = true;
+        req.id = req.id || genReqId(req, res);
+        const log = quietReqLogger ? logger3.child({ [requestIdKey]: req.id }) : logger3;
+        let fullReqLogger = log.child({ [reqKey]: req });
+        const customPropBindings = typeof customProps === "function" ? customProps(req, res) : customProps;
+        if (customPropBindings) {
+          fullReqLogger = fullReqLogger.child(customPropBindings);
+        }
+        const responseLogger = quietResLogger ? log : fullReqLogger;
+        const requestLogger = quietReqLogger ? log : fullReqLogger;
+        if (!res.log) {
+          res.log = responseLogger;
+        }
+        if (Array.isArray(res.allLogs) === false) {
+          res.allLogs = [];
+        }
+        res.allLogs.push(responseLogger);
+        if (!req.log) {
+          req.log = requestLogger;
+        }
+        if (!req.allLogs) {
+          req.allLogs = [];
+        }
+        req.allLogs.push(requestLogger);
+        res[startTime] = res[startTime] || Date.now();
+        res[reqObject] = req;
+        const onResponseComplete = (err) => {
+          res.removeListener("close", onResponseComplete);
+          res.removeListener("finish", onResponseComplete);
+          res.removeListener("error", onResponseComplete);
+          return onResFinished(res, responseLogger, err);
+        };
+        if (autoLogging) {
+          if (autoLoggingIgnore !== null && shouldLogSuccess === true) {
+            const isIgnored = autoLoggingIgnore(req);
+            shouldLogSuccess = !isIgnored;
+          }
+          if (shouldLogSuccess) {
+            const shouldLogReceived = receivedMessage !== void 0 || onRequestReceivedObject !== void 0;
+            if (shouldLogReceived) {
+              const level = getLogLevelFromCustomLogLevel(customLogLevel, useLevel, res, void 0, req);
+              const receivedObjectResult = onRequestReceivedObject !== void 0 ? onRequestReceivedObject(req, res, void 0) : {};
+              const receivedStringResult = receivedMessage !== void 0 ? receivedMessage(req, res) : void 0;
+              requestLogger[level](receivedObjectResult, receivedStringResult);
+            }
+            res.on("close", onResponseComplete);
+            res.on("finish", onResponseComplete);
+          }
+          res.on("error", onResponseComplete);
+        }
+        if (next) {
+          next();
+        }
+      }
+    }
+    function wrapChild(opts, stream) {
+      const prevLogger = opts.logger;
+      const prevGenReqId = opts.genReqId;
+      let logger2 = null;
+      if (prevLogger) {
+        opts.logger = void 0;
+        opts.genReqId = void 0;
+        logger2 = prevLogger.child({}, opts);
+        opts.logger = prevLogger;
+        opts.genReqId = prevGenReqId;
+      } else {
+        if (opts.transport && !opts.transport.caller) {
+          opts.transport.caller = getCallerFile();
+        }
+        logger2 = pino2(opts, stream);
+      }
+      return logger2;
+    }
+    function reqIdGenFactory(func) {
+      if (typeof func === "function") return func;
+      const maxInt = 2147483647;
+      let nextReqId = 0;
+      return function genReqId(req, res) {
+        return req.id || (nextReqId = nextReqId + 1 & maxInt);
+      };
+    }
+    function getFunctionOrDefault(value, defaultValue) {
+      if (value && typeof value === "function") {
+        return value;
+      }
+      return defaultValue;
+    }
+    function defaultSuccessfulRequestObjectProvider(req, res, successObject) {
+      return successObject;
+    }
+    function defaultFailedRequestObjectProvider(req, res, error40, errorObject) {
+      return errorObject;
+    }
+    function defaultFailedRequestMessageProvider() {
+      return "request errored";
+    }
+    function defaultSuccessfulRequestMessageProvider(req, res) {
+      return !req.readableAborted && res.writableEnded ? "request completed" : "request aborted";
+    }
+    module.exports = pinoLogger;
+    module.exports.stdSerializers = {
+      err: serializers.err,
+      req: serializers.req,
+      res: serializers.res
+    };
+    module.exports.startTime = startTime;
+    module.exports.default = pinoLogger;
+    module.exports.pinoHttp = pinoLogger;
+  }
+});
+
 // ../../node_modules/.pnpm/postgres-array@2.0.0/node_modules/postgres-array/index.js
 var require_postgres_array = __commonJS({
   "../../node_modules/.pnpm/postgres-array@2.0.0/node_modules/postgres-array/index.js"(exports) {
@@ -33250,6 +33498,7 @@ var require_lib5 = __commonJS({
 // src/app.ts
 var import_express9 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
+var import_pino_http = __toESM(require_logger(), 1);
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -56438,18 +56687,7 @@ var routes_default = router8;
 
 // src/app.ts
 var app = (0, import_express9.default)();
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    logger.info({
-      method: req.method,
-      url: req.url?.split("?")[0],
-      statusCode: res.statusCode,
-      duration: Date.now() - start
-    });
-  });
-  next();
-});
+app.use((0, import_pino_http.default)({ logger }));
 var allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()) : [];
 app.use(
   (0, import_cors.default)({
@@ -56464,12 +56702,12 @@ app.use(
 app.use(import_express9.default.json());
 app.use(import_express9.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
-var errorHandler = (err, _req, res, _next) => {
+app.use((err, _req, res, _next) => {
   logger.error(err);
   const status = err.status ?? err.statusCode ?? 500;
-  res.status(status).json({ error: err.message ?? "Internal server error" });
-};
-app.use(errorHandler);
+  const message = err instanceof Error ? err.message : "Internal server error";
+  res.status(status).json({ error: message });
+});
 var app_default = app;
 
 // src/index.ts
