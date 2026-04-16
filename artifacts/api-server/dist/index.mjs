@@ -58505,6 +58505,7 @@ app.use(
 app.use(import_express10.default.json());
 app.use(import_express10.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
+app.use(routes_default);
 app.use(
   (err, _req, res, _next) => {
     logger.error(err);

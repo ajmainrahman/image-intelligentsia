@@ -85,9 +85,11 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.svg" alt="Logo" className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-lg" />
-          <h1 className="text-2xl font-bold text-foreground">Career Hub</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your career, your path.</p>
+          <img src="/logo.svg" alt="Image Intelligentsia" className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-lg" />
+          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Image Intelligentsia
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 italic">The model is still training.</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">

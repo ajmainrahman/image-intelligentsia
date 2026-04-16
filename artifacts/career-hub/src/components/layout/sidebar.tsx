@@ -31,14 +31,14 @@ export function Sidebar() {
         <div className="flex items-center gap-3 mb-1">
           <img
             src="/logo.svg"
-            alt="imageintelligentsia logo"
+            alt="Image Intelligentsia logo"
             className="h-9 w-9 shrink-0 rounded-xl"
           />
           <span
             className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            imageintelligentsia
+            Image Intelligentsia
           </span>
         </div>
         <p className="text-[10.5px] text-sidebar-foreground/40 italic leading-snug pl-0.5">
@@ -106,7 +106,7 @@ export function Sidebar() {
           Sign out
         </button>
         <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1">
-          © 2025 imageintelligentsia
+          © 2025 Image Intelligentsia
         </p>
       </div>
     </aside>
