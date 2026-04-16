@@ -1,9 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 
-const router: IRouter = Router();
+const router = Router();
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

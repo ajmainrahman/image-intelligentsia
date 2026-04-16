@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { db, goalsTable, progressTable, jobsTable, remindersTable, roadmapTable } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
@@ -6,7 +6,7 @@ import {
   GetRecentActivityResponse,
 } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.get("/dashboard/summary", async (_req, res, next): Promise<void> => {
   try {
