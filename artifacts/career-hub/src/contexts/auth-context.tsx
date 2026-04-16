@@ -15,7 +15,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const USER_KEY = "career_hub_user";
+const USER_KEY = "image_intelligentsia_user";
 
 function loadStoredUser(): AuthUser | null {
   try {

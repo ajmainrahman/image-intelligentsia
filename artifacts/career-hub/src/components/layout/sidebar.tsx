@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { BrandLogo } from "@/components/brand-logo";
 import {
   LayoutDashboard,
   Target,
@@ -9,7 +10,6 @@ import {
   Briefcase,
   BellRing,
   LogOut,
-  TrendingUp,
 } from "lucide-react";
 
 const navItems = [
@@ -29,11 +29,9 @@ export function Sidebar() {
     <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex flex-col px-5 pt-6 pb-5 border-b border-sidebar-border gap-1">
         <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 shrink-0 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
-            <TrendingUp className="h-5 w-5" />
-          </div>
+          <BrandLogo className="h-9 w-9 shrink-0 rounded-xl" iconClassName="h-5 w-5" />
           <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none">
-            Career Hub
+            Image Intelligentsia
           </span>
         </div>
         {user && (
@@ -85,7 +83,7 @@ export function Sidebar() {
           Sign out
         </button>
         <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1 mt-3">
-          © 2025 Career Hub
+          © 2025 Image Intelligentsia
         </p>
       </div>
     </aside>

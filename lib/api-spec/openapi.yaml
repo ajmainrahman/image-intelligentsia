@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Api
+  title: Image Intelligentsia API
   version: 0.1.0
-  description: Career Hub API
+  description: Image Intelligentsia API
 servers:
   - url: /api
     description: Base API path

@@ -1,4 +1,4 @@
-const TOKEN_KEY = "career_hub_token";
+const TOKEN_KEY = "image_intelligentsia_token";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -28,9 +28,17 @@ export async function api<T = unknown>(
 
   if (res.status === 204) return undefined as T;
 
-  const data = await res.json().catch(() => ({}));
+  const contentType = res.headers.get("content-type") ?? "";
+  const data = contentType.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : await res.text().catch(() => "");
+
   if (!res.ok) {
-    throw new Error((data as { error?: string }).error ?? `Request failed (${res.status})`);
+    const message =
+      typeof data === "string"
+        ? data.trim()
+        : (data as { error?: string }).error;
+    throw new Error(message || `Request failed (${res.status})`);
   }
   return data as T;
 }

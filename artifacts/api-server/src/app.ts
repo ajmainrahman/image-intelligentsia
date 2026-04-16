@@ -61,7 +61,12 @@ app.use(
       (err as { statusCode?: number }).statusCode ??
       500;
     const message =
-      err instanceof Error ? err.message : "Internal server error";
+      (err as { publicMessage?: string }).publicMessage ??
+      (process.env.NODE_ENV === "production" && statusCode >= 500
+        ? "Internal server error"
+        : err instanceof Error
+          ? err.message
+          : "Internal server error");
     res.statusCode = statusCode;
     res.json({ error: message });
   },

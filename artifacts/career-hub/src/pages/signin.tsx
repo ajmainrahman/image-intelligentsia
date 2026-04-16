@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Eye, EyeOff, Loader2, TrendingUp } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 type View = "login" | "register";
 
@@ -84,11 +85,9 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground mb-4 shadow-lg">
-            <TrendingUp className="h-8 w-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Career Hub</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your personal career planning dashboard</p>
+          <BrandLogo className="h-16 w-16 mb-4" iconClassName="h-8 w-8" />
+          <h1 className="text-2xl font-bold text-foreground">Image Intelligentsia</h1>
+          <p className="text-sm text-muted-foreground mt-1">Your intelligent image workflow dashboard</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">

@@ -28,7 +28,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Replit Workflows
 
-- **Start application** — Runs the Career Hub frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
+- **Start application** — Runs the Image Intelligentsia frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
 - **API Server** — Runs the Express API server (`PORT=8080 pnpm --filter @workspace/api-server run dev`), served at `/api`
 - Frontend Vite config binds to `0.0.0.0`, uses the workflow-provided `PORT`, enables Replit preview hosts, and proxies `/api` to the local API server on port `8080`.
 
@@ -45,10 +45,10 @@ For Vercel deployment, additionally set:
 
 ## Artifacts
 
-### Career Hub (`artifacts/career-hub`)
+### Image Intelligentsia (`artifacts/career-hub`)
 - **Type**: React + Vite web app
 - **Preview path**: `/`
-- **Purpose**: Personal career planning dashboard for job preparation (Data Scientist, Data Analyst, ML Engineer)
+- **Purpose**: Image Intelligentsia dashboard, currently retaining the existing planning/workflow modules while branding is updated
 
 #### Features
 - **Dashboard**: Summary stats (goals, progress, jobs, reminders), top skills from job descriptions, recent activity timeline
@@ -68,7 +68,7 @@ For Vercel deployment, additionally set:
 ### API Server (`artifacts/api-server`)
 - **Type**: Express 5 API
 - **Preview path**: `/api`
-- **Purpose**: Backend API for Career Hub
+- **Purpose**: Backend API for Image Intelligentsia
 
 #### Database Tables
 - `goals` — career goals
@@ -89,7 +89,8 @@ Simple name + email sign-in. No passwords or hashing dependency. Session stored 
 - `POST /api/auth/signout` — client-side only (clears localStorage)
 - Frontend context: `artifacts/career-hub/src/contexts/auth-context.tsx`
 - Sign-in page: `artifacts/career-hub/src/pages/signin.tsx`
-- JWT signing uses a development-only fallback secret; production requires `JWT_SECRET` to be configured.
+- JWT signing accepts `JWT_SECRET`, `AUTH_SECRET`, or `NEXTAUTH_SECRET`; production requires one of them to be configured.
+- Database connections accept Replit `DATABASE_URL` and common Vercel/Neon variables including `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, and `POSTGRES_PRISMA_URL`.
 
 ## Vercel / Neon DB Fix
 

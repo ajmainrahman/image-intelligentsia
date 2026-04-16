@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Career Hub"
+title = "Image Intelligentsia"
 version = "1.0.0"
 id = "artifacts/career-hub"
 router = "path"

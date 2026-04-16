@@ -1,14 +1,32 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+export class ServerConfigurationError extends Error {
+  statusCode = 500;
+  publicMessage: string;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ServerConfigurationError";
+    this.publicMessage = message;
+  }
+}
+
 const JWT_SECRET =
   process.env.JWT_SECRET ??
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
   (process.env.NODE_ENV === "production"
     ? undefined
-    : "career-hub-development-secret");
+    : "image-intelligentsia-development-secret");
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET must be set in production.");
+function getJwtSecret(): string {
+  if (!JWT_SECRET) {
+    throw new ServerConfigurationError(
+      "Server auth is not configured. Set JWT_SECRET or AUTH_SECRET in Vercel environment variables.",
+    );
+  }
+  return JWT_SECRET;
 }
 
 export interface AuthRequest extends Request {
@@ -16,7 +34,7 @@ export interface AuthRequest extends Request {
 }
 
 export function signToken(userId: number): string {
-  return jwt.sign({ sub: String(userId) }, JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign({ sub: String(userId) }, getJwtSecret(), { expiresIn: "30d" });
 }
 
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -27,7 +45,7 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
+    const payload = jwt.verify(token, getJwtSecret()) as { sub: string };
     req.userId = Number(payload.sub);
     next();
   } catch {
