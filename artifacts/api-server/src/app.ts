@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction, type ErrorRequestHandler } from "express";
 import cors from "cors";
 import { logger } from "./lib/logger.js";
 import router from "./routes/index.js";
@@ -36,5 +36,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  logger.error(err);
+  const status = (err as { status?: number; statusCode?: number }).status
+    ?? (err as { statusCode?: number }).statusCode
+    ?? 500;
+  res.status(status).json({ error: err.message ?? "Internal server error" });
+};
+
+app.use(errorHandler);
 
 export default app;

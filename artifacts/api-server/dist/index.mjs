@@ -55969,337 +55969,437 @@ function serializeRows(rows) {
 
 // src/routes/goals.ts
 var router2 = (0, import_express2.Router)();
-router2.get("/goals", async (_req, res) => {
-  const goals = await db.select().from(goalsTable).orderBy(goalsTable.createdAt);
-  res.json(ListGoalsResponse.parse(serializeRows(goals)));
+router2.get("/goals", async (_req, res, next) => {
+  try {
+    const goals = await db.select().from(goalsTable).orderBy(goalsTable.createdAt);
+    res.json(ListGoalsResponse.parse(serializeRows(goals)));
+  } catch (err) {
+    next(err);
+  }
 });
-router2.post("/goals", async (req, res) => {
-  const parsed = CreateGoalBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
+router2.post("/goals", async (req, res, next) => {
+  try {
+    const parsed = CreateGoalBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [goal] = await db.insert(goalsTable).values(parsed.data).returning();
+    res.status(201).json(GetGoalResponse.parse(serializeRow(goal)));
+  } catch (err) {
+    next(err);
   }
-  const [goal] = await db.insert(goalsTable).values(parsed.data).returning();
-  res.status(201).json(GetGoalResponse.parse(serializeRow(goal)));
 });
-router2.get("/goals/:id", async (req, res) => {
-  const params = GetGoalParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router2.get("/goals/:id", async (req, res, next) => {
+  try {
+    const params = GetGoalParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id));
+    if (!goal) {
+      res.status(404).json({ error: "Goal not found" });
+      return;
+    }
+    res.json(GetGoalResponse.parse(serializeRow(goal)));
+  } catch (err) {
+    next(err);
   }
-  const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id));
-  if (!goal) {
-    res.status(404).json({ error: "Goal not found" });
-    return;
-  }
-  res.json(GetGoalResponse.parse(serializeRow(goal)));
 });
-router2.put("/goals/:id", async (req, res) => {
-  const params = UpdateGoalParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router2.put("/goals/:id", async (req, res, next) => {
+  try {
+    const params = UpdateGoalParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateGoalBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [goal] = await db.update(goalsTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(goalsTable.id, params.data.id)).returning();
+    if (!goal) {
+      res.status(404).json({ error: "Goal not found" });
+      return;
+    }
+    res.json(UpdateGoalResponse.parse(serializeRow(goal)));
+  } catch (err) {
+    next(err);
   }
-  const parsed = UpdateGoalBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [goal] = await db.update(goalsTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(goalsTable.id, params.data.id)).returning();
-  if (!goal) {
-    res.status(404).json({ error: "Goal not found" });
-    return;
-  }
-  res.json(UpdateGoalResponse.parse(serializeRow(goal)));
 });
-router2.delete("/goals/:id", async (req, res) => {
-  const params = DeleteGoalParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router2.delete("/goals/:id", async (req, res, next) => {
+  try {
+    const params = DeleteGoalParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [goal] = await db.delete(goalsTable).where(eq(goalsTable.id, params.data.id)).returning();
+    if (!goal) {
+      res.status(404).json({ error: "Goal not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
   }
-  const [goal] = await db.delete(goalsTable).where(eq(goalsTable.id, params.data.id)).returning();
-  if (!goal) {
-    res.status(404).json({ error: "Goal not found" });
-    return;
-  }
-  res.sendStatus(204);
 });
 var goals_default = router2;
 
 // src/routes/progress.ts
 var import_express3 = __toESM(require_express2(), 1);
 var router3 = (0, import_express3.Router)();
-router3.get("/progress", async (_req, res) => {
-  const entries = await db.select().from(progressTable).orderBy(progressTable.createdAt);
-  res.json(ListProgressResponse.parse(serializeRows(entries)));
+router3.get("/progress", async (_req, res, next) => {
+  try {
+    const entries = await db.select().from(progressTable).orderBy(progressTable.createdAt);
+    res.json(ListProgressResponse.parse(serializeRows(entries)));
+  } catch (err) {
+    next(err);
+  }
 });
-router3.post("/progress", async (req, res) => {
-  const parsed = CreateProgressBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
+router3.post("/progress", async (req, res, next) => {
+  try {
+    const parsed = CreateProgressBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [entry] = await db.insert(progressTable).values(parsed.data).returning();
+    res.status(201).json(ListProgressResponse.element.parse(serializeRow(entry)));
+  } catch (err) {
+    next(err);
   }
-  const [entry] = await db.insert(progressTable).values(parsed.data).returning();
-  res.status(201).json(ListProgressResponse.element.parse(serializeRow(entry)));
 });
-router3.put("/progress/:id", async (req, res) => {
-  const params = UpdateProgressParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router3.put("/progress/:id", async (req, res, next) => {
+  try {
+    const params = UpdateProgressParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateProgressBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [entry] = await db.update(progressTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(progressTable.id, params.data.id)).returning();
+    if (!entry) {
+      res.status(404).json({ error: "Progress entry not found" });
+      return;
+    }
+    res.json(UpdateProgressResponse.parse(serializeRow(entry)));
+  } catch (err) {
+    next(err);
   }
-  const parsed = UpdateProgressBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [entry] = await db.update(progressTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(progressTable.id, params.data.id)).returning();
-  if (!entry) {
-    res.status(404).json({ error: "Progress entry not found" });
-    return;
-  }
-  res.json(UpdateProgressResponse.parse(serializeRow(entry)));
 });
-router3.delete("/progress/:id", async (req, res) => {
-  const params = DeleteProgressParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router3.delete("/progress/:id", async (req, res, next) => {
+  try {
+    const params = DeleteProgressParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [entry] = await db.delete(progressTable).where(eq(progressTable.id, params.data.id)).returning();
+    if (!entry) {
+      res.status(404).json({ error: "Progress entry not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
   }
-  const [entry] = await db.delete(progressTable).where(eq(progressTable.id, params.data.id)).returning();
-  if (!entry) {
-    res.status(404).json({ error: "Progress entry not found" });
-    return;
-  }
-  res.sendStatus(204);
 });
 var progress_default = router3;
 
 // src/routes/roadmap.ts
 var import_express4 = __toESM(require_express2(), 1);
 var router4 = (0, import_express4.Router)();
-router4.get("/roadmap", async (_req, res) => {
-  const items = await db.select().from(roadmapTable).orderBy(roadmapTable.yearTarget, roadmapTable.order);
-  res.json(ListRoadmapItemsResponse.parse(serializeRows(items)));
+router4.get("/roadmap", async (_req, res, next) => {
+  try {
+    const items = await db.select().from(roadmapTable).orderBy(roadmapTable.yearTarget, roadmapTable.order);
+    res.json(ListRoadmapItemsResponse.parse(serializeRows(items)));
+  } catch (err) {
+    next(err);
+  }
 });
-router4.post("/roadmap", async (req, res) => {
-  const parsed = CreateRoadmapItemBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
+router4.post("/roadmap", async (req, res, next) => {
+  try {
+    const parsed = CreateRoadmapItemBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [item] = await db.insert(roadmapTable).values(parsed.data).returning();
+    res.status(201).json(ListRoadmapItemsResponse.element.parse(serializeRow(item)));
+  } catch (err) {
+    next(err);
   }
-  const [item] = await db.insert(roadmapTable).values(parsed.data).returning();
-  res.status(201).json(ListRoadmapItemsResponse.element.parse(serializeRow(item)));
 });
-router4.put("/roadmap/:id", async (req, res) => {
-  const params = UpdateRoadmapItemParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router4.put("/roadmap/:id", async (req, res, next) => {
+  try {
+    const params = UpdateRoadmapItemParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateRoadmapItemBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [item] = await db.update(roadmapTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(roadmapTable.id, params.data.id)).returning();
+    if (!item) {
+      res.status(404).json({ error: "Roadmap item not found" });
+      return;
+    }
+    res.json(UpdateRoadmapItemResponse.parse(serializeRow(item)));
+  } catch (err) {
+    next(err);
   }
-  const parsed = UpdateRoadmapItemBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [item] = await db.update(roadmapTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(roadmapTable.id, params.data.id)).returning();
-  if (!item) {
-    res.status(404).json({ error: "Roadmap item not found" });
-    return;
-  }
-  res.json(UpdateRoadmapItemResponse.parse(serializeRow(item)));
 });
-router4.delete("/roadmap/:id", async (req, res) => {
-  const params = DeleteRoadmapItemParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router4.delete("/roadmap/:id", async (req, res, next) => {
+  try {
+    const params = DeleteRoadmapItemParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [item] = await db.delete(roadmapTable).where(eq(roadmapTable.id, params.data.id)).returning();
+    if (!item) {
+      res.status(404).json({ error: "Roadmap item not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
   }
-  const [item] = await db.delete(roadmapTable).where(eq(roadmapTable.id, params.data.id)).returning();
-  if (!item) {
-    res.status(404).json({ error: "Roadmap item not found" });
-    return;
-  }
-  res.sendStatus(204);
 });
 var roadmap_default = router4;
 
 // src/routes/jobs.ts
 var import_express5 = __toESM(require_express2(), 1);
 var router5 = (0, import_express5.Router)();
-router5.get("/jobs", async (_req, res) => {
-  const jobs = await db.select().from(jobsTable).orderBy(jobsTable.createdAt);
-  res.json(ListJobsResponse.parse(serializeRows(jobs)));
+router5.get("/jobs", async (_req, res, next) => {
+  try {
+    const jobs = await db.select().from(jobsTable).orderBy(jobsTable.createdAt);
+    res.json(ListJobsResponse.parse(serializeRows(jobs)));
+  } catch (err) {
+    next(err);
+  }
 });
-router5.post("/jobs", async (req, res) => {
-  const parsed = CreateJobBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
+router5.post("/jobs", async (req, res, next) => {
+  try {
+    const parsed = CreateJobBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [job] = await db.insert(jobsTable).values(parsed.data).returning();
+    res.status(201).json(GetJobResponse.parse(serializeRow(job)));
+  } catch (err) {
+    next(err);
   }
-  const [job] = await db.insert(jobsTable).values(parsed.data).returning();
-  res.status(201).json(GetJobResponse.parse(serializeRow(job)));
 });
-router5.get("/jobs/:id", async (req, res) => {
-  const params = GetJobParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router5.get("/jobs/:id", async (req, res, next) => {
+  try {
+    const params = GetJobParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
+    if (!job) {
+      res.status(404).json({ error: "Job not found" });
+      return;
+    }
+    res.json(GetJobResponse.parse(serializeRow(job)));
+  } catch (err) {
+    next(err);
   }
-  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
-  if (!job) {
-    res.status(404).json({ error: "Job not found" });
-    return;
-  }
-  res.json(GetJobResponse.parse(serializeRow(job)));
 });
-router5.put("/jobs/:id", async (req, res) => {
-  const params = UpdateJobParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router5.put("/jobs/:id", async (req, res, next) => {
+  try {
+    const params = UpdateJobParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateJobBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const [job] = await db.update(jobsTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(jobsTable.id, params.data.id)).returning();
+    if (!job) {
+      res.status(404).json({ error: "Job not found" });
+      return;
+    }
+    res.json(UpdateJobResponse.parse(serializeRow(job)));
+  } catch (err) {
+    next(err);
   }
-  const parsed = UpdateJobBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [job] = await db.update(jobsTable).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(jobsTable.id, params.data.id)).returning();
-  if (!job) {
-    res.status(404).json({ error: "Job not found" });
-    return;
-  }
-  res.json(UpdateJobResponse.parse(serializeRow(job)));
 });
-router5.delete("/jobs/:id", async (req, res) => {
-  const params = DeleteJobParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router5.delete("/jobs/:id", async (req, res, next) => {
+  try {
+    const params = DeleteJobParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [job] = await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id)).returning();
+    if (!job) {
+      res.status(404).json({ error: "Job not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
   }
-  const [job] = await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id)).returning();
-  if (!job) {
-    res.status(404).json({ error: "Job not found" });
-    return;
-  }
-  res.sendStatus(204);
 });
 var jobs_default = router5;
 
 // src/routes/reminders.ts
 var import_express6 = __toESM(require_express2(), 1);
 var router6 = (0, import_express6.Router)();
-router6.get("/reminders", async (_req, res) => {
-  const reminders = await db.select().from(remindersTable).orderBy(remindersTable.createdAt);
-  res.json(ListRemindersResponse.parse(serializeRows(reminders)));
+router6.get("/reminders", async (_req, res, next) => {
+  try {
+    const reminders = await db.select().from(remindersTable).orderBy(remindersTable.createdAt);
+    res.json(ListRemindersResponse.parse(serializeRows(reminders)));
+  } catch (err) {
+    next(err);
+  }
 });
-router6.post("/reminders", async (req, res) => {
-  const parsed = CreateReminderBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
+router6.post("/reminders", async (req, res, next) => {
+  try {
+    const parsed = CreateReminderBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const insertData = {
+      ...parsed.data,
+      dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
+    };
+    const [reminder] = await db.insert(remindersTable).values(insertData).returning();
+    res.status(201).json(ListRemindersResponse.element.parse(serializeRow(reminder)));
+  } catch (err) {
+    next(err);
   }
-  const insertData = {
-    ...parsed.data,
-    dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
-  };
-  const [reminder] = await db.insert(remindersTable).values(insertData).returning();
-  res.status(201).json(ListRemindersResponse.element.parse(serializeRow(reminder)));
 });
-router6.put("/reminders/:id", async (req, res) => {
-  const params = UpdateReminderParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router6.put("/reminders/:id", async (req, res, next) => {
+  try {
+    const params = UpdateReminderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateReminderBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const updateData = {
+      ...parsed.data,
+      dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    const [reminder] = await db.update(remindersTable).set(updateData).where(eq(remindersTable.id, params.data.id)).returning();
+    if (!reminder) {
+      res.status(404).json({ error: "Reminder not found" });
+      return;
+    }
+    res.json(UpdateReminderResponse.parse(serializeRow(reminder)));
+  } catch (err) {
+    next(err);
   }
-  const parsed = UpdateReminderBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const updateData = {
-    ...parsed.data,
-    dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
-    updatedAt: /* @__PURE__ */ new Date()
-  };
-  const [reminder] = await db.update(remindersTable).set(updateData).where(eq(remindersTable.id, params.data.id)).returning();
-  if (!reminder) {
-    res.status(404).json({ error: "Reminder not found" });
-    return;
-  }
-  res.json(UpdateReminderResponse.parse(serializeRow(reminder)));
 });
-router6.delete("/reminders/:id", async (req, res) => {
-  const params = DeleteReminderParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+router6.delete("/reminders/:id", async (req, res, next) => {
+  try {
+    const params = DeleteReminderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [reminder] = await db.delete(remindersTable).where(eq(remindersTable.id, params.data.id)).returning();
+    if (!reminder) {
+      res.status(404).json({ error: "Reminder not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
   }
-  const [reminder] = await db.delete(remindersTable).where(eq(remindersTable.id, params.data.id)).returning();
-  if (!reminder) {
-    res.status(404).json({ error: "Reminder not found" });
-    return;
-  }
-  res.sendStatus(204);
 });
 var reminders_default = router6;
 
 // src/routes/dashboard.ts
 var import_express7 = __toESM(require_express2(), 1);
 var router7 = (0, import_express7.Router)();
-router7.get("/dashboard/summary", async (_req, res) => {
-  const [goals, progress, jobs, reminders, roadmap] = await Promise.all([
-    db.select().from(goalsTable),
-    db.select().from(progressTable),
-    db.select().from(jobsTable),
-    db.select().from(remindersTable),
-    db.select().from(roadmapTable)
-  ]);
-  const summary = {
-    totalGoals: goals.length,
-    activeGoals: goals.filter((g) => g.status === "active").length,
-    progressCompleted: progress.filter((p) => p.status === "completed").length,
-    progressInProgress: progress.filter((p) => p.status === "in_progress").length,
-    totalJobs: jobs.length,
-    appliedJobs: jobs.filter((j) => j.status === "applied" || j.status === "interviewing").length,
-    pendingReminders: reminders.filter((r) => !r.completed).length,
-    roadmapCompleted: roadmap.filter((r) => r.status === "completed").length,
-    roadmapTotal: roadmap.length
-  };
-  res.json(GetDashboardSummaryResponse.parse(summary));
+router7.get("/dashboard/summary", async (_req, res, next) => {
+  try {
+    const [goals, progress, jobs, reminders, roadmap] = await Promise.all([
+      db.select().from(goalsTable),
+      db.select().from(progressTable),
+      db.select().from(jobsTable),
+      db.select().from(remindersTable),
+      db.select().from(roadmapTable)
+    ]);
+    const summary = {
+      totalGoals: goals.length,
+      activeGoals: goals.filter((g) => g.status === "active").length,
+      progressCompleted: progress.filter((p) => p.status === "completed").length,
+      progressInProgress: progress.filter((p) => p.status === "in_progress").length,
+      totalJobs: jobs.length,
+      appliedJobs: jobs.filter((j) => j.status === "applied" || j.status === "interviewing").length,
+      pendingReminders: reminders.filter((r) => !r.completed).length,
+      roadmapCompleted: roadmap.filter((r) => r.status === "completed").length,
+      roadmapTotal: roadmap.length
+    };
+    res.json(GetDashboardSummaryResponse.parse(summary));
+  } catch (err) {
+    next(err);
+  }
 });
-router7.get("/dashboard/top-skills", async (_req, res) => {
-  const jobs = await db.select({ skills: jobsTable.skills }).from(jobsTable);
-  const skillCount = {};
-  for (const job of jobs) {
-    for (const skill of job.skills ?? []) {
-      const normalized = skill.trim().toLowerCase();
-      if (normalized) {
-        skillCount[normalized] = (skillCount[normalized] ?? 0) + 1;
+router7.get("/dashboard/top-skills", async (_req, res, next) => {
+  try {
+    const jobs = await db.select({ skills: jobsTable.skills }).from(jobsTable);
+    const skillCount = {};
+    for (const job of jobs) {
+      for (const skill of job.skills ?? []) {
+        const normalized = skill.trim().toLowerCase();
+        if (normalized) {
+          skillCount[normalized] = (skillCount[normalized] ?? 0) + 1;
+        }
       }
     }
+    const topSkills = Object.entries(skillCount).map(([skill, count]) => ({ skill, count })).sort((a, b) => b.count - a.count).slice(0, 20);
+    res.json(GetTopSkillsResponse.parse(topSkills));
+  } catch (err) {
+    next(err);
   }
-  const topSkills = Object.entries(skillCount).map(([skill, count]) => ({ skill, count })).sort((a, b) => b.count - a.count).slice(0, 20);
-  res.json(GetTopSkillsResponse.parse(topSkills));
 });
-router7.get("/dashboard/recent-activity", async (_req, res) => {
-  const [goals, progress, jobs, reminders, roadmap] = await Promise.all([
-    db.select().from(goalsTable).orderBy(goalsTable.createdAt).limit(5),
-    db.select().from(progressTable).orderBy(progressTable.createdAt).limit(5),
-    db.select().from(jobsTable).orderBy(jobsTable.createdAt).limit(5),
-    db.select().from(remindersTable).orderBy(remindersTable.createdAt).limit(5),
-    db.select().from(roadmapTable).orderBy(roadmapTable.createdAt).limit(5)
-  ]);
-  const activity = [
-    ...goals.map((g) => ({ id: g.id, type: "goal", title: g.title, action: `Goal: ${g.status}`, createdAt: g.createdAt.toISOString() })),
-    ...progress.map((p) => ({ id: p.id, type: "progress", title: p.title, action: `Progress: ${p.status}`, createdAt: p.createdAt.toISOString() })),
-    ...jobs.map((j) => ({ id: j.id, type: "job", title: j.title, action: `Job: ${j.status}`, createdAt: j.createdAt.toISOString() })),
-    ...reminders.map((r) => ({ id: r.id, type: "reminder", title: r.title, action: `Reminder: ${r.completed ? "completed" : "pending"}`, createdAt: r.createdAt.toISOString() })),
-    ...roadmap.map((r) => ({ id: r.id, type: "roadmap", title: r.title, action: `Roadmap: ${r.status}`, createdAt: r.createdAt.toISOString() }))
-  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 15);
-  res.json(GetRecentActivityResponse.parse(activity));
+router7.get("/dashboard/recent-activity", async (_req, res, next) => {
+  try {
+    const [goals, progress, jobs, reminders, roadmap] = await Promise.all([
+      db.select().from(goalsTable).orderBy(goalsTable.createdAt).limit(5),
+      db.select().from(progressTable).orderBy(progressTable.createdAt).limit(5),
+      db.select().from(jobsTable).orderBy(jobsTable.createdAt).limit(5),
+      db.select().from(remindersTable).orderBy(remindersTable.createdAt).limit(5),
+      db.select().from(roadmapTable).orderBy(roadmapTable.createdAt).limit(5)
+    ]);
+    const activity = [
+      ...goals.map((g) => ({ id: g.id, type: "goal", title: g.title, action: `Goal: ${g.status}`, createdAt: g.createdAt.toISOString() })),
+      ...progress.map((p) => ({ id: p.id, type: "progress", title: p.title, action: `Progress: ${p.status}`, createdAt: p.createdAt.toISOString() })),
+      ...jobs.map((j) => ({ id: j.id, type: "job", title: j.title, action: `Job: ${j.status}`, createdAt: j.createdAt.toISOString() })),
+      ...reminders.map((r) => ({ id: r.id, type: "reminder", title: r.title, action: `Reminder: ${r.completed ? "completed" : "pending"}`, createdAt: r.createdAt.toISOString() })),
+      ...roadmap.map((r) => ({ id: r.id, type: "roadmap", title: r.title, action: `Roadmap: ${r.status}`, createdAt: r.createdAt.toISOString() }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 15);
+    res.json(GetRecentActivityResponse.parse(activity));
+  } catch (err) {
+    next(err);
+  }
 });
 var dashboard_default = router7;
 
@@ -56342,6 +56442,12 @@ app.use(
 app.use(import_express9.default.json());
 app.use(import_express9.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
+var errorHandler = (err, _req, res, _next) => {
+  logger.error(err);
+  const status = err.status ?? err.statusCode ?? 500;
+  res.status(status).json({ error: err.message ?? "Internal server error" });
+};
+app.use(errorHandler);
 var app_default = app;
 
 // src/index.ts
