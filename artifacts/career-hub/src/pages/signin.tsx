@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 function SignInForm() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +19,7 @@ function SignInForm() {
     setError("");
     setLoading(true);
     try {
-      await signIn(email.trim());
+      await signIn(email.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -40,6 +41,17 @@ function SignInForm() {
           autoFocus
         />
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="signin-password">Password</Label>
+        <Input
+          id="signin-password"
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -53,15 +65,20 @@ function SignUpForm() {
   const { signUp } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
     setLoading(true);
     try {
-      await signUp(name.trim(), email.trim());
+      await signUp(name.trim(), email.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
@@ -72,11 +89,11 @@ function SignUpForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="signup-name">Name</Label>
+        <Label htmlFor="signup-name">Full Name</Label>
         <Input
           id="signup-name"
           type="text"
-          placeholder="Your name"
+          placeholder="Your full name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -92,6 +109,18 @@ function SignUpForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="signup-password">Password</Label>
+        <Input
+          id="signup-password"
+          type="password"
+          placeholder="At least 6 characters"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={6}
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -121,7 +150,7 @@ export default function SignInPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Welcome</CardTitle>
-            <CardDescription>Use your email to sign in or create an account</CardDescription>
+            <CardDescription>Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin">

@@ -8,8 +8,8 @@ export type AuthUser = {
 
 type AuthContextValue = {
   user: AuthUser | null;
-  signIn: (email: string) => Promise<void>;
-  signUp: (name: string, email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
 };
 
@@ -72,14 +72,14 @@ async function callAuth(action: "signin" | "signup" | "signout", body?: object):
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
 
-  const signIn = useCallback(async (email: string) => {
-    const data = await callAuth("signin", { email });
+  const signIn = useCallback(async (email: string, password: string) => {
+    const data = await callAuth("signin", { email, password });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string) => {
-    const data = await callAuth("signup", { name, email });
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const data = await callAuth("signup", { name, email, password });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
