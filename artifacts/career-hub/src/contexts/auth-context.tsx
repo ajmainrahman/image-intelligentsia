@@ -26,19 +26,47 @@ function loadStoredUser(): AuthUser | null {
   }
 }
 
-const apiBase = `${import.meta.env.BASE_URL}api/auth`.replace(/\/+/g, "/");
+const apiPath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/auth`;
+
+function getAuthUrls(action: "signin" | "signup" | "signout") {
+  const path = `${apiPath}/${action}`;
+
+  if (typeof window === "undefined") {
+    return [path];
+  }
+
+  const urls = [path];
+  const browserOrigin = window.location.origin;
+  const proxyOrigin = `${window.location.protocol}//${window.location.hostname}`;
+
+  if (window.location.port && proxyOrigin !== browserOrigin) {
+    urls.unshift(`${proxyOrigin}${path}`);
+  }
+
+  return [...new Set(urls)];
+}
 
 async function callAuth(action: "signin" | "signup" | "signout", body?: object): Promise<AuthUser> {
-  const res = await fetch(`${apiBase}/${action}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error((data as { error?: string }).error ?? "Request failed");
+  let lastError = "Request failed";
+
+  for (const url of getAuthUrls(action)) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        return data as AuthUser;
+      }
+      lastError = (data as { error?: string }).error ?? `Request failed (${res.status})`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : "Request failed";
+    }
   }
-  return data as AuthUser;
+
+  throw new Error(lastError);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
