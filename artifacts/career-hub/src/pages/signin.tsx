@@ -10,7 +10,6 @@ import { Loader2 } from "lucide-react";
 function SignInForm() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +18,7 @@ function SignInForm() {
     setError("");
     setLoading(true);
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -41,17 +40,6 @@ function SignInForm() {
           autoFocus
         />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="signin-password">Password</Label>
-        <Input
-          id="signin-password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -65,7 +53,6 @@ function SignUpForm() {
   const { signUp } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -74,7 +61,7 @@ function SignUpForm() {
     setError("");
     setLoading(true);
     try {
-      await signUp(name.trim(), email.trim(), password);
+      await signUp(name.trim(), email.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
@@ -107,18 +94,6 @@ function SignUpForm() {
           required
         />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="signup-password">Password</Label>
-        <Input
-          id="signup-password"
-          type="password"
-          placeholder="Min. 6 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
-      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -146,7 +121,7 @@ export default function SignInPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Welcome</CardTitle>
-            <CardDescription>Sign in or create a new account</CardDescription>
+            <CardDescription>Use your email to sign in or create an account</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin">

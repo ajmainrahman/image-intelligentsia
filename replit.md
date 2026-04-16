@@ -82,8 +82,9 @@ For Vercel deployment, additionally set:
 
 ## Auth
 
-Simple name + email sign-in. No passwords. Session stored in localStorage.
+Simple name + email sign-in. No passwords or hashing dependency. Session stored in localStorage.
 - `POST /api/auth/signin` — finds or creates user by email, returns user object
+- `POST /api/auth/signup` — creates or updates a user by name + email, returns user object
 - `POST /api/auth/signout` — client-side only (clears localStorage)
 - Frontend context: `artifacts/career-hub/src/contexts/auth-context.tsx`
 - Sign-in page: `artifacts/career-hub/src/pages/signin.tsx`

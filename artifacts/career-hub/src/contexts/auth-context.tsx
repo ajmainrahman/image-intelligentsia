@@ -8,8 +8,8 @@ export type AuthUser = {
 
 type AuthContextValue = {
   user: AuthUser | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
+  signIn: (email: string) => Promise<void>;
+  signUp: (name: string, email: string) => Promise<void>;
   signOut: () => void;
 };
 
@@ -26,11 +26,13 @@ function loadStoredUser(): AuthUser | null {
   }
 }
 
-async function callAuth(path: string, body: object): Promise<AuthUser> {
-  const res = await fetch(path, {
+const apiBase = `${import.meta.env.BASE_URL}api/auth`.replace(/\/+/g, "/");
+
+async function callAuth(action: "signin" | "signup" | "signout", body?: object): Promise<AuthUser> {
+  const res = await fetch(`${apiBase}/${action}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -42,14 +44,14 @@ async function callAuth(path: string, body: object): Promise<AuthUser> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const data = await callAuth("/api/auth/signin", { email, password });
+  const signIn = useCallback(async (email: string) => {
+    const data = await callAuth("signin", { email });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
-    const data = await callAuth("/api/auth/signup", { name, email, password });
+  const signUp = useCallback(async (name: string, email: string) => {
+    const data = await callAuth("signup", { name, email });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setUser(data);
   }, []);
@@ -57,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
-    fetch("/api/auth/signout", { method: "POST" }).catch(() => {});
+    callAuth("signout").catch(() => {});
   }, []);
 
   return (
