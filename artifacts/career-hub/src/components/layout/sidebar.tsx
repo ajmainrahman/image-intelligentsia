@@ -7,7 +7,6 @@ import {
   Map as MapIcon,
   Briefcase,
   BellRing,
-  Sparkles,
 } from "lucide-react";
 
 const navItems = [
@@ -26,10 +25,12 @@ export function Sidebar() {
     <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Brand */}
       <div className="flex flex-col px-5 pt-6 pb-5 border-b border-sidebar-border gap-1">
-        <div className="flex items-center gap-2.5 mb-1">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary/20 flex items-center justify-center shrink-0 ring-1 ring-sidebar-primary/30">
-            <Sparkles className="h-4 w-4 text-sidebar-primary" />
-          </div>
+        <div className="flex items-center gap-3 mb-1">
+          <img
+            src="/logo.svg"
+            alt="imageintelligentsia logo"
+            className="h-9 w-9 shrink-0 rounded-xl"
+          />
           <span
             className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
