@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import healthRouter from "./health.js";
 import goalsRouter from "./goals.js";
 import progressRouter from "./progress.js";
