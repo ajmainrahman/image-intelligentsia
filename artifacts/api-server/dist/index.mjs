@@ -56229,7 +56229,9 @@ var import_express2 = __toESM(require_express2(), 1);
 function serializeRow(row) {
   const result = {};
   for (const [key, val] of Object.entries(row)) {
-    if (val instanceof Date) {
+    if (val === null || val === void 0) {
+      continue;
+    } else if (val instanceof Date) {
       result[key] = val.toISOString();
     } else if (Array.isArray(val)) {
       result[key] = val.map((v) => v instanceof Date ? v.toISOString() : v);
@@ -58504,6 +58506,21 @@ app.use(
 );
 app.use(import_express10.default.json());
 app.use(import_express10.default.urlencoded({ extended: true }));
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === "object") {
+    const strip = (obj) => {
+      for (const key of Object.keys(obj)) {
+        if (obj[key] === null) {
+          delete obj[key];
+        } else if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
+          strip(obj[key]);
+        }
+      }
+    };
+    strip(req.body);
+  }
+  next();
+});
 app.use("/api", routes_default);
 app.use(routes_default);
 app.use(

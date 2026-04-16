@@ -1,7 +1,10 @@
 export function serializeRow<T extends Record<string, unknown>>(row: T): T {
   const result: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(row)) {
-    if (val instanceof Date) {
+    if (val === null || val === undefined) {
+      // omit nulls — response Zod schemas use .optional(), not .nullish()
+      continue;
+    } else if (val instanceof Date) {
       result[key] = val.toISOString();
     } else if (Array.isArray(val)) {
       result[key] = val.map((v) => (v instanceof Date ? v.toISOString() : v));

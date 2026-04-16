@@ -29,6 +29,23 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Strip null values from request bodies so optional Zod fields receive undefined
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === "object") {
+    const strip = (obj: Record<string, unknown>) => {
+      for (const key of Object.keys(obj)) {
+        if (obj[key] === null) {
+          delete obj[key];
+        } else if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
+          strip(obj[key] as Record<string, unknown>);
+        }
+      }
+    };
+    strip(req.body);
+  }
+  next();
+});
+
 app.use("/api", router);
 app.use(router);
 
