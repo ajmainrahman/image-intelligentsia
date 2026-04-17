@@ -42,6 +42,8 @@ All secrets are configured in Replit Secrets:
 For Vercel deployment, additionally set:
 - `DATABASE_URL` — production PostgreSQL connection string (e.g. Neon)
 - `ALLOWED_ORIGINS` — comma-separated list of allowed frontend origins (e.g. `https://your-app.vercel.app`)
+- `JWT_SECRET` or `AUTH_SECRET` — required for account creation and sign-in token signing
+- Vercel builds the API server into `artifacts/api-server/dist/app.mjs`; `api/index.ts` imports this bundle for serverless execution.
 
 ## Artifacts
 
