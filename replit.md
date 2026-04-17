@@ -28,8 +28,10 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Replit Workflows
 
-- **Start application** — Runs the Image Intelligentsia frontend (`PORT=20829 pnpm --filter @workspace/career-hub run dev`), served at `/`
-- **API Server** — Runs the Express API server (`PORT=8080 pnpm --filter @workspace/api-server run dev`), served at `/api`
+- **Start application** — Runs the Image Intelligentsia frontend and Express API together:
+  - API: `PORT=8080 pnpm --filter @workspace/api-server run dev`
+  - Frontend: `PORT=20829 BASE_PATH=/ pnpm --filter @workspace/career-hub run dev`
+- Frontend is served at `/` and proxies `/api` requests to the local API server on port `8080`.
 - Frontend Vite config binds to `0.0.0.0`, uses the workflow-provided `PORT`, enables Replit preview hosts, and proxies `/api` to the local API server on port `8080`.
 
 ## Environment Variables (Secrets)
@@ -37,7 +39,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 All secrets are configured in Replit Secrets:
 - `DATABASE_URL` — Replit built-in PostgreSQL connection string
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` — Individual DB connection parts
-- `PORT` — Set to `20829` (frontend service port)
+- `PORT` — Set by the workflow for each service (`20829` frontend, `8080` API)
 
 For Vercel deployment, additionally set:
 - `DATABASE_URL` — production PostgreSQL connection string (e.g. Neon)
