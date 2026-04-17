@@ -15,6 +15,7 @@ const JobBody = z.object({
   notes: z.string().nullable().optional(),
   status: z.enum(["saved", "applied", "interviewing", "rejected", "offered"]).default("saved"),
   url: z.string().url().nullable().optional(),
+  applyDate: z.string().nullable().optional(),
 });
 
 router.get("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
@@ -30,7 +31,12 @@ router.post("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<v
   try {
     const parsed = JobBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const [job] = await db.insert(jobsTable).values({ ...parsed.data, userId: req.userId! }).returning();
+    const { applyDate, ...rest } = parsed.data;
+    const [job] = await db.insert(jobsTable).values({
+      ...rest,
+      applyDate: applyDate ? new Date(applyDate) : null,
+      userId: req.userId!,
+    }).returning();
     res.status(201).json(serializeJob(job));
   } catch (err) { next(err); }
 });
@@ -41,8 +47,9 @@ router.put("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Promis
     if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
     const parsed = JobBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const { applyDate, ...rest } = parsed.data;
     const [job] = await db.update(jobsTable)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set({ ...rest, applyDate: applyDate ? new Date(applyDate) : null, updatedAt: new Date() })
       .where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!)))
       .returning();
     if (!job) { res.status(404).json({ error: "Job not found" }); return; }
@@ -73,6 +80,7 @@ function serializeJob(j: typeof jobsTable.$inferSelect) {
     notes: j.notes,
     status: j.status,
     url: j.url,
+    applyDate: j.applyDate ? j.applyDate.toISOString() : null,
     createdAt: j.createdAt.toISOString(),
     updatedAt: j.updatedAt.toISOString(),
   };

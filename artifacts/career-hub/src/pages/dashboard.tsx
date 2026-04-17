@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map as MapIcon } from "lucide-react";
+import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map as MapIcon, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 
 type Summary = {
@@ -27,6 +27,17 @@ type ActivityItem = {
   createdAt: string;
 };
 
+type Reminder = {
+  id: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  priority: string;
+  completed: boolean;
+  category: string;
+  createdAt: string;
+};
+
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useQuery<Summary>({
     queryKey: ["dashboard-summary"],
@@ -42,6 +53,15 @@ export default function Dashboard() {
     queryKey: ["dashboard-activity"],
     queryFn: () => api<ActivityItem[]>("/dashboard/recent-activity"),
   });
+
+  const { data: reminders, isLoading: isLoadingReminders } = useQuery<Reminder[]>({
+    queryKey: ["dashboard-reminders"],
+    queryFn: () => api<Reminder[]>("/reminders"),
+  });
+
+  const recentReminder = reminders
+    ?.filter((reminder) => !reminder.completed)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   return (
     <div className="space-y-8 page-enter">
@@ -147,6 +167,41 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
+          <Card className="border-primary/15 bg-gradient-to-br from-primary/10 via-card to-card">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <BellRing className="h-5 w-5 text-primary" />
+                <CardTitle>Recent Reminder Task</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReminders ? (
+                <Skeleton className="h-24 w-full rounded-xl" />
+              ) : recentReminder ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold">{recentReminder.title}</p>
+                    {recentReminder.description && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recentReminder.description}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="capitalize rounded-full bg-muted px-2 py-1">{recentReminder.category}</span>
+                    <span className="capitalize rounded-full bg-primary/10 px-2 py-1 text-primary">{recentReminder.priority} priority</span>
+                    {recentReminder.dueDate && (
+                      <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {format(new Date(recentReminder.dueDate), "MMM d")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No pending reminder tasks yet.</p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">

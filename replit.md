@@ -60,7 +60,9 @@ For Vercel deployment, additionally set:
 - **Progress**: Log learning activities — courses, AI tools (Google AI Studio, ChatGPT), projects, certifications
 - **Roadmap**: 5-10 year visual timeline split into short/mid/long term phases
 - **Jobs**: Save job descriptions, extract keywords and required skills, track application status
+- **Jobs Apply Date**: Each job can store an optional apply date shown on job cards
 - **Reminders**: Task reminders with priority, due dates, and categories
+- **Notepad**: Local browser-saved notes section for quick writing and interview/application notes
 
 #### Tech
 - React 19 + Vite, TailwindCSS, shadcn/ui components
@@ -79,6 +81,7 @@ For Vercel deployment, additionally set:
 - `progress_entries` — learning progress entries
 - `roadmap_items` — long-term roadmap milestones
 - `jobs` — saved job descriptions with keywords/skills arrays
+- `jobs.apply_date` — optional timestamp for when an application was submitted
 - `reminders` — task reminders with due dates
 - `users` — registered users (id, name, email)
 

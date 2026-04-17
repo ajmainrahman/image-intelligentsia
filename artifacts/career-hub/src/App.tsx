@@ -11,6 +11,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const GoalsPage = lazy(() => import("@/pages/goals"));
 const JobsPage = lazy(() => import("@/pages/jobs"));
+const NotepadPage = lazy(() => import("@/pages/notepad"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const RoadmapPage = lazy(() => import("@/pages/roadmap"));
 const RemindersPage = lazy(() => import("@/pages/reminders"));
@@ -55,6 +56,7 @@ function AppRoutes() {
           <Route path="/progress" component={ProgressPage} />
           <Route path="/roadmap" component={RoadmapPage} />
           <Route path="/jobs" component={JobsPage} />
+          <Route path="/notepad" component={NotepadPage} />
           <Route path="/reminders" component={RemindersPage} />
           <Route component={NotFound} />
         </Switch>

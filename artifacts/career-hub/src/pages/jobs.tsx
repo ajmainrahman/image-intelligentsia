@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -26,6 +26,7 @@ type Job = {
   notes: string | null;
   status: string;
   url: string | null;
+  applyDate: string | null;
 };
 
 const jobSchema = z.object({
@@ -37,6 +38,7 @@ const jobSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(["saved", "applied", "interviewing", "rejected", "offered"]),
   url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  applyDate: z.string().optional().or(z.literal("")),
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -86,7 +88,7 @@ export default function JobsPage() {
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
-    defaultValues: { title: "", company: "", description: "", keywords: "", skills: "", notes: "", status: "saved", url: "" },
+    defaultValues: { title: "", company: "", description: "", keywords: "", skills: "", notes: "", status: "saved", url: "", applyDate: "" },
   });
 
   const onSubmit = (data: JobFormValues) => {
@@ -95,6 +97,7 @@ export default function JobsPage() {
       company: data.company || null,
       notes: data.notes || null,
       url: data.url || null,
+      applyDate: data.applyDate || null,
       keywords: data.keywords.split(",").map(s => s.trim()).filter(Boolean),
       skills: data.skills.split(",").map(s => s.trim()).filter(Boolean),
     };
@@ -106,7 +109,7 @@ export default function JobsPage() {
   };
 
   const handleEdit = (job: Job) => {
-    form.reset({ title: job.title, company: job.company || "", description: job.description, keywords: job.keywords.join(", "), skills: job.skills.join(", "), notes: job.notes || "", status: job.status as JobFormValues["status"], url: job.url || "" });
+    form.reset({ title: job.title, company: job.company || "", description: job.description, keywords: job.keywords.join(", "), skills: job.skills.join(", "), notes: job.notes || "", status: job.status as JobFormValues["status"], url: job.url || "", applyDate: job.applyDate ? job.applyDate.substring(0, 10) : "" });
     setEditingJobId(job.id);
   };
 
@@ -163,6 +166,9 @@ export default function JobsPage() {
                     <FormItem><FormLabel>URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
+                <FormField control={form.control} name="applyDate" render={({ field }) => (
+                  <FormItem><FormLabel>Apply Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
                 <FormField control={form.control} name="skills" render={({ field }) => (
                   <FormItem><FormLabel>Required Skills (comma separated)</FormLabel><FormControl><Input placeholder="Python, SQL, TensorFlow..." {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -197,6 +203,7 @@ export default function JobsPage() {
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[job.status] ?? ""}`}>{job.status}</span>
                     <CardTitle className="text-xl line-clamp-1">{job.title}</CardTitle>
                     {job.company && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><Building2 className="h-4 w-4" />{job.company}</div>}
+                    {job.applyDate && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><CalendarDays className="h-4 w-4" />Applied {new Date(job.applyDate).toLocaleDateString()}</div>}
                   </div>
                   <div className="flex -mr-2 shrink-0">
                     {job.url && <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" asChild><a href={job.url} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>}

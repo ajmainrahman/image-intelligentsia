@@ -9,6 +9,7 @@ import {
   Map as MapIcon,
   Briefcase,
   BellRing,
+  NotebookPen,
   LogOut,
 } from "lucide-react";
 
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/progress", label: "Learning", icon: BookOpen },
   { href: "/roadmap", label: "Roadmap", icon: MapIcon },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/notepad", label: "Notepad", icon: NotebookPen },
   { href: "/reminders", label: "Reminders", icon: BellRing },
 ];
 

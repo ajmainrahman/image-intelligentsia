@@ -712,6 +712,9 @@ components:
         url:
           type: string
           nullable: true
+        applyDate:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -751,6 +754,9 @@ components:
           type: string
           enum: [saved, applied, interviewing, rejected, offered]
         url:
+          type: string
+          nullable: true
+        applyDate:
           type: string
           nullable: true
       required:
