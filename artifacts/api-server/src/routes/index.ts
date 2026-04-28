@@ -8,9 +8,9 @@ import remindersRouter from "./reminders.js";
 import dashboardRouter from "./dashboard.js";
 import authRouter from "./auth.js";
 import activityRouter from "./activity.js";
+import profileRouter from "./profile.js";
 
 const router = Router();
-
 router.use(healthRouter);
 router.use(authRouter);
 router.use(goalsRouter);
@@ -20,5 +20,6 @@ router.use(jobsRouter);
 router.use(remindersRouter);
 router.use(dashboardRouter);
 router.use(activityRouter);
+router.use(profileRouter);
 
 export default router;
