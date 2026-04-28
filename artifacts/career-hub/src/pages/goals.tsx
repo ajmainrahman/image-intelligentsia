@@ -3,16 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Target, Plus, Pencil, Trash2, Calendar, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Goal = {
@@ -38,16 +36,20 @@ type GoalFormState = {
   skillDraft: string;
 };
 
-const STATUS_META: Record<Goal["status"], { label: string; pill: string; bar: string; rank: number }> = {
-  active:    { label: "In Progress", pill: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",       bar: "bg-blue-500",  rank: 0 },
-  paused:    { label: "Planned",     pill: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",       bar: "bg-slate-400", rank: 1 },
-  completed: { label: "Achieved",    pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", bar: "bg-emerald-500", rank: 2 },
+type StatusMeta = { label: string; pillBg: string; pillText: string; barColor: string; rank: number };
+
+const STATUS_META: Record<Goal["status"], StatusMeta> = {
+  active:    { label: "In Progress", pillBg: "bg-accent",     pillText: "text-primary",          barColor: "bg-primary",     rank: 0 },
+  paused:    { label: "Planned",     pillBg: "bg-secondary",  pillText: "text-muted-foreground",  barColor: "bg-border",      rank: 1 },
+  completed: { label: "Achieved",    pillBg: "bg-emerald-50", pillText: "text-emerald-700",        barColor: "bg-emerald-500", rank: 2 },
 };
 
 const emptyForm = (): GoalFormState => ({
   title: "", targetRole: "", description: "", skills: [], progress: 0,
   status: "active", targetYear: String(new Date().getFullYear()), skillDraft: "",
 });
+
+const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 export default function GoalsPage() {
   const queryClient = useQueryClient();
@@ -92,26 +94,13 @@ export default function GoalsPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const closeDialog = () => {
-    setOpen(false);
-    setEditingId(null);
-    setForm(emptyForm());
-  };
-
-  const openCreate = () => {
-    setForm(emptyForm());
-    setEditingId(null);
-    setOpen(true);
-  };
-
+  const closeDialog = () => { setOpen(false); setEditingId(null); setForm(emptyForm()); };
+  const openCreate = () => { setForm(emptyForm()); setEditingId(null); setOpen(true); };
   const openEdit = (goal: Goal) => {
     setForm({
-      title: goal.title,
-      targetRole: goal.targetRole,
-      description: goal.description ?? "",
-      skills: goal.skills ?? [],
-      progress: goal.progress ?? 0,
-      status: goal.status,
+      title: goal.title, targetRole: goal.targetRole,
+      description: goal.description ?? "", skills: goal.skills ?? [],
+      progress: goal.progress ?? 0, status: goal.status,
       targetYear: goal.targetYear ? String(goal.targetYear) : "",
       skillDraft: "",
     });
@@ -130,10 +119,8 @@ export default function GoalsPage() {
   };
 
   const onSkillKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      addSkill(form.skillDraft);
-    } else if (e.key === "Backspace" && !form.skillDraft && form.skills.length) {
+    if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkill(form.skillDraft); }
+    else if (e.key === "Backspace" && !form.skillDraft && form.skills.length) {
       setForm((f) => ({ ...f, skills: f.skills.slice(0, -1) }));
     }
   };
@@ -147,12 +134,9 @@ export default function GoalsPage() {
       return;
     }
     const payload = {
-      title: form.title.trim(),
-      targetRole: form.targetRole.trim(),
-      description: form.description.trim() || null,
-      skills: form.skills,
-      progress: form.progress,
-      status: form.status,
+      title: form.title.trim(), targetRole: form.targetRole.trim(),
+      description: form.description.trim() || null, skills: form.skills,
+      progress: form.progress, status: form.status,
       targetYear: form.targetYear ? Number(form.targetYear) : null,
     };
     if (editingId) updateGoal.mutate({ id: editingId, data: payload });
@@ -168,40 +152,73 @@ export default function GoalsPage() {
   }, [goals]);
 
   return (
-    <div className="space-y-8 page-enter">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 page-enter">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Career Goals</h1>
-          <p className="text-muted-foreground mt-1">Define your path, target roles, and skills you’re building.</p>
+          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>
+            What you're working toward
+          </h1>
+          <p className="text-[14px] text-muted-foreground mt-1.5">
+            Track your career ambitions and the skills that get you there.
+          </p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? openCreate() : closeDialog())}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" />Add Goal</Button>
+            <Button className="gap-2 text-[13px]">
+              <Plus className="h-3.5 w-3.5" />
+              Add Goal
+            </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[560px]">
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Goal" : "Create New Goal"}</DialogTitle>
-              <DialogDescription>Define your target role, motivation, skills, and progress.</DialogDescription>
+
+          {/* Dialog */}
+          <DialogContent className="sm:max-w-[520px] rounded-2xl p-8">
+            <DialogHeader className="mb-1">
+              <DialogTitle className="text-[20px]" style={serif}>
+                {editingId ? "Edit goal" : "Create a goal"}
+              </DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Goal Title</label>
-                <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Transition to Machine Learning" />
+                <label className="text-[12px] font-medium text-muted-foreground">Goal Title</label>
+                <Input
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="e.g. Transition to Machine Learning"
+                  className="bg-secondary border-border text-[13px]"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Target Role</label>
-                  <Input value={form.targetRole} onChange={(e) => setForm((f) => ({ ...f, targetRole: e.target.value }))} placeholder="e.g. ML Engineer" />
+                  <label className="text-[12px] font-medium text-muted-foreground">Target Role</label>
+                  <Input
+                    value={form.targetRole}
+                    onChange={(e) => setForm((f) => ({ ...f, targetRole: e.target.value }))}
+                    placeholder="e.g. ML Engineer"
+                    className="bg-secondary border-border text-[13px]"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Target Year</label>
-                  <Input type="number" value={form.targetYear} onChange={(e) => setForm((f) => ({ ...f, targetYear: e.target.value }))} placeholder="2025" />
+                  <label className="text-[12px] font-medium text-muted-foreground">Target Year</label>
+                  <Input
+                    type="number"
+                    value={form.targetYear}
+                    onChange={(e) => setForm((f) => ({ ...f, targetYear: e.target.value }))}
+                    placeholder="2026"
+                    className="bg-secondary border-border text-[13px]"
+                  />
                 </div>
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Status</label>
+                <label className="text-[12px] font-medium text-muted-foreground">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-secondary border-border text-[13px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">In Progress</SelectItem>
                     <SelectItem value="paused">Planned</SelectItem>
@@ -209,148 +226,178 @@ export default function GoalsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Description</label>
+                <label className="text-[12px] font-medium text-muted-foreground">Description</label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="Why does this goal matter to you?"
-                  className="resize-none"
+                  className="resize-none bg-secondary border-border text-[13px]"
                   rows={3}
                 />
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Skills</label>
-                <div className="flex flex-wrap items-center gap-1.5 rounded-md border bg-background p-2 min-h-[44px]">
+                <label className="text-[12px] font-medium text-muted-foreground">Skills</label>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-secondary p-2 min-h-[44px]">
                   {form.skills.map((skill) => (
-                    <Badge key={skill} variant="secondary" className="gap-1 pl-2.5 pr-1">
+                    <span
+                      key={skill}
+                      className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary"
+                    >
                       {skill}
                       <button
                         type="button"
                         onClick={() => removeSkill(skill)}
-                        className="hover:bg-muted rounded p-0.5"
-                        aria-label={`Remove ${skill}`}
+                        className="hover:text-foreground transition-colors"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-2.5 w-2.5" />
                       </button>
-                    </Badge>
+                    </span>
                   ))}
                   <input
                     value={form.skillDraft}
                     onChange={(e) => setForm((f) => ({ ...f, skillDraft: e.target.value }))}
                     onKeyDown={onSkillKeyDown}
                     onBlur={() => addSkill(form.skillDraft)}
-                    placeholder="Type a skill, press Enter"
-                    className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                    placeholder={form.skills.length === 0 ? "Type a skill, press Enter…" : "Add more…"}
+                    className="flex-1 min-w-[120px] bg-transparent outline-none text-[13px] text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Progress</label>
-                  <span className="text-sm font-medium text-primary">{form.progress}%</span>
+                  <label className="text-[12px] font-medium text-muted-foreground">Progress</label>
+                  <span className="text-[12px] font-medium text-primary">{form.progress}%</span>
                 </div>
                 <Slider
                   value={[form.progress]}
                   onValueChange={([v]) => setForm((f) => ({ ...f, progress: v }))}
-                  min={0}
-                  max={100}
-                  step={5}
+                  min={0} max={100} step={5}
                 />
               </div>
             </div>
+
             <DialogFooter className="pt-4">
-              <Button onClick={submit} disabled={createGoal.isPending || updateGoal.isPending}>
-                {(createGoal.isPending || updateGoal.isPending) ? "Saving..." : "Save Goal"}
+              <Button variant="outline" onClick={closeDialog} className="text-[13px]">Cancel</Button>
+              <Button onClick={submit} disabled={createGoal.isPending || updateGoal.isPending} className="text-[13px]">
+                {(createGoal.isPending || updateGoal.isPending) ? "Saving…" : "Save goal"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Goal cards */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-72 w-full rounded-xl" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-64 w-full rounded-2xl" />)}
         </div>
       ) : sortedGoals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {sortedGoals.map((goal, index) => {
             const meta = STATUS_META[goal.status];
             return (
               <motion.div
                 key={goal.id}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}
+                transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3), ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <Card className="flex flex-col h-full hover-elevate group transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1.5 min-w-0">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${meta.pill}`}>
-                          {meta.label}
+                <div className="group bg-card border border-border rounded-2xl p-5 flex flex-col h-full hover:border-muted-foreground/30 transition-colors duration-150">
+
+                  {/* Card header */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="space-y-1.5 min-w-0">
+                      <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${meta.pillBg} ${meta.pillText}`}>
+                        {meta.label}
+                      </span>
+                      <h3 className="text-[15px] font-medium text-foreground leading-snug line-clamp-2">
+                        {goal.targetRole}
+                      </h3>
+                      <p className="text-[12px] text-muted-foreground line-clamp-1">{goal.title}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      {goal.targetYear && (
+                        <span className="text-[11px] text-muted-foreground">
+                          {goal.targetYear}
                         </span>
-                        <h3 className="text-lg font-semibold leading-tight line-clamp-2">{goal.targetRole}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{goal.title}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        {goal.targetYear && (
-                          <Badge variant="outline" className="gap-1 font-medium">
-                            <Calendar className="h-3 w-3" />
-                            {goal.targetYear}
-                          </Badge>
-                        )}
-                        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity -mr-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(goal)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { if (confirm("Delete this goal?")) deleteGoal.mutate(goal.id); }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      )}
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(goal)}
+                          className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => { if (confirm("Delete this goal?")) deleteGoal.mutate(goal.id); }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 space-y-4 pb-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3 min-h-[3.75rem]">
-                      {goal.description || "No description provided yet."}
-                    </p>
-                    {goal.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {goal.skills.map((skill) => (
-                          <span key={skill} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{goal.progress ?? 0}%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${meta.bar} transition-all`} style={{ width: `${Math.min(100, goal.progress ?? 0)}%` }} />
-                      </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-[13px] text-muted-foreground line-clamp-2 mb-4 flex-1">
+                    {goal.description || "No description added yet."}
+                  </p>
+
+                  {/* Skills */}
+                  {goal.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {goal.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary"
+                        >
+                          {skill}
+                        </span>
+                      ))}
                     </div>
-                  </CardContent>
-                  <CardFooter className="border-t bg-muted/20 pt-3 pb-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Target className="h-3.5 w-3.5 text-primary" />
+                  )}
+
+                  {/* Progress */}
+                  <div className="space-y-1.5 mb-4">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium text-foreground">{goal.progress ?? 0}%</span>
+                    </div>
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${meta.barColor} transition-all duration-500`}
+                        style={{ width: `${Math.min(100, goal.progress ?? 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-3 border-t border-border">
+                    <p className="text-[11px] text-muted-foreground">
                       Created {formatDistanceToNow(new Date(goal.createdAt), { addSuffix: true })}
-                    </div>
-                  </CardFooter>
-                </Card>
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             );
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed rounded-xl bg-muted/10">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4"><Target className="h-8 w-8" /></div>
-          <h3 className="text-xl font-semibold mb-2">No goals defined yet</h3>
-          <p className="text-muted-foreground max-w-md mb-6">Start by setting a long-term career objective.</p>
-          <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" />Create First Goal</Button>
+        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
+          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>
+            No goals defined yet
+          </p>
+          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">
+            Start by setting a long-term career objective.
+          </p>
+          <Button onClick={openCreate} className="gap-2 text-[13px]">
+            <Plus className="h-3.5 w-3.5" />
+            Create first goal
+          </Button>
         </div>
       )}
     </div>
