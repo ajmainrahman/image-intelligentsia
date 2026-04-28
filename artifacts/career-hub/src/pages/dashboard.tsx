@@ -3,10 +3,9 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, NotebookPen, Map as MapIcon, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
 type Summary = {
@@ -42,22 +41,25 @@ type Reminder = {
   createdAt: string;
 };
 
-const ACTIVITY_META: Record<ActivityItem["type"], { label: string; color: string; ring: string; Icon: React.ElementType }> = {
-  job:      { label: "Job Added",       color: "bg-blue-500",   ring: "ring-blue-200/60",   Icon: Briefcase },
-  goal:     { label: "Goal Created",    color: "bg-violet-500", ring: "ring-violet-200/60", Icon: Target },
-  progress: { label: "Progress Logged", color: "bg-emerald-500",ring: "ring-emerald-200/60",Icon: BookOpen },
-  reminder: { label: "Reminder Set",    color: "bg-amber-500",  ring: "ring-amber-200/60",  Icon: BellRing },
-  note:     { label: "Note Saved",      color: "bg-slate-500",  ring: "ring-slate-200/60",  Icon: NotebookPen },
-  roadmap:  { label: "Milestone Added", color: "bg-fuchsia-500",ring: "ring-fuchsia-200/60",Icon: MapIcon },
+const ACTIVITY_META: Record
+  ActivityItem["type"],
+  { label: string }
+> = {
+  job:      { label: "Job added" },
+  goal:     { label: "Goal created" },
+  progress: { label: "Progress logged" },
+  reminder: { label: "Reminder set" },
+  note:     { label: "Note saved" },
+  roadmap:  { label: "Milestone added" },
 };
 
 const FILTERS: { id: "all" | ActivityItem["type"]; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "job", label: "Jobs" },
-  { id: "goal", label: "Goals" },
+  { id: "all",      label: "All" },
+  { id: "job",      label: "Jobs" },
+  { id: "goal",     label: "Goals" },
   { id: "progress", label: "Progress" },
   { id: "reminder", label: "Reminders" },
-  { id: "note", label: "Notes" },
+  { id: "note",     label: "Notes" },
 ];
 
 export default function Dashboard() {
@@ -84,7 +86,7 @@ export default function Dashboard() {
   });
 
   const recentReminder = reminders
-    ?.filter((reminder) => !reminder.completed)
+    ?.filter((r) => !r.completed)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   const filteredActivity = useMemo(() => {
@@ -92,198 +94,294 @@ export default function Dashboard() {
     return filter === "all" ? list : list.filter((item) => item.type === filter);
   }, [activity, filter]);
 
+  const roadmapPct =
+    summary && summary.roadmapTotal > 0
+      ? Math.round((summary.roadmapCompleted / summary.roadmapTotal) * 100)
+      : 0;
+
   return (
-    <div className="space-y-8 page-enter">
+    <div className="space-y-10 page-enter">
+
+      {/* Page header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-        <p className="text-muted-foreground mt-1">Your career progress at a glance.</p>
+        <h1
+          className="text-[28px] text-foreground leading-tight"
+          style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+        >
+          Your overview
+        </h1>
+        <p className="text-[14px] text-muted-foreground mt-1.5">
+          Here's where things stand today.
+        </p>
       </div>
 
+      {/* Stat cards — 2 column */}
       {isLoadingSummary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+        <div className="grid grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
         </div>
       ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
-            { label: "Active Goals",       value: summary.activeGoals, hint: `of ${summary.totalGoals} total goals`, Icon: Target },
-            { label: "Learning Progress",  value: summary.progressCompleted, hint: `${summary.progressInProgress} currently in progress`, Icon: BookOpen },
-            { label: "Jobs Applied",       value: summary.appliedJobs, hint: `of ${summary.totalJobs} saved jobs`, Icon: Briefcase },
-            { label: "Pending Reminders",  value: summary.pendingReminders, hint: "Tasks requiring attention", Icon: BellRing },
+            {
+              label: "Active goals",
+              value: summary.activeGoals,
+              hint: `of ${summary.totalGoals} total`,
+            },
+            {
+              label: "Learning completed",
+              value: summary.progressCompleted,
+              hint: `${summary.progressInProgress} in progress`,
+            },
+            {
+              label: "Jobs applied",
+              value: summary.appliedJobs,
+              hint: `of ${summary.totalJobs} saved`,
+            },
+            {
+              label: "Pending reminders",
+              value: summary.pendingReminders,
+              hint: "awaiting action",
+            },
           ].map((stat) => (
-            <Card key={stat.label} className="hover-elevate transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                <stat.Icon className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.hint}</p>
-              </CardContent>
-            </Card>
+            <div
+              key={stat.label}
+              className="bg-secondary rounded-xl px-5 py-4"
+            >
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                {stat.label}
+              </p>
+              <p
+                className="text-[28px] text-foreground leading-none"
+                style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+              >
+                {stat.value}
+              </p>
+              <p className="text-[12px] text-muted-foreground mt-1.5">
+                {stat.hint}
+              </p>
+            </div>
           ))}
         </div>
       ) : null}
 
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
+
+        {/* Activity timeline — 2/3 width */}
+        <div className="lg:col-span-2">
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <CardTitle>Recent Activity</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Last 20 events across the app.</p>
+                <h2
+                  className="text-[17px] text-foreground"
+                  style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+                >
+                  Recent activity
+                </h2>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  Last 20 events across the app
+                </p>
               </div>
-              <Link href="/activity" className="text-sm font-medium text-primary hover:underline">View all</Link>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                      filter === f.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/70 text-muted-foreground"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
+              <Link
+                href="/activity"
+                className="text-[12px] text-primary hover:underline underline-offset-2"
+              >
+                View all
+              </Link>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex flex-wrap gap-1.5 mb-6">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`px-3 py-1 text-[12px] font-medium rounded-full transition-colors ${
+                    filter === f.id
+                      ? "bg-accent text-primary"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Timeline */}
+            {isLoadingActivity ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
-
-              {isLoadingActivity ? (
-                <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-              ) : filteredActivity.length > 0 ? (
-                <ol className="relative border-l-2 border-border pl-6 space-y-5">
-                  <AnimatePresence initial={false}>
-                    {filteredActivity.map((item, index) => {
-                      const meta = ACTIVITY_META[item.type] ?? ACTIVITY_META.note;
-                      const Icon = meta.Icon;
-                      return (
-                        <motion.li
-                          key={`${item.type}-${item.id}`}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.4) }}
-                          className="relative"
-                        >
-                          <span className={`absolute -left-[34px] top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-white shadow ring-4 ring-background ${meta.color}`}>
-                            <Icon className="h-3 w-3" />
+            ) : filteredActivity.length > 0 ? (
+              <ol className="relative border-l border-border pl-6 space-y-5">
+                <AnimatePresence initial={false}>
+                  {filteredActivity.map((item, index) => {
+                    const meta = ACTIVITY_META[item.type] ?? ACTIVITY_META.note;
+                    return (
+                      <motion.li
+                        key={`${item.type}-${item.id}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: 0.25,
+                          delay: Math.min(index * 0.04, 0.35),
+                          ease: [0.25, 0.1, 0.25, 1],
+                        }}
+                        className="relative"
+                      >
+                        {/* Timeline dot */}
+                        <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full bg-primary/40 ring-2 ring-background" />
+                        <div className="flex items-baseline gap-2.5">
+                          <span className="text-[11px] font-medium text-primary uppercase tracking-wide">
+                            {meta.label}
                           </span>
-                          <div className="flex flex-wrap items-baseline gap-x-3">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{meta.label}</span>
-                            <span className="text-xs text-muted-foreground/80">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
-                          </div>
-                          <p className="mt-0.5 text-sm font-medium line-clamp-1">{item.title}</p>
-                        </motion.li>
-                      );
-                    })}
-                  </AnimatePresence>
-                </ol>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                  <p>No activity in this filter yet.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                          <span className="text-[11px] text-muted-foreground">
+                            {formatDistanceToNow(new Date(item.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[13px] text-foreground line-clamp-1">
+                          {item.title}
+                        </p>
+                      </motion.li>
+                    );
+                  })}
+                </AnimatePresence>
+              </ol>
+            ) : (
+              <div className="flex items-center justify-center py-12 text-center">
+                <p className="text-[13px] text-muted-foreground">
+                  No activity in this filter yet.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <Card className="border-primary/15 bg-gradient-to-br from-primary/10 via-card to-card">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <BellRing className="h-5 w-5 text-primary" />
-                <CardTitle>Recent Reminder Task</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingReminders ? (
-                <Skeleton className="h-24 w-full rounded-xl" />
-              ) : recentReminder ? (
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-semibold">{recentReminder.title}</p>
-                    {recentReminder.description && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recentReminder.description}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="capitalize rounded-full bg-muted px-2 py-1">{recentReminder.category}</span>
-                    <span className="capitalize rounded-full bg-primary/10 px-2 py-1 text-primary">{recentReminder.priority} priority</span>
-                    {recentReminder.dueDate && (
-                      <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                        <CalendarDays className="h-3 w-3" />
-                        {format(new Date(recentReminder.dueDate), "MMM d")}
-                      </span>
-                    )}
-                  </div>
-                  <Button variant="outline" size="sm" asChild className="w-full">
-                    <Link href="/reminders">Open reminders</Link>
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No pending reminder tasks yet.</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Right column — 1/3 width */}
+        <div className="space-y-5">
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle>Top Skills in Demand</CardTitle>
+          {/* Reminder card */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <h2
+              className="text-[15px] text-foreground mb-4"
+              style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+            >
+              Don't forget
+            </h2>
+            {isLoadingReminders ? (
+              <Skeleton className="h-20 w-full rounded-xl" />
+            ) : recentReminder ? (
+              <div className="space-y-3">
+                <p className="text-[13px] font-medium text-foreground">
+                  {recentReminder.title}
+                </p>
+                {recentReminder.description && (
+                  <p className="text-[12px] text-muted-foreground line-clamp-2">
+                    {recentReminder.description}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-1.5 text-[11px]">
+                  <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
+                    {recentReminder.category}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-accent text-primary capitalize">
+                    {recentReminder.priority} priority
+                  </span>
+                  {recentReminder.dueDate && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                      <CalendarDays className="h-3 w-3" />
+                      {format(new Date(recentReminder.dueDate), "MMM d")}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="w-full text-[12px] mt-1"
+                >
+                  <Link href="/reminders">View reminders</Link>
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSkills ? (
-                <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
-              ) : skills && skills.length > 0 ? (
-                <div className="space-y-3">
-                  {skills.slice(0, 6).map((skill, index) => (
-                    <div key={skill.skill} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-medium w-4 text-center text-muted-foreground">{index + 1}</span>
-                        <span className="font-medium text-sm capitalize">{skill.skill}</span>
-                      </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                        {skill.count} job{skill.count !== 1 ? "s" : ""}
+            ) : (
+              <p className="text-[12px] text-muted-foreground">
+                No pending reminders right now.
+              </p>
+            )}
+          </div>
+
+          {/* Top skills */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <h2
+              className="text-[15px] text-foreground mb-4"
+              style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+            >
+              Skills in demand
+            </h2>
+            {isLoadingSkills ? (
+              <div className="space-y-2.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-7 w-full" />
+                ))}
+              </div>
+            ) : skills && skills.length > 0 ? (
+              <div className="space-y-2">
+                {skills.slice(0, 6).map((skill, index) => (
+                  <div
+                    key={skill.skill}
+                    className="flex items-center justify-between py-1.5 border-b border-border last:border-0"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-[11px] text-muted-foreground w-4 text-right">
+                        {index + 1}
+                      </span>
+                      <span className="text-[13px] text-foreground capitalize">
+                        {skill.skill}
                       </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">Save jobs to see required skills here.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">
+                      {skill.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-muted-foreground">
+                Save jobs to see required skills here.
+              </p>
+            )}
+          </div>
 
+          {/* Roadmap progress */}
           {summary && (
-            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                    <Trophy className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">Roadmap Progress</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      You have completed {summary.roadmapCompleted} of {summary.roadmapTotal} roadmap milestones.
-                    </p>
-                    <div className="mt-4 h-2 w-full bg-primary/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-700"
-                        style={{ width: `${summary.roadmapTotal > 0 ? (summary.roadmapCompleted / summary.roadmapTotal) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h2
+                className="text-[15px] text-foreground mb-1"
+                style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+              >
+                Roadmap progress
+              </h2>
+              <p className="text-[12px] text-muted-foreground mb-4">
+                {summary.roadmapCompleted} of {summary.roadmapTotal} milestones complete
+              </p>
+              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-700"
+                  style={{ width: `${roadmapPct}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2 text-right">
+                {roadmapPct}%
+              </p>
+            </div>
           )}
         </div>
       </div>
