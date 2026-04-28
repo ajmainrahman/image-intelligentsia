@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
-import { BrandLogo } from "@/components/brand-logo";
 import {
   LayoutDashboard,
   Target,
@@ -14,15 +13,30 @@ import {
   LogOut,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/progress", label: "Learning", icon: BookOpen },
-  { href: "/roadmap", label: "Roadmap", icon: MapIcon },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/notepad", label: "Notepad", icon: NotebookPen },
-  { href: "/reminders", label: "Reminders", icon: BellRing },
-  { href: "/activity", label: "Activity", icon: ActivityIcon },
+const navSections = [
+  {
+    label: "Track",
+    items: [
+      { href: "/", label: "Overview", icon: LayoutDashboard },
+      { href: "/activity", label: "Activity", icon: ActivityIcon },
+    ],
+  },
+  {
+    label: "Build",
+    items: [
+      { href: "/goals", label: "Goals", icon: Target },
+      { href: "/progress", label: "Learning", icon: BookOpen },
+      { href: "/roadmap", label: "Roadmap", icon: MapIcon },
+    ],
+  },
+  {
+    label: "Manage",
+    items: [
+      { href: "/jobs", label: "Opportunities", icon: Briefcase },
+      { href: "/reminders", label: "Reminders", icon: BellRing },
+      { href: "/notepad", label: "Notepad", icon: NotebookPen },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -30,65 +44,83 @@ export function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex flex-col px-5 pt-6 pb-5 border-b border-sidebar-border gap-1">
-        <div className="flex items-center gap-3 mb-1">
-          <BrandLogo className="h-9 w-9 shrink-0 rounded-xl" iconClassName="h-5 w-5" />
-          <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground leading-none">
-            Image Intelligentsia
-          </span>
-        </div>
-        {user && (
-          <p className="text-[11px] text-sidebar-foreground/50 leading-snug pl-0.5 truncate">
-            {user.name}
-          </p>
-        )}
+    <aside className="fixed inset-y-0 left-0 w-56 flex flex-col border-r border-border bg-card">
+
+      {/* Brand */}
+      <div className="px-6 pt-7 pb-6 border-b border-border">
+        <span
+          className="text-[19px] text-foreground leading-none tracking-tight"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          Intelligentsia
+        </span>
+        <p className="text-[11px] text-muted-foreground mt-1.5 leading-none">
+          Career dashboard
+        </p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive =
-            location === item.href ||
-            (item.href !== "/" && location.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group",
-                isActive
-                  ? "bg-sidebar-primary/15 text-sidebar-primary shadow-sm"
-                  : "text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground/90"
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-colors duration-150",
-                  isActive
-                    ? "text-sidebar-primary"
-                    : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
-                )}
-              />
-              {item.label}
-              {isActive && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
-              )}
-            </Link>
-          );
-        })}
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-5">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            <p className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest px-3 mb-1.5">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const isActive =
+                  location === item.href ||
+                  (item.href !== "/" && location.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 relative group",
+                      isActive
+                        ? "text-primary bg-accent font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
+                    )}
+                    <item.icon
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        isActive
+                          ? "text-primary"
+                          : "text-muted-foreground/50 group-hover:text-muted-foreground"
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-sidebar-border">
+      {/* User + Sign out */}
+      <div className="px-4 py-5 border-t border-border space-y-3">
+        {user && (
+          <div className="px-2">
+            <p className="text-[13px] font-medium text-foreground truncate">
+              {user.name}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {user.email}
+            </p>
+          </div>
+        )}
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-destructive transition-all duration-150 group"
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-150 group"
         >
-          <LogOut className="h-4 w-4 shrink-0 text-sidebar-foreground/40 group-hover:text-destructive" />
+          <LogOut className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground" />
           Sign out
         </button>
-        <p className="text-[10px] text-sidebar-foreground/25 leading-relaxed px-1 mt-3">
-          © 2025 Image Intelligentsia
-        </p>
       </div>
     </aside>
   );
