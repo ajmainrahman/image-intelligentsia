@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db, remindersTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/auth.js";
+import { logActivity } from "../lib/activity.js";
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.post("/reminders", requireAuth, async (req: AuthRequest, res, next): Prom
       userId: req.userId!,
       dueDate: dueDate ? new Date(dueDate) : null,
     }).returning();
+    await logActivity(req.userId!, "reminder", reminder.title, reminder.id, "set");
     res.status(201).json(serializeReminder(reminder));
   } catch (err) { next(err); }
 });

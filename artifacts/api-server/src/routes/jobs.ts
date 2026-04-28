@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db, jobsTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/auth.js";
+import { logActivity } from "../lib/activity.js";
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.post("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<v
       applyDate: applyDate ? new Date(applyDate) : null,
       userId: req.userId!,
     }).returning();
+    await logActivity(req.userId!, "job", job.title, job.id, "added");
     res.status(201).json(serializeJob(job));
   } catch (err) { next(err); }
 });

@@ -10,6 +10,7 @@ import {
   Briefcase,
   BellRing,
   NotebookPen,
+  Activity as ActivityIcon,
   LogOut,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/notepad", label: "Notepad", icon: NotebookPen },
   { href: "/reminders", label: "Reminders", icon: BellRing },
+  { href: "/activity", label: "Activity", icon: ActivityIcon },
 ];
 
 export function Sidebar() {

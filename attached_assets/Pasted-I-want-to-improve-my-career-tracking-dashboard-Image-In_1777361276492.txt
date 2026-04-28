@@ -1,0 +1,200 @@
+I want to improve my career tracking dashboard (Image Intelligentsia). 
+Below are 4 feature areas with detailed requirements. 
+Implement all changes while keeping the existing tech stack: 
+React 19 + Vite, TailwindCSS, shadcn/ui, TanStack Query, Wouter, 
+framer-motion, Express 5, PostgreSQL + Drizzle ORM.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEATURE 1 — REDESIGN "RECENT ACTIVITY" SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current problem: Recent activity is a plain list with no visual 
+hierarchy or context.
+
+Requirements:
+- Replace the flat list with a vertical timeline UI. Each event 
+  gets a left-side timestamp, a colored icon dot (color-coded by 
+  activity type), and a short description.
+- Activity types to support (with distinct icons and colors):
+    • Job Added → blue
+    • Goal Created → violet
+    • Progress Logged → green
+    • Reminder Set → amber
+    • Note Saved → gray
+- Each timeline item should show: activity type label, title of 
+  the related item (e.g. job title, goal name), and a relative 
+  timestamp (e.g. "2 hours ago", "Yesterday").
+- Animate items in with framer-motion staggered fade-up on load.
+- Add a filter bar above the timeline: "All | Jobs | Goals | 
+  Progress | Reminders" — clicking filters the visible activities.
+- Limit to last 20 activities. Add a "View all" link.
+- Store activity events in a new `activity_log` DB table: 
+  id, user_id, type (enum), related_id, title, created_at.
+- Auto-log an event whenever a job, goal, progress entry, 
+  reminder, or note is created.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEATURE 2 — REDESIGN GOALS SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current problem: Goal cards only show target role, year, and 
+status. No skills tracking, no rich description, cards look bare.
+
+Requirements:
+- Update the `goals` DB table to add two new columns:
+    • skills TEXT[] — array of skill tags required for this goal
+    • description TEXT — a short motivation or context note
+- Update the Drizzle schema and run migration.
+- Redesign the Goal card UI:
+    • Header: target role (bold) + status badge (color-coded: 
+      "In Progress" = blue, "Achieved" = green, "Planned" = gray)
+    • Target year badge (top right)
+    • Description paragraph (muted text, 2–3 lines max with 
+      line-clamp)
+    • Skills section: render each skill as a small pill/tag 
+      (e.g. Python, SQL, Leadership)
+    • Progress indicator: a thin horizontal progress bar 
+      (0–100%, editable via slider in the edit dialog)
+    • Footer: "Created X days ago"
+- Update the Create/Edit Goal dialog to include:
+    • Description textarea
+    • Skills input: type a skill + press Enter or comma to add 
+      as a tag; show added tags with an ✕ remove button
+    • Progress slider (0–100)
+- Goals page layout: switch from a single-column list to a 
+  responsive 2-column card grid (1 column on mobile).
+- Sort goals: In Progress first, then Planned, then Achieved.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEATURE 3 — REDESIGN LEARNING / PROGRESS SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current problem: Learning entries are shown as a plain list. 
+No categorization, no streak tracking, no visual progress sense.
+
+Requirements:
+- Update the `progress_entries` DB table to add:
+    • category TEXT — e.g. "Course", "Project", "Certification", 
+      "AI Tool", "Book", "Practice"
+    • duration_hours NUMERIC — hours spent on this activity
+    • resource_url TEXT — optional link to the course/resource
+    • completed_at TIMESTAMP — when it was finished (nullable 
+      for in-progress items)
+- Update Drizzle schema and run migration.
+
+- Redesign the Learning page layout with 3 sections:
+
+  SECTION A — Stats bar at the top (4 metric cards in a row):
+    • Total hours logged
+    • Entries this week
+    • Current streak (consecutive days with at least 1 entry)
+    • Most active category
+
+  SECTION B — Category filter tabs:
+    "All | Course | Project | Certification | AI Tool | Book | 
+    Practice"
+    Clicking a tab filters the entries below.
+
+  SECTION C — Entry cards in a 2-column grid:
+    Each card shows:
+      • Category badge (color per category)
+      • Title (bold)
+      • Duration badge (e.g. "3.5 hrs")
+      • Optional resource URL as a small external link icon
+      • Notes/description (2 lines max, line-clamp)
+      • Completion status: "Completed" (green) or "In Progress" 
+        (amber)
+      • Date logged
+
+- Update the Add Entry dialog to include all new fields:
+    category (select dropdown), duration_hours (number input), 
+    resource_url (text input), completed_at (date picker, 
+    optional).
+
+- Add a weekly activity heatmap below the stats bar: 
+  a 7-column grid showing the last 12 weeks. Each cell is 
+  colored based on hours logged that day (empty = light gray, 
+  1–2 hrs = light green, 3–5 hrs = medium green, 6+ hrs = 
+  dark green). Tooltip on hover showing date + hours.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEATURE 4 — REDESIGN ROADMAP SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current problem: Description is stored as a plain text string 
+causing all content (Focus On, Responsibilities, Skills) to 
+render as one ugly unformatted blob.
+
+Requirements:
+
+DATABASE:
+- Update the `roadmap_items` table description column to store 
+  structured JSON with this shape:
+  {
+    "v": 2,
+    "focusOn": "string",
+    "responsibilities": ["string", ...],
+    "skills": ["string", ...],
+    "level": 1–5,
+    "progress": 0–100
+  }
+- Keep backwards compatibility: if description is plain text 
+  (not parseable as JSON with v:2), render it as a legacy 
+  fallback paragraph.
+
+CARD UI:
+- Header row: Phase badge (Short/Mid/Long, color-coded) + 
+  Target Year badge + Level badge (e.g. "Level 2 · Mid-Junior")
+- Edit and Delete icon buttons visible on card hover (top right)
+- Title: target role name (bold, 15px)
+- Focus On: muted paragraph below title
+- Progress bar: labeled "Progress" with % value on the right, 
+  thin violet bar
+- Key Responsibilities: bulleted list with small violet dots 
+  as bullets
+- Skills: small pill tags in a flex-wrap row, separated by a 
+  top divider line
+- Hover effect: subtle border darkening and shadow lift
+
+EDITOR DIALOG (replace the current free-text textarea):
+- Target Role: text input
+- Target Year: number input
+- Phase: 3-button toggle (Short / Mid / Long), styled with 
+  color per phase
+- Level: range slider (1–5), showing label below 
+  (Junior → Mid-Junior → Mid → Senior → Lead)
+- Focus On: small textarea (2 rows)
+- Key Responsibilities: dynamic list — each item is a text 
+  input with a remove ✕ button; "+ Add responsibility" button 
+  adds a new row
+- Skills/Technologies: tag input — type + Enter or comma to 
+  add, ✕ to remove
+- Progress: range slider (0–100) with live % display
+
+ROADMAP PAGE LAYOUT:
+- Organize cards into 3 labeled columns: "Short Term", 
+  "Mid Term", "Long Term"
+- Each column has its own "+ Add" button
+- Column headers show the phase label + item count badge
+- Animate cards in with framer-motion staggered entrance
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GENERAL NOTES FOR ALL FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Use TailwindCSS utility classes throughout. Do not write 
+  custom CSS files.
+- Use shadcn/ui components for dialogs, inputs, sliders, 
+  badges, and buttons wherever possible.
+- All new DB columns must have safe defaults so existing 
+  rows are not broken.
+- Run `pnpm --filter @workspace/db run push` after each 
+  schema change.
+- Keep all API routes under /api and follow the existing 
+  Express router pattern in the codebase.
+- Use TanStack Query (useQuery / useMutation) for all 
+  data fetching — no raw fetch() calls in components.
+- Do not break existing features: Jobs, Reminders, Notepad, 
+  Dashboard stats, and Auth must continue working.
+- After all changes, do a full typecheck: 
+  `pnpm run typecheck`

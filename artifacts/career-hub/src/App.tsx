@@ -15,6 +15,7 @@ const NotepadPage = lazy(() => import("@/pages/notepad"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const RoadmapPage = lazy(() => import("@/pages/roadmap"));
 const RemindersPage = lazy(() => import("@/pages/reminders"));
+const ActivityPage = lazy(() => import("@/pages/activity"));
 const SignInPage = lazy(() => import("@/pages/signin"));
 
 const queryClient = new QueryClient({
@@ -58,6 +59,7 @@ function AppRoutes() {
           <Route path="/jobs" component={JobsPage} />
           <Route path="/notepad" component={NotepadPage} />
           <Route path="/reminders" component={RemindersPage} />
+          <Route path="/activity" component={ActivityPage} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

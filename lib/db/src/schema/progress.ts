@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, numeric } from "drizzle-orm/pg-core";
 
 export const progressTable = pgTable("progress_entries", {
   id: serial("id").primaryKey(),
@@ -8,6 +8,9 @@ export const progressTable = pgTable("progress_entries", {
   description: text("description"),
   status: text("status").notNull().default("not_started"),
   toolOrResource: text("tool_or_resource"),
+  resourceUrl: text("resource_url"),
+  durationHours: numeric("duration_hours", { precision: 8, scale: 2 }).notNull().default("0"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
   goalId: integer("goal_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

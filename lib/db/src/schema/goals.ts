@@ -6,6 +6,8 @@ export const goalsTable = pgTable("goals", {
   title: text("title").notNull(),
   targetRole: text("target_role").notNull(),
   description: text("description"),
+  skills: text("skills").array().notNull().default([]),
+  progress: integer("progress").notNull().default(0),
   status: text("status").notNull().default("active"),
   targetYear: integer("target_year"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

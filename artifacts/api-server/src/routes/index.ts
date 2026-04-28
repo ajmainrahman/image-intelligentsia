@@ -7,6 +7,7 @@ import jobsRouter from "./jobs.js";
 import remindersRouter from "./reminders.js";
 import dashboardRouter from "./dashboard.js";
 import authRouter from "./auth.js";
+import activityRouter from "./activity.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use(roadmapRouter);
 router.use(jobsRouter);
 router.use(remindersRouter);
 router.use(dashboardRouter);
+router.use(activityRouter);
 
 export default router;

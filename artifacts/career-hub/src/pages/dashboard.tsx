@@ -1,9 +1,13 @@
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, Clock, Activity, Map as MapIcon, CalendarDays } from "lucide-react";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Target, BookOpen, Briefcase, BellRing, Trophy, TrendingUp, NotebookPen, Map as MapIcon, CalendarDays } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 
 type Summary = {
   totalGoals: number;
@@ -21,7 +25,7 @@ type Skill = { skill: string; count: number };
 
 type ActivityItem = {
   id: number;
-  type: string;
+  type: "job" | "goal" | "progress" | "reminder" | "note" | "roadmap";
   title: string;
   action: string;
   createdAt: string;
@@ -38,7 +42,27 @@ type Reminder = {
   createdAt: string;
 };
 
+const ACTIVITY_META: Record<ActivityItem["type"], { label: string; color: string; ring: string; Icon: React.ElementType }> = {
+  job:      { label: "Job Added",       color: "bg-blue-500",   ring: "ring-blue-200/60",   Icon: Briefcase },
+  goal:     { label: "Goal Created",    color: "bg-violet-500", ring: "ring-violet-200/60", Icon: Target },
+  progress: { label: "Progress Logged", color: "bg-emerald-500",ring: "ring-emerald-200/60",Icon: BookOpen },
+  reminder: { label: "Reminder Set",    color: "bg-amber-500",  ring: "ring-amber-200/60",  Icon: BellRing },
+  note:     { label: "Note Saved",      color: "bg-slate-500",  ring: "ring-slate-200/60",  Icon: NotebookPen },
+  roadmap:  { label: "Milestone Added", color: "bg-fuchsia-500",ring: "ring-fuchsia-200/60",Icon: MapIcon },
+};
+
+const FILTERS: { id: "all" | ActivityItem["type"]; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "job", label: "Jobs" },
+  { id: "goal", label: "Goals" },
+  { id: "progress", label: "Progress" },
+  { id: "reminder", label: "Reminders" },
+  { id: "note", label: "Notes" },
+];
+
 export default function Dashboard() {
+  const [filter, setFilter] = useState<typeof FILTERS[number]["id"]>("all");
+
   const { data: summary, isLoading: isLoadingSummary } = useQuery<Summary>({
     queryKey: ["dashboard-summary"],
     queryFn: () => api<Summary>("/dashboard/summary"),
@@ -50,8 +74,8 @@ export default function Dashboard() {
   });
 
   const { data: activity, isLoading: isLoadingActivity } = useQuery<ActivityItem[]>({
-    queryKey: ["dashboard-activity"],
-    queryFn: () => api<ActivityItem[]>("/dashboard/recent-activity"),
+    queryKey: ["activity"],
+    queryFn: () => api<ActivityItem[]>("/activity?limit=20"),
   });
 
   const { data: reminders, isLoading: isLoadingReminders } = useQuery<Reminder[]>({
@@ -62,6 +86,11 @@ export default function Dashboard() {
   const recentReminder = reminders
     ?.filter((reminder) => !reminder.completed)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+  const filteredActivity = useMemo(() => {
+    const list = activity ?? [];
+    return filter === "all" ? list : list.filter((item) => item.type === filter);
+  }, [activity, filter]);
 
   return (
     <div className="space-y-8 page-enter">
@@ -76,90 +105,86 @@ export default function Dashboard() {
         </div>
       ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover-elevate">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Goals</CardTitle>
-              <Target className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.activeGoals}</div>
-              <p className="text-xs text-muted-foreground mt-1">of {summary.totalGoals} total goals</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-elevate">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Learning Progress</CardTitle>
-              <BookOpen className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.progressCompleted}</div>
-              <p className="text-xs text-muted-foreground mt-1">{summary.progressInProgress} currently in progress</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-elevate">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Jobs Applied</CardTitle>
-              <Briefcase className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.appliedJobs}</div>
-              <p className="text-xs text-muted-foreground mt-1">of {summary.totalJobs} saved jobs</p>
-            </CardContent>
-          </Card>
-          <Card className="hover-elevate">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Reminders</CardTitle>
-              <BellRing className="h-4 w-4 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.pendingReminders}</div>
-              <p className="text-xs text-muted-foreground mt-1">Tasks requiring attention</p>
-            </CardContent>
-          </Card>
+          {[
+            { label: "Active Goals",       value: summary.activeGoals, hint: `of ${summary.totalGoals} total goals`, Icon: Target },
+            { label: "Learning Progress",  value: summary.progressCompleted, hint: `${summary.progressInProgress} currently in progress`, Icon: BookOpen },
+            { label: "Jobs Applied",       value: summary.appliedJobs, hint: `of ${summary.totalJobs} saved jobs`, Icon: Briefcase },
+            { label: "Pending Reminders",  value: summary.pendingReminders, hint: "Tasks requiring attention", Icon: BellRing },
+          ].map((stat) => (
+            <Card key={stat.label} className="hover-elevate transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+                <stat.Icon className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.hint}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="h-full">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <div>
                 <CardTitle>Recent Activity</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Last 20 events across the app.</p>
               </div>
+              <Link href="/activity" className="text-sm font-medium text-primary hover:underline">View all</Link>
             </CardHeader>
             <CardContent>
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                      filter === f.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/70 text-muted-foreground"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
               {isLoadingActivity ? (
                 <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-              ) : Array.isArray(activity) && activity.length > 0 ? (
-                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-border">
-                  {activity.map((item) => (
-                    <div key={`${item.type}-${item.id}`} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-background bg-muted text-muted-foreground shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm">
-                        {item.type === "goal" && <Target className="h-3.5 w-3.5" />}
-                        {item.type === "progress" && <BookOpen className="h-3.5 w-3.5" />}
-                        {item.type === "job" && <Briefcase className="h-3.5 w-3.5" />}
-                        {item.type === "roadmap" && <MapIcon className="h-3.5 w-3.5" />}
-                        {item.type === "reminder" && <BellRing className="h-3.5 w-3.5" />}
-                      </div>
-                      <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl border bg-card shadow-sm group-hover:border-primary/20 transition-colors">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">{item.action}</span>
-                          <span className="text-sm text-muted-foreground line-clamp-1">{item.title}</span>
-                          <span className="text-xs text-muted-foreground/70 flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(item.createdAt), "MMM d, h:mm a")}
+              ) : filteredActivity.length > 0 ? (
+                <ol className="relative border-l-2 border-border pl-6 space-y-5">
+                  <AnimatePresence initial={false}>
+                    {filteredActivity.map((item, index) => {
+                      const meta = ACTIVITY_META[item.type] ?? ACTIVITY_META.note;
+                      const Icon = meta.Icon;
+                      return (
+                        <motion.li
+                          key={`${item.type}-${item.id}`}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.4) }}
+                          className="relative"
+                        >
+                          <span className={`absolute -left-[34px] top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-white shadow ring-4 ring-background ${meta.color}`}>
+                            <Icon className="h-3 w-3" />
                           </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                          <div className="flex flex-wrap items-baseline gap-x-3">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{meta.label}</span>
+                            <span className="text-xs text-muted-foreground/80">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
+                          </div>
+                          <p className="mt-0.5 text-sm font-medium line-clamp-1">{item.title}</p>
+                        </motion.li>
+                      );
+                    })}
+                  </AnimatePresence>
+                </ol>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                  <Activity className="h-12 w-12 mb-4 text-muted/50" />
-                  <p>No recent activity.</p>
-                  <p className="text-sm mt-1">Start tracking your goals and progress.</p>
+                  <p>No activity in this filter yet.</p>
                 </div>
               )}
             </CardContent>
@@ -195,6 +220,9 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
+                  <Button variant="outline" size="sm" asChild className="w-full">
+                    <Link href="/reminders">Open reminders</Link>
+                  </Button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No pending reminder tasks yet.</p>
@@ -214,11 +242,11 @@ export default function Dashboard() {
                 <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : skills && skills.length > 0 ? (
                 <div className="space-y-3">
-                  {skills.map((skill, index) => (
+                  {skills.slice(0, 6).map((skill, index) => (
                     <div key={skill.skill} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-medium w-4 text-center text-muted-foreground">{index + 1}</span>
-                        <span className="font-medium text-sm">{skill.skill}</span>
+                        <span className="font-medium text-sm capitalize">{skill.skill}</span>
                       </div>
                       <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
                         {skill.count} job{skill.count !== 1 ? "s" : ""}
@@ -241,14 +269,14 @@ export default function Dashboard() {
                   <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
                     <Trophy className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-primary-foreground/90">Roadmap Progress</h3>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground">Roadmap Progress</h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       You have completed {summary.roadmapCompleted} of {summary.roadmapTotal} roadmap milestones.
                     </p>
                     <div className="mt-4 h-2 w-full bg-primary/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary rounded-full transition-all duration-1000"
+                        className="h-full bg-primary rounded-full transition-all duration-700"
                         style={{ width: `${summary.roadmapTotal > 0 ? (summary.roadmapCompleted / summary.roadmapTotal) * 100 : 0}%` }}
                       />
                     </div>

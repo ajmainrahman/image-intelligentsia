@@ -3,18 +3,34 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db, roadmapTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/auth.js";
+import { logActivity } from "../lib/activity.js";
 
 const router = Router();
 
+const RoadmapDescriptionV2 = z.object({
+  v: z.literal(2),
+  focusOn: z.string().default(""),
+  responsibilities: z.array(z.string()).default([]),
+  skills: z.array(z.string()).default([]),
+  level: z.number().int().min(1).max(5).default(1),
+  progress: z.number().int().min(0).max(100).default(0),
+});
+
 const RoadmapBody = z.object({
   title: z.string().min(1),
-  description: z.string().nullable().optional(),
+  description: z.union([z.string(), RoadmapDescriptionV2]).nullable().optional(),
   yearTarget: z.number().int().min(2000).max(2100),
   phase: z.enum(["short_term", "mid_term", "long_term"]).default("short_term"),
   status: z.enum(["planned", "in_progress", "completed"]).default("planned"),
   goalId: z.number().int().nullable().optional(),
   order: z.number().int().default(0),
 });
+
+function normaliseDescription(raw: string | object | null | undefined): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw === "object") return JSON.stringify(raw);
+  return raw;
+}
 
 router.get("/roadmap", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
@@ -29,7 +45,12 @@ router.post("/roadmap", requireAuth, async (req: AuthRequest, res, next): Promis
   try {
     const parsed = RoadmapBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const [item] = await db.insert(roadmapTable).values({ ...parsed.data, userId: req.userId! }).returning();
+    const [item] = await db.insert(roadmapTable).values({
+      ...parsed.data,
+      description: normaliseDescription(parsed.data.description),
+      userId: req.userId!,
+    }).returning();
+    await logActivity(req.userId!, "roadmap", item.title, item.id, "created");
     res.status(201).json(serializeRoadmapItem(item));
   } catch (err) { next(err); }
 });
@@ -41,7 +62,11 @@ router.put("/roadmap/:id", requireAuth, async (req: AuthRequest, res, next): Pro
     const parsed = RoadmapBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
     const [item] = await db.update(roadmapTable)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set({
+        ...parsed.data,
+        description: normaliseDescription(parsed.data.description),
+        updatedAt: new Date(),
+      })
       .where(and(eq(roadmapTable.id, id), eq(roadmapTable.userId, req.userId!)))
       .returning();
     if (!item) { res.status(404).json({ error: "Item not found" }); return; }

@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db, goalsTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/auth.js";
+import { logActivity } from "../lib/activity.js";
 
 const router = Router();
 
@@ -10,6 +11,8 @@ const GoalBody = z.object({
   title: z.string().min(1),
   targetRole: z.string().min(1),
   description: z.string().nullable().optional(),
+  skills: z.array(z.string()).default([]),
+  progress: z.number().int().min(0).max(100).default(0),
   status: z.enum(["active", "completed", "paused"]).default("active"),
   targetYear: z.number().int().min(2000).max(2100).nullable().optional(),
 });
@@ -28,6 +31,7 @@ router.post("/goals", requireAuth, async (req: AuthRequest, res, next): Promise<
     const parsed = GoalBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
     const [goal] = await db.insert(goalsTable).values({ ...parsed.data, userId: req.userId! }).returning();
+    await logActivity(req.userId!, "goal", goal.title, goal.id, "created");
     res.status(201).json(serializeGoal(goal));
   } catch (err) { next(err); }
 });
@@ -65,6 +69,8 @@ function serializeGoal(g: typeof goalsTable.$inferSelect) {
     title: g.title,
     targetRole: g.targetRole,
     description: g.description,
+    skills: g.skills ?? [],
+    progress: g.progress ?? 0,
     status: g.status,
     targetYear: g.targetYear,
     createdAt: g.createdAt.toISOString(),

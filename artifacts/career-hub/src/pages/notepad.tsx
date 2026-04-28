@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +51,7 @@ function countWords(content: string): number {
 }
 
 export default function NotepadPage() {
+  const queryClient = useQueryClient();
   const [notes, setNotes] = useState<Note[]>(loadNotes);
   const [selectedNoteId, setSelectedNoteId] = useState(() => notes[0]?.id ?? "");
   const [lastSaved, setLastSaved] = useState("Ready");
@@ -83,6 +86,12 @@ export default function NotepadPage() {
     setNotes((currentNotes) => [note, ...currentNotes]);
     setSelectedNoteId(note.id);
     setLastSaved("Saving...");
+    api("/activity/note", {
+      method: "POST",
+      body: JSON.stringify({ title: "Untitled note", action: "created" }),
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["activity"] }))
+      .catch(() => {});
   };
 
   const deleteNote = (id: string) => {

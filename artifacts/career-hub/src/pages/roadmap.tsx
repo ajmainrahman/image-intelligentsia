@@ -1,232 +1,493 @@
-import { useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Map as MapIcon, Plus, Pencil, Trash2, CheckCircle2, Circle, Clock } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Map as MapIcon, Plus, Pencil, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Badge } from "@/components/ui/badge";
+
+type Phase = "short_term" | "mid_term" | "long_term";
+type Status = "planned" | "in_progress" | "completed";
 
 type RoadmapItem = {
   id: number;
   title: string;
   description: string | null;
   yearTarget: number;
-  phase: string;
-  status: string;
+  phase: Phase;
+  status: Status;
   order: number;
 };
 
-const roadmapItemSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  yearTarget: z.coerce.number().min(2020).max(2100),
-  phase: z.enum(["short_term", "mid_term", "long_term"]),
-  status: z.enum(["planned", "in_progress", "completed"]),
-  order: z.coerce.number().default(0),
+type StructuredDescription = {
+  v: 2;
+  focusOn: string;
+  responsibilities: string[];
+  skills: string[];
+  level: number;
+  progress: number;
+};
+
+type FormState = {
+  title: string;
+  yearTarget: string;
+  phase: Phase;
+  status: Status;
+  focusOn: string;
+  responsibilities: string[];
+  skills: string[];
+  skillDraft: string;
+  level: number;
+  progress: number;
+};
+
+const PHASES: { id: Phase; label: string; short: string; pill: string; ring: string }[] = [
+  { id: "short_term", label: "Short Term", short: "Short", pill: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300", ring: "ring-emerald-500/30" },
+  { id: "mid_term",   label: "Mid Term",   short: "Mid",   pill: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",       ring: "ring-blue-500/30" },
+  { id: "long_term",  label: "Long Term",  short: "Long",  pill: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300", ring: "ring-violet-500/30" },
+];
+
+const LEVEL_LABELS = ["Junior", "Mid-Junior", "Mid", "Senior", "Lead"];
+
+const emptyForm = (phase: Phase = "short_term"): FormState => ({
+  title: "",
+  yearTarget: String(new Date().getFullYear() + 1),
+  phase,
+  status: "planned",
+  focusOn: "",
+  responsibilities: [],
+  skills: [],
+  skillDraft: "",
+  level: 1,
+  progress: 0,
 });
 
-type RoadmapItemFormValues = z.infer<typeof roadmapItemSchema>;
+function parseDescription(raw: string | null): StructuredDescription | { legacy: string } | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && parsed.v === 2) {
+      return {
+        v: 2,
+        focusOn: typeof parsed.focusOn === "string" ? parsed.focusOn : "",
+        responsibilities: Array.isArray(parsed.responsibilities) ? parsed.responsibilities.filter((s: unknown): s is string => typeof s === "string") : [],
+        skills: Array.isArray(parsed.skills) ? parsed.skills.filter((s: unknown): s is string => typeof s === "string") : [],
+        level: typeof parsed.level === "number" ? Math.min(5, Math.max(1, parsed.level)) : 1,
+        progress: typeof parsed.progress === "number" ? Math.min(100, Math.max(0, parsed.progress)) : 0,
+      };
+    }
+  } catch {}
+  return { legacy: raw };
+}
 
-const phases = [
-  { id: "short_term", label: "Short Term (1-2 yrs)", description: "Foundational skills and first roles" },
-  { id: "mid_term", label: "Mid Term (3-5 yrs)", description: "Specialization and senior positions" },
-  { id: "long_term", label: "Long Term (6-10 yrs)", description: "Leadership and mastery" },
-] as const;
+function isStructured(d: ReturnType<typeof parseDescription>): d is StructuredDescription {
+  return !!d && typeof d === "object" && "v" in d && d.v === 2;
+}
 
 export default function RoadmapPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [activePhase, setActivePhase] = useState<"short_term" | "mid_term" | "long_term">("short_term");
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
 
-  const { data: roadmapItems, isLoading } = useQuery<RoadmapItem[]>({
+  const { data: items = [], isLoading } = useQuery<RoadmapItem[]>({
     queryKey: ["roadmap"],
     queryFn: () => api<RoadmapItem[]>("/roadmap"),
   });
 
-  const createRoadmapItem = useMutation({
+  const createItem = useMutation({
     mutationFn: (data: object) => api("/roadmap", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roadmap"] });
-      setIsCreateOpen(false);
-      form.reset();
-      toast({ title: "Milestone added", description: "Your roadmap has been updated." });
+      queryClient.invalidateQueries({ queryKey: ["activity"] });
+      closeDialog();
+      toast({ title: "Milestone added" });
     },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const updateRoadmapItem = useMutation({
+  const updateItem = useMutation({
     mutationFn: ({ id, data }: { id: number; data: object }) =>
       api(`/roadmap/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roadmap"] });
-      setEditingItemId(null);
-      form.reset();
+      closeDialog();
       toast({ title: "Milestone updated" });
     },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const deleteRoadmapItem = useMutation({
+  const deleteItem = useMutation({
     mutationFn: (id: number) => api(`/roadmap/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roadmap"] });
       toast({ title: "Milestone deleted" });
     },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const form = useForm<RoadmapItemFormValues>({
-    resolver: zodResolver(roadmapItemSchema),
-    defaultValues: { title: "", description: "", yearTarget: new Date().getFullYear(), phase: "short_term", status: "planned", order: 0 },
-  });
+  const closeDialog = () => { setOpen(false); setEditingId(null); setForm(emptyForm()); };
+  const openCreate = (phase: Phase = "short_term") => { setForm(emptyForm(phase)); setEditingId(null); setOpen(true); };
 
-  const onSubmit = (data: RoadmapItemFormValues) => {
-    const payload = { ...data, description: data.description || null };
-    if (editingItemId) {
-      updateRoadmapItem.mutate({ id: editingItemId, data: payload });
+  const openEdit = (item: RoadmapItem) => {
+    const parsed = parseDescription(item.description);
+    if (parsed && isStructured(parsed)) {
+      setForm({
+        title: item.title,
+        yearTarget: String(item.yearTarget),
+        phase: item.phase,
+        status: item.status,
+        focusOn: parsed.focusOn,
+        responsibilities: parsed.responsibilities,
+        skills: parsed.skills,
+        skillDraft: "",
+        level: parsed.level,
+        progress: parsed.progress,
+      });
     } else {
-      createRoadmapItem.mutate(payload);
+      setForm({
+        title: item.title,
+        yearTarget: String(item.yearTarget),
+        phase: item.phase,
+        status: item.status,
+        focusOn: parsed && "legacy" in parsed ? parsed.legacy : "",
+        responsibilities: [],
+        skills: [],
+        skillDraft: "",
+        level: 1,
+        progress: item.status === "completed" ? 100 : item.status === "in_progress" ? 50 : 0,
+      });
+    }
+    setEditingId(item.id);
+    setOpen(true);
+  };
+
+  const addResponsibility = () =>
+    setForm((f) => ({ ...f, responsibilities: [...f.responsibilities, ""] }));
+
+  const updateResponsibility = (index: number, value: string) =>
+    setForm((f) => ({
+      ...f,
+      responsibilities: f.responsibilities.map((r, i) => (i === index ? value : r)),
+    }));
+
+  const removeResponsibility = (index: number) =>
+    setForm((f) => ({ ...f, responsibilities: f.responsibilities.filter((_, i) => i !== index) }));
+
+  const addSkill = (raw: string) => {
+    const skill = raw.trim().replace(/,$/, "");
+    if (!skill) return;
+    if (form.skills.some((s) => s.toLowerCase() === skill.toLowerCase())) {
+      setForm((f) => ({ ...f, skillDraft: "" }));
+      return;
+    }
+    setForm((f) => ({ ...f, skills: [...f.skills, skill], skillDraft: "" }));
+  };
+
+  const onSkillKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addSkill(form.skillDraft);
+    } else if (e.key === "Backspace" && !form.skillDraft && form.skills.length) {
+      setForm((f) => ({ ...f, skills: f.skills.slice(0, -1) }));
     }
   };
 
-  const handleEdit = (item: RoadmapItem) => {
-    form.reset({ title: item.title, description: item.description || "", yearTarget: item.yearTarget, phase: item.phase as RoadmapItemFormValues["phase"], status: item.status as RoadmapItemFormValues["status"], order: item.order });
-    setEditingItemId(item.id);
+  const submit = () => {
+    if (!form.title.trim()) {
+      toast({ title: "Target role is required", variant: "destructive" });
+      return;
+    }
+    const description: StructuredDescription = {
+      v: 2,
+      focusOn: form.focusOn.trim(),
+      responsibilities: form.responsibilities.map((r) => r.trim()).filter(Boolean),
+      skills: form.skills,
+      level: form.level,
+      progress: form.progress,
+    };
+    const payload = {
+      title: form.title.trim(),
+      yearTarget: Number(form.yearTarget) || new Date().getFullYear(),
+      phase: form.phase,
+      status: form.status,
+      description,
+      order: 0,
+    };
+    if (editingId) updateItem.mutate({ id: editingId, data: payload });
+    else createItem.mutate(payload);
   };
 
-  const getStatusIcon = (status: string) => {
-    if (status === "completed") return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-    if (status === "in_progress") return <Clock className="h-5 w-5 text-blue-500" />;
-    return <Circle className="h-5 w-5 text-slate-300 dark:text-slate-600" />;
-  };
-
-  const itemsByPhase = (roadmapItems ?? []).reduce((acc, item) => {
-    if (!acc[item.phase]) acc[item.phase] = [];
-    acc[item.phase].push(item);
-    return acc;
-  }, {} as Record<string, RoadmapItem[]>);
-
-  Object.keys(itemsByPhase).forEach(phase => {
-    itemsByPhase[phase].sort((a, b) => a.yearTarget !== b.yearTarget ? a.yearTarget - b.yearTarget : a.order - b.order);
-  });
-
-  const isOpen = isCreateOpen || editingItemId !== null;
+  const itemsByPhase = useMemo(() => {
+    const buckets: Record<Phase, RoadmapItem[]> = { short_term: [], mid_term: [], long_term: [] };
+    for (const item of items) buckets[item.phase]?.push(item);
+    for (const phase of Object.keys(buckets) as Phase[]) {
+      buckets[phase].sort((a, b) => a.yearTarget - b.yearTarget || a.order - b.order);
+    }
+    return buckets;
+  }, [items]);
 
   return (
-    <div className="space-y-8 page-enter max-w-4xl mx-auto">
+    <div className="space-y-8 page-enter">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Career Roadmap</h1>
-          <p className="text-muted-foreground mt-1">Your 10-year path to mastery.</p>
+          <p className="text-muted-foreground mt-1">Your structured path across short, mid, and long-term horizons.</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setIsCreateOpen(false); setEditingItemId(null); form.reset(); } else { setIsCreateOpen(true); form.setValue("phase", activePhase); } }}>
+        <Dialog open={open} onOpenChange={(v) => (v ? (editingId ? null : openCreate()) : closeDialog())}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" />Add Milestone</Button>
+            <Button onClick={() => openCreate()} className="gap-2"><Plus className="h-4 w-4" />Add Milestone</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader><DialogTitle>{editingItemId ? "Edit Milestone" : "Add Milestone"}</DialogTitle></DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                <FormField control={form.control} name="title" render={({ field }) => (
-                  <FormItem><FormLabel>Title</FormLabel><FormControl><Input placeholder="e.g. Master Deep Learning" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="phase" render={({ field }) => (
-                    <FormItem><FormLabel>Phase</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="short_term">Short Term (1-2y)</SelectItem>
-                          <SelectItem value="mid_term">Mid Term (3-5y)</SelectItem>
-                          <SelectItem value="long_term">Long Term (6-10y)</SelectItem>
-                        </SelectContent>
-                      </Select><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={form.control} name="yearTarget" render={({ field }) => (
-                    <FormItem><FormLabel>Target Year</FormLabel><FormControl><Input type="number" placeholder="2025" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Edit Milestone" : "Add Milestone"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Target Role</label>
+                  <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Senior ML Engineer" />
                 </div>
-                <FormField control={form.control} name="status" render={({ field }) => (
-                  <FormItem><FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Details about this milestone..." className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={createRoadmapItem.isPending || updateRoadmapItem.isPending}>
-                    {(createRoadmapItem.isPending || updateRoadmapItem.isPending) ? "Saving..." : "Save Milestone"}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Target Year</label>
+                  <Input type="number" value={form.yearTarget} onChange={(e) => setForm((f) => ({ ...f, yearTarget: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Phase</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PHASES.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, phase: p.id }))}
+                      className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                        form.phase === p.id ? `${p.pill} border-transparent` : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Level</label>
+                  <span className="text-sm font-medium text-primary">Level {form.level} · {LEVEL_LABELS[form.level - 1]}</span>
+                </div>
+                <Slider value={[form.level]} onValueChange={([v]) => setForm((f) => ({ ...f, level: v }))} min={1} max={5} step={1} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Focus On</label>
+                <Textarea
+                  rows={2}
+                  value={form.focusOn}
+                  onChange={(e) => setForm((f) => ({ ...f, focusOn: e.target.value }))}
+                  placeholder="Short summary of what to focus on in this role."
+                  className="resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Key Responsibilities</label>
+                  <Button type="button" variant="ghost" size="sm" onClick={addResponsibility} className="gap-1 h-7">
+                    <Plus className="h-3.5 w-3.5" />Add
                   </Button>
                 </div>
-              </form>
-            </Form>
+                <div className="space-y-2">
+                  {form.responsibilities.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No responsibilities yet.</p>
+                  )}
+                  {form.responsibilities.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input value={r} onChange={(e) => updateResponsibility(i, e.target.value)} placeholder={`Responsibility ${i + 1}`} />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeResponsibility(i)} className="h-9 w-9 text-muted-foreground hover:text-destructive">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Skills / Technologies</label>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-md border bg-background p-2 min-h-[44px]">
+                  {form.skills.map((skill) => (
+                    <Badge key={skill} variant="secondary" className="gap-1 pl-2.5 pr-1">
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, skills: f.skills.filter((s) => s !== skill) }))}
+                        className="hover:bg-muted rounded p-0.5"
+                        aria-label={`Remove ${skill}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <input
+                    value={form.skillDraft}
+                    onChange={(e) => setForm((f) => ({ ...f, skillDraft: e.target.value }))}
+                    onKeyDown={onSkillKeyDown}
+                    onBlur={() => addSkill(form.skillDraft)}
+                    placeholder="Type a skill, press Enter"
+                    className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Progress</label>
+                  <span className="text-sm font-medium text-primary">{form.progress}%</span>
+                </div>
+                <Slider value={[form.progress]} onValueChange={([v]) => setForm((f) => ({ ...f, progress: v }))} min={0} max={100} step={5} />
+              </div>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button onClick={submit} disabled={createItem.isPending || updateItem.isPending}>
+                {(createItem.isPending || updateItem.isPending) ? "Saving..." : "Save Milestone"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex space-x-1 p-1 bg-muted rounded-lg w-full mb-8">
-        {phases.map((phase) => (
-          <button key={phase.id} onClick={() => setActivePhase(phase.id)}
-            className={`flex-1 flex items-center justify-center py-2.5 px-4 text-sm font-medium rounded-md transition-all ${activePhase === phase.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"}`}>
-            {phase.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-card border rounded-xl p-6 shadow-sm">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground">{phases.find(p => p.id === activePhase)?.label}</h2>
-          <p className="text-muted-foreground">{phases.find(p => p.id === activePhase)?.description}</p>
-        </div>
-        {isLoading ? (
-          <div className="space-y-6">{[1, 2, 3].map(i => <div key={i} className="flex gap-4"><Skeleton className="h-6 w-6 rounded-full shrink-0" /><Skeleton className="h-24 w-full rounded-xl" /></div>)}</div>
-        ) : itemsByPhase[activePhase]?.length > 0 ? (
-          <div className="relative">
-            <div className="absolute top-4 left-[11px] bottom-4 w-0.5 bg-border -z-10" />
-            <div className="space-y-8">
-              {itemsByPhase[activePhase].map((item) => (
-                <div key={item.id} className="flex gap-4 group">
-                  <div className="mt-1 bg-card rounded-full ring-4 ring-card">{getStatusIcon(item.status)}</div>
-                  <div className="flex-1 border rounded-lg p-4 bg-background shadow-sm hover:border-primary/30 transition-colors relative">
-                    <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { if (confirm("Delete this milestone?")) deleteRoadmapItem.mutate(item.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </div>
-                    <Badge variant="secondary" className="mb-2 bg-primary/10 text-primary hover:bg-primary/20 font-medium">Target: {item.yearTarget}</Badge>
-                    <h3 className="text-lg font-semibold mb-1 pr-16">{item.title}</h3>
-                    {item.description && <p className="text-muted-foreground text-sm leading-relaxed mt-2">{item.description}</p>}
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {PHASES.map((phase) => {
+          const list = itemsByPhase[phase.id];
+          return (
+            <div key={phase.id} className="rounded-xl border bg-card/60 p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex h-7 items-center px-2.5 rounded-full text-xs font-semibold ${phase.pill}`}>
+                    {phase.label}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                    {list.length}
+                  </span>
                 </div>
-              ))}
+                <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => openCreate(phase.id)}>
+                  <Plus className="h-3.5 w-3.5" />Add
+                </Button>
+              </div>
+
+              {isLoading ? (
+                <div className="space-y-3">{[1, 2].map(i => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}</div>
+              ) : list.length > 0 ? (
+                <div className="space-y-3">
+                  {list.map((item, index) => (
+                    <RoadmapCard
+                      key={item.id}
+                      item={item}
+                      phase={phase}
+                      index={index}
+                      onEdit={() => openEdit(item)}
+                      onDelete={() => { if (confirm("Delete this milestone?")) deleteItem.mutate(item.id); }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center text-sm text-muted-foreground border-2 border-dashed rounded-lg flex-1">
+                  <MapIcon className="h-6 w-6 mb-2 opacity-60" />
+                  <p>No milestones yet.</p>
+                  <Button variant="link" size="sm" onClick={() => openCreate(phase.id)} className="mt-1">Add the first one</Button>
+                </div>
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl bg-muted/10">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4"><MapIcon className="h-6 w-6" /></div>
-            <h3 className="text-lg font-semibold mb-2">No milestones in this phase</h3>
-            <p className="text-muted-foreground text-sm max-w-sm mb-6">Plan out the key achievements you need to reach your career goals during this time period.</p>
-            <Button onClick={() => { form.setValue("phase", activePhase); setIsCreateOpen(true); }} className="gap-2"><Plus className="h-4 w-4" />Add First Milestone</Button>
-          </div>
-        )}
+          );
+        })}
       </div>
     </div>
+  );
+}
+
+function RoadmapCard({
+  item, phase, index, onEdit, onDelete,
+}: {
+  item: RoadmapItem;
+  phase: typeof PHASES[number];
+  index: number;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const parsed = parseDescription(item.description);
+  const structured = isStructured(parsed) ? parsed : null;
+  const legacyText = parsed && "legacy" in parsed ? parsed.legacy : null;
+  const progress = structured?.progress ?? (item.status === "completed" ? 100 : item.status === "in_progress" ? 50 : 0);
+  const level = structured?.level ?? 1;
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, delay: Math.min(index * 0.05, 0.3) }}
+      className="rounded-lg border bg-background p-4 group relative transition-all hover:border-primary/40 hover:shadow-md"
+    >
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={onEdit}><Pencil className="h-3.5 w-3.5" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 pr-16">
+        <Badge variant="outline" className={`border-none ${phase.pill}`}>{phase.short}</Badge>
+        <Badge variant="outline" className="font-medium">{item.yearTarget}</Badge>
+        <Badge variant="outline" className="font-medium">Level {level} · {LEVEL_LABELS[level - 1]}</Badge>
+      </div>
+
+      <h3 className="mt-2 text-[15px] font-semibold leading-tight">{item.title}</h3>
+
+      {structured?.focusOn && (
+        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{structured.focusOn}</p>
+      )}
+      {!structured && legacyText && (
+        <p className="text-sm text-muted-foreground mt-1 leading-relaxed line-clamp-3">{legacyText}</p>
+      )}
+
+      <div className="mt-3 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground font-medium">Progress</span>
+          <span className="font-medium">{progress}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {structured?.responsibilities && structured.responsibilities.length > 0 && (
+        <div className="mt-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Key Responsibilities</h4>
+          <ul className="space-y-1">
+            {structured.responsibilities.map((r, i) => (
+              <li key={i} className="flex gap-2 text-sm text-foreground/90">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0" />
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {structured?.skills && structured.skills.length > 0 && (
+        <div className="mt-3 pt-3 border-t flex flex-wrap gap-1.5">
+          {structured.skills.map((skill) => (
+            <span key={skill} className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 font-medium">
+              {skill}
+            </span>
+          ))}
+        </div>
+      )}
+    </motion.article>
   );
 }
