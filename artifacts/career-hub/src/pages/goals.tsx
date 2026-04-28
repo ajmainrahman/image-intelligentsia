@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, Map as MapIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Goal = {
@@ -23,6 +23,18 @@ type Goal = {
   status: "active" | "completed" | "paused";
   targetYear: number | null;
   createdAt: string;
+};
+
+type ProgressEntry = {
+  id: number;
+  goalId: number | null;
+  status: string;
+};
+
+type RoadmapItem = {
+  id: number;
+  goalId: number | null;
+  status: string;
 };
 
 type GoalFormState = {
@@ -51,16 +63,29 @@ const emptyForm = (): GoalFormState => ({
 
 const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
+const MAX_DESC = 1000;
+
 export default function GoalsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<GoalFormState>(emptyForm);
+  const [expandedDesc, setExpandedDesc] = useState<Set<number>>(new Set());
 
   const { data: goals, isLoading } = useQuery<Goal[]>({
     queryKey: ["goals"],
     queryFn: () => api<Goal[]>("/goals"),
+  });
+
+  const { data: progressEntries = [] } = useQuery<ProgressEntry[]>({
+    queryKey: ["progress"],
+    queryFn: () => api<ProgressEntry[]>("/progress"),
+  });
+
+  const { data: roadmapItems = [] } = useQuery<RoadmapItem[]>({
+    queryKey: ["roadmap"],
+    queryFn: () => api<RoadmapItem[]>("/roadmap"),
   });
 
   const createGoal = useMutation({
@@ -143,6 +168,27 @@ export default function GoalsPage() {
     else createGoal.mutate(payload);
   };
 
+  const toggleDesc = (id: number) => {
+    setExpandedDesc((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const getGoalStats = (goalId: number) => {
+    const linkedProgress = progressEntries.filter((e) => e.goalId === goalId);
+    const linkedRoadmap = roadmapItems.filter((r) => r.goalId === goalId);
+    const completedProgress = linkedProgress.filter((e) => e.status === "completed").length;
+    const completedRoadmap = linkedRoadmap.filter((r) => r.status === "completed").length;
+    return {
+      progressTotal: linkedProgress.length,
+      progressDone: completedProgress,
+      roadmapTotal: linkedRoadmap.length,
+      roadmapDone: completedRoadmap,
+    };
+  };
+
   const sortedGoals = useMemo(() => {
     return [...(goals ?? [])].sort((a, b) => {
       const rank = STATUS_META[a.status].rank - STATUS_META[b.status].rank;
@@ -172,7 +218,6 @@ export default function GoalsPage() {
             </Button>
           </DialogTrigger>
 
-          {/* Dialog */}
           <DialogContent className="sm:max-w-[520px] rounded-2xl p-8">
             <DialogHeader className="mb-1">
               <DialogTitle className="text-[20px]" style={serif}>
@@ -228,13 +273,18 @@ export default function GoalsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Description</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[12px] font-medium text-muted-foreground">Description</label>
+                  <span className={`text-[11px] ${form.description.length > MAX_DESC * 0.9 ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {form.description.length}/{MAX_DESC}
+                  </span>
+                </div>
                 <Textarea
                   value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Why does this goal matter to you?"
-                  className="resize-none bg-secondary border-border text-[13px]"
-                  rows={3}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value.slice(0, MAX_DESC) }))}
+                  placeholder="Why does this goal matter to you? What does success look like?"
+                  className="bg-secondary border-border text-[13px] min-h-[120px] resize-y"
+                  rows={5}
                 />
               </div>
 
@@ -242,16 +292,9 @@ export default function GoalsPage() {
                 <label className="text-[12px] font-medium text-muted-foreground">Skills</label>
                 <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-secondary p-2 min-h-[44px]">
                   {form.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary"
-                    >
+                    <span key={skill} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">
                       {skill}
-                      <button
-                        type="button"
-                        onClick={() => removeSkill(skill)}
-                        className="hover:text-foreground transition-colors"
-                      >
+                      <button type="button" onClick={() => removeSkill(skill)} className="hover:text-foreground transition-colors">
                         <X className="h-2.5 w-2.5" />
                       </button>
                     </span>
@@ -299,6 +342,9 @@ export default function GoalsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {sortedGoals.map((goal, index) => {
             const meta = STATUS_META[goal.status];
+            const stats = getGoalStats(goal.id);
+            const isExpanded = expandedDesc.has(goal.id);
+            const descLong = (goal.description?.length ?? 0) > 120;
             return (
               <motion.div
                 key={goal.id}
@@ -321,9 +367,7 @@ export default function GoalsPage() {
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       {goal.targetYear && (
-                        <span className="text-[11px] text-muted-foreground">
-                          {goal.targetYear}
-                        </span>
+                        <span className="text-[11px] text-muted-foreground">{goal.targetYear}</span>
                       )}
                       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -342,19 +386,49 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-[13px] text-muted-foreground line-clamp-2 mb-4 flex-1">
-                    {goal.description || "No description added yet."}
-                  </p>
+                  {/* Description with expand/collapse */}
+                  {goal.description && (
+                    <div className="mb-4">
+                      <p className={`text-[13px] text-muted-foreground leading-relaxed ${!isExpanded && descLong ? "line-clamp-2" : ""}`}>
+                        {goal.description}
+                      </p>
+                      {descLong && (
+                        <button
+                          onClick={() => toggleDesc(goal.id)}
+                          className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1"
+                        >
+                          {isExpanded ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Read more</>}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {!goal.description && (
+                    <p className="text-[13px] text-muted-foreground mb-4 flex-1">No description added yet.</p>
+                  )}
+
+                  {/* Linked stats */}
+                  {(stats.progressTotal > 0 || stats.roadmapTotal > 0) && (
+                    <div className="flex gap-3 mb-4">
+                      {stats.progressTotal > 0 && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary rounded-lg px-2.5 py-1.5">
+                          <BookOpen className="h-3 w-3 text-primary" />
+                          <span>{stats.progressDone}/{stats.progressTotal} learning</span>
+                        </div>
+                      )}
+                      {stats.roadmapTotal > 0 && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary rounded-lg px-2.5 py-1.5">
+                          <MapIcon className="h-3 w-3 text-primary" />
+                          <span>{stats.roadmapDone}/{stats.roadmapTotal} milestones</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Skills */}
                   {goal.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {goal.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary"
-                        >
+                        <span key={skill} className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">
                           {skill}
                         </span>
                       ))}
@@ -388,12 +462,8 @@ export default function GoalsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
-          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>
-            No goals defined yet
-          </p>
-          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">
-            Start by setting a long-term career objective.
-          </p>
+          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>No goals defined yet</p>
+          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Start by setting a long-term career objective.</p>
           <Button onClick={openCreate} className="gap-2 text-[13px]">
             <Plus className="h-3.5 w-3.5" />
             Create first goal
