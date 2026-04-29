@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { CalendarDays } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarDays, Pencil, X, Check, Plus } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 type Summary = {
   totalGoals: number;
@@ -41,6 +44,14 @@ type Reminder = {
   createdAt: string;
 };
 
+type Profile = {
+  tagline: string;
+  about: string;
+  expertise: string[];
+  skills: string[];
+  interests: string[];
+};
+
 type ActivityMeta = { label: string };
 
 const ACTIVITY_META: Record<ActivityItem["type"], ActivityMeta> = {
@@ -60,6 +71,245 @@ const FILTERS: { id: "all" | ActivityItem["type"]; label: string }[] = [
   { id: "reminder", label: "Reminders" },
   { id: "note",     label: "Notes" },
 ];
+
+const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
+
+const emptyProfile = (): Profile => ({
+  tagline: "", about: "", expertise: [], skills: [], interests: [],
+});
+
+function TagInput({
+  values,
+  onChange,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (v: string[]) => void;
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = (raw: string) => {
+    const val = raw.trim().replace(/,$/, "");
+    if (!val) return;
+    if (values.some((v) => v.toLowerCase() === val.toLowerCase())) { setDraft(""); return; }
+    onChange([...values, val]);
+    setDraft("");
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(draft); }
+    else if (e.key === "Backspace" && !draft && values.length) onChange(values.slice(0, -1));
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-secondary p-2 min-h-[40px]">
+      {values.map((v) => (
+        <span key={v} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">
+          {v}
+          <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:text-foreground transition-colors">
+            <X className="h-2.5 w-2.5" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={onKeyDown}
+        onBlur={() => add(draft)}
+        placeholder={values.length === 0 ? placeholder : "Add more…"}
+        className="flex-1 min-w-[120px] bg-transparent outline-none text-[13px] text-foreground placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
+
+function ProfileSection() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Profile>(emptyProfile());
+
+  const { data: profile, isLoading } = useQuery<Profile>({
+    queryKey: ["profile"],
+    queryFn: () => api<Profile>("/profile"),
+  });
+
+  const saveProfile = useMutation({
+    mutationFn: (data: Profile) => api("/profile", { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      setEditing(false);
+      toast({ title: "Profile saved" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const startEdit = () => {
+    setForm({
+      tagline: profile?.tagline ?? "",
+      about: profile?.about ?? "",
+      expertise: profile?.expertise ?? [],
+      skills: profile?.skills ?? [],
+      interests: profile?.interests ?? [],
+    });
+    setEditing(true);
+  };
+
+  const hasContent = profile && (
+    profile.tagline || profile.about ||
+    profile.expertise.length > 0 ||
+    profile.skills.length > 0 ||
+    profile.interests.length > 0
+  );
+
+  if (isLoading) {
+    return <Skeleton className="h-48 w-full rounded-2xl" />;
+  }
+
+  if (!editing && !hasContent) {
+    return (
+      <div className="bg-card border border-dashed border-border rounded-2xl p-6 flex items-center justify-between">
+        <div>
+          <p className="text-[15px] font-medium text-foreground" style={serif}>Set up your profile</p>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Add your expertise, skills and interests.</p>
+        </div>
+        <Button onClick={startEdit} className="gap-2 text-[13px]">
+          <Plus className="h-3.5 w-3.5" /> Add Profile
+        </Button>
+      </div>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] text-foreground" style={serif}>Edit Profile</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditing(false)} className="text-[12px]">Cancel</Button>
+            <Button size="sm" onClick={() => saveProfile.mutate(form)} disabled={saveProfile.isPending} className="gap-1.5 text-[12px]">
+              <Check className="h-3.5 w-3.5" />
+              {saveProfile.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-medium text-muted-foreground">Tagline</label>
+          <Input
+            value={form.tagline}
+            onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
+            placeholder="e.g. ML Engineer passionate about Computer Vision"
+            className="bg-secondary border-border text-[13px]"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-medium text-muted-foreground">About</label>
+          <Textarea
+            value={form.about}
+            onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))}
+            placeholder="A short summary about your background, what you're working on, and where you're headed…"
+            className="resize-y bg-secondary border-border text-[13px] min-h-[100px]"
+            rows={4}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-medium text-muted-foreground">Expertise</label>
+          <TagInput
+            values={form.expertise}
+            onChange={(v) => setForm((f) => ({ ...f, expertise: v }))}
+            placeholder="e.g. Computer Vision, NLP… press Enter"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-medium text-muted-foreground">Skills</label>
+          <TagInput
+            values={form.skills}
+            onChange={(v) => setForm((f) => ({ ...f, skills: v }))}
+            placeholder="e.g. Python, PyTorch, Docker… press Enter"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-medium text-muted-foreground">Interests</label>
+          <TagInput
+            values={form.interests}
+            onChange={(v) => setForm((f) => ({ ...f, interests: v }))}
+            placeholder="e.g. Robotics, Open Source… press Enter"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      className="bg-card border border-border rounded-2xl p-6"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          {profile?.tagline && (
+            <p className="text-[15px] font-medium text-foreground leading-snug">{profile.tagline}</p>
+          )}
+          {profile?.about && (
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed max-w-2xl">{profile.about}</p>
+          )}
+        </div>
+        <button
+          onClick={startEdit}
+          className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-4"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {profile?.expertise && profile.expertise.length > 0 && (
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Expertise</p>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.expertise.map((e) => (
+                <span key={e} className="text-[12px] px-3 py-1 rounded-full bg-primary text-primary-foreground font-medium">
+                  {e}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {profile?.skills && profile.skills.length > 0 && (
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Skills</p>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.skills.map((s) => (
+                <span key={s} className="text-[12px] px-3 py-1 rounded-full bg-accent text-primary">
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {profile?.interests && profile.interests.length > 0 && (
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Interests</p>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.interests.map((i) => (
+                <span key={i} className="text-[12px] px-3 py-1 rounded-full bg-secondary text-muted-foreground border border-border">
+                  {i}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function Dashboard() {
   const [filter, setFilter] = useState<typeof FILTERS[number]["id"]>("all");
@@ -99,14 +349,11 @@ export default function Dashboard() {
       : 0;
 
   return (
-    <div className="space-y-10 page-enter">
+    <div className="space-y-8 page-enter">
 
       {/* Page header */}
       <div>
-        <h1
-          className="text-[28px] text-foreground leading-tight"
-          style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-        >
+        <h1 className="text-[28px] text-foreground leading-tight" style={serif}>
           Your overview
         </h1>
         <p className="text-[14px] text-muted-foreground mt-1.5">
@@ -114,31 +361,25 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stat cards — 2 column */}
+      {/* Profile Overview */}
+      <ProfileSection />
+
+      {/* Stat cards */}
       {isLoadingSummary ? (
         <div className="grid grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
-          ))}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
         </div>
       ) : summary ? (
         <div className="grid grid-cols-2 gap-4">
           {[
-            { label: "Active goals",       value: summary.activeGoals,        hint: `of ${summary.totalGoals} total` },
-            { label: "Learning completed", value: summary.progressCompleted,  hint: `${summary.progressInProgress} in progress` },
-            { label: "Jobs applied",       value: summary.appliedJobs,        hint: `of ${summary.totalJobs} saved` },
-            { label: "Pending reminders",  value: summary.pendingReminders,   hint: "awaiting action" },
+            { label: "Active goals",       value: summary.activeGoals,       hint: `of ${summary.totalGoals} total` },
+            { label: "Learning completed", value: summary.progressCompleted, hint: `${summary.progressInProgress} in progress` },
+            { label: "Jobs applied",       value: summary.appliedJobs,       hint: `of ${summary.totalJobs} saved` },
+            { label: "Pending reminders",  value: summary.pendingReminders,  hint: "awaiting action" },
           ].map((stat) => (
             <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                {stat.label}
-              </p>
-              <p
-                className="text-[28px] text-foreground leading-none"
-                style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-              >
-                {stat.value}
-              </p>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
+              <p className="text-[28px] text-foreground leading-none" style={serif}>{stat.value}</p>
               <p className="text-[12px] text-muted-foreground mt-1.5">{stat.hint}</p>
             </div>
           ))}
@@ -153,31 +394,21 @@ export default function Dashboard() {
           <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2
-                  className="text-[17px] text-foreground"
-                  style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-                >
-                  Recent activity
-                </h2>
-                <p className="text-[12px] text-muted-foreground mt-0.5">
-                  Last 20 events across the app
-                </p>
+                <h2 className="text-[17px] text-foreground" style={serif}>Recent activity</h2>
+                <p className="text-[12px] text-muted-foreground mt-0.5">Last 20 events across the app</p>
               </div>
               <Link href="/activity" className="text-[12px] text-primary hover:underline underline-offset-2">
                 View all
               </Link>
             </div>
 
-            {/* Filter pills */}
             <div className="flex flex-wrap gap-1.5 mb-6">
               {FILTERS.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   className={`px-3 py-1 text-[12px] font-medium rounded-full transition-colors ${
-                    filter === f.id
-                      ? "bg-accent text-primary"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                    filter === f.id ? "bg-accent text-primary" : "bg-secondary text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {f.label}
@@ -185,11 +416,8 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Timeline */}
             {isLoadingActivity ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
+              <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : filteredActivity.length > 0 ? (
               <ol className="relative border-l border-border pl-6 space-y-5">
                 <AnimatePresence initial={false}>
@@ -206,9 +434,7 @@ export default function Dashboard() {
                       >
                         <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full bg-primary/40 ring-2 ring-background" />
                         <div className="flex items-baseline gap-2.5">
-                          <span className="text-[11px] font-medium text-primary uppercase tracking-wide">
-                            {meta.label}
-                          </span>
+                          <span className="text-[11px] font-medium text-primary uppercase tracking-wide">{meta.label}</span>
                           <span className="text-[11px] text-muted-foreground">
                             {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                           </span>
@@ -232,12 +458,7 @@ export default function Dashboard() {
 
           {/* Reminder */}
           <div className="bg-card border border-border rounded-2xl p-5">
-            <h2
-              className="text-[15px] text-foreground mb-4"
-              style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-            >
-              Don't forget
-            </h2>
+            <h2 className="text-[15px] text-foreground mb-4" style={serif}>Don't forget</h2>
             {isLoadingReminders ? (
               <Skeleton className="h-20 w-full rounded-xl" />
             ) : recentReminder ? (
@@ -247,12 +468,8 @@ export default function Dashboard() {
                   <p className="text-[12px] text-muted-foreground line-clamp-2">{recentReminder.description}</p>
                 )}
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
-                  <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
-                    {recentReminder.category}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-accent text-primary capitalize">
-                    {recentReminder.priority} priority
-                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">{recentReminder.category}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-accent text-primary capitalize">{recentReminder.priority} priority</span>
                   {recentReminder.dueDate && (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                       <CalendarDays className="h-3 w-3" />
@@ -271,16 +488,9 @@ export default function Dashboard() {
 
           {/* Top skills */}
           <div className="bg-card border border-border rounded-2xl p-5">
-            <h2
-              className="text-[15px] text-foreground mb-4"
-              style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-            >
-              Skills in demand
-            </h2>
+            <h2 className="text-[15px] text-foreground mb-4" style={serif}>Skills in demand</h2>
             {isLoadingSkills ? (
-              <div className="space-y-2.5">
-                {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-7 w-full" />)}
-              </div>
+              <div className="space-y-2.5">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
             ) : skills && skills.length > 0 ? (
               <div className="space-y-2">
                 {skills.slice(0, 6).map((skill, index) => (
@@ -289,9 +499,7 @@ export default function Dashboard() {
                       <span className="text-[11px] text-muted-foreground w-4 text-right">{index + 1}</span>
                       <span className="text-[13px] text-foreground capitalize">{skill.skill}</span>
                     </div>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">
-                      {skill.count}
-                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">{skill.count}</span>
                   </div>
                 ))}
               </div>
@@ -303,20 +511,12 @@ export default function Dashboard() {
           {/* Roadmap progress */}
           {summary && (
             <div className="bg-card border border-border rounded-2xl p-5">
-              <h2
-                className="text-[15px] text-foreground mb-1"
-                style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
-              >
-                Roadmap progress
-              </h2>
+              <h2 className="text-[15px] text-foreground mb-1" style={serif}>Roadmap progress</h2>
               <p className="text-[12px] text-muted-foreground mb-4">
                 {summary.roadmapCompleted} of {summary.roadmapTotal} milestones complete
               </p>
               <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-700"
-                  style={{ width: `${roadmapPct}%` }}
-                />
+                <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${roadmapPct}%` }} />
               </div>
               <p className="text-[11px] text-muted-foreground mt-2 text-right">{roadmapPct}%</p>
             </div>
