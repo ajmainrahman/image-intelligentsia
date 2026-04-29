@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 
 export const roadmapTable = pgTable("roadmap_items", {
   id: serial("id").primaryKey(),
@@ -10,6 +10,9 @@ export const roadmapTable = pgTable("roadmap_items", {
   status: text("status").notNull().default("planned"),
   goalId: integer("goal_id"),
   order: integer("order").notNull().default(0),
+  pinned: boolean("pinned").notNull().default(false),
+  archived: boolean("archived").notNull().default(false),
+  reflection: text("reflection"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
