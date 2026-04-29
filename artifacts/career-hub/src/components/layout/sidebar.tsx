@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/contexts/theme-context";
 import {
   LayoutDashboard,
   Target,
@@ -11,6 +12,9 @@ import {
   NotebookPen,
   Activity as ActivityIcon,
   LogOut,
+  Sun,
+  Moon,
+  CalendarCheck,
 } from "lucide-react";
 
 const navSections = [
@@ -19,6 +23,7 @@ const navSections = [
     items: [
       { href: "/", label: "Overview", icon: LayoutDashboard },
       { href: "/activity", label: "Activity", icon: ActivityIcon },
+      { href: "/weekly-review", label: "Weekly Review", icon: CalendarCheck },
     ],
   },
   {
@@ -42,19 +47,20 @@ const navSections = [
 export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-56 flex flex-col border-r border-border bg-card">
+    <aside className="fixed inset-y-0 left-0 w-56 flex flex-col border-r border-sidebar-border bg-sidebar z-30">
 
       {/* Brand */}
-      <div className="px-6 pt-7 pb-6 border-b border-border">
+      <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
         <span
-          className="text-[19px] text-foreground leading-none tracking-tight"
+          className="text-[19px] text-sidebar-foreground leading-none tracking-tight"
           style={{ fontFamily: "'DM Serif Display', serif" }}
         >
           Intelligentsia
         </span>
-        <p className="text-[11px] text-muted-foreground mt-1.5 leading-none">
+        <p className="text-[11px] text-sidebar-foreground/50 mt-1.5 leading-none">
           Career dashboard
         </p>
       </div>
@@ -63,7 +69,7 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-5">
         {navSections.map((section) => (
           <div key={section.label}>
-            <p className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest px-3 mb-1.5">
+            <p className="text-[10px] font-medium text-sidebar-foreground/30 uppercase tracking-widest px-3 mb-1.5">
               {section.label}
             </p>
             <div className="space-y-0.5">
@@ -78,19 +84,19 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 relative group",
                       isActive
-                        ? "text-primary bg-accent font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        ? "text-sidebar-primary-foreground bg-sidebar-accent font-medium"
+                        : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
                     )}
                   >
                     {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-sidebar-primary rounded-r-full" />
                     )}
                     <item.icon
                       className={cn(
                         "h-3.5 w-3.5 shrink-0",
                         isActive
-                          ? "text-primary"
-                          : "text-muted-foreground/50 group-hover:text-muted-foreground"
+                          ? "text-sidebar-primary"
+                          : "text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60"
                       )}
                     />
                     {item.label}
@@ -102,23 +108,40 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* User + Sign out */}
-      <div className="px-4 py-5 border-t border-border space-y-3">
+      {/* Bottom controls */}
+      <div className="px-4 py-5 border-t border-sidebar-border space-y-3">
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
+          ) : (
+            <Moon className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
+          )}
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
+
+        {/* User info */}
         {user && (
           <div className="px-2">
-            <p className="text-[13px] font-medium text-foreground truncate">
+            <p className="text-[13px] font-medium text-sidebar-foreground truncate">
               {user.name}
             </p>
-            <p className="text-[11px] text-muted-foreground truncate">
+            <p className="text-[11px] text-sidebar-foreground/50 truncate">
               {user.email}
             </p>
           </div>
         )}
+
+        {/* Sign out */}
         <button
           onClick={logout}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-150 group"
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
         >
-          <LogOut className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground" />
+          <LogOut className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
           Sign out
         </button>
       </div>
