@@ -49,60 +49,60 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ── LIGHT MODE ── */
+/* ── LIGHT MODE — Warm Cream + Cocoa Sidebar ── */
 :root {
   --elevate-1: rgba(0,0,0,.02);
   --elevate-2: rgba(0,0,0,.05);
 
-  /* Warm white background */
-  --background: 40 25% 97%;
-  --foreground: 230 15% 12%;
-  --border: 230 15% 88%;
+  /* Warm cream page background */
+  --background: 38 35% 97%;
+  --foreground: 25 20% 12%;
+  --border: 30 20% 88%;
 
-  /* Cards */
+  /* Cards — pure warm white */
   --card: 0 0% 100%;
-  --card-foreground: 230 15% 12%;
+  --card-foreground: 25 20% 12%;
 
-  /* Sidebar — deep indigo/slate */
-  --sidebar: 230 35% 13%;
-  --sidebar-foreground: 220 20% 85%;
-  --sidebar-border: 230 30% 19%;
-  --sidebar-primary: 258 80% 70%;
-  --sidebar-primary-foreground: 258 100% 97%;
-  --sidebar-accent: 230 30% 20%;
-  --sidebar-accent-foreground: 220 20% 92%;
-  --sidebar-ring: 258 80% 70%;
+  /* Sidebar — rich cocoa/coffee brown */
+  --sidebar: 22 35% 14%;
+  --sidebar-foreground: 32 30% 82%;
+  --sidebar-border: 22 28% 20%;
+  --sidebar-primary: 35 85% 58%;
+  --sidebar-primary-foreground: 35 100% 97%;
+  --sidebar-accent: 22 28% 21%;
+  --sidebar-accent-foreground: 32 30% 90%;
+  --sidebar-ring: 35 85% 58%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 230 15% 12%;
+  --popover-foreground: 25 20% 12%;
 
-  /* Primary — vibrant indigo */
-  --primary: 258 80% 58%;
+  /* Primary — warm amber/golden */
+  --primary: 35 85% 52%;
   --primary-foreground: 0 0% 100%;
 
   /* Secondary */
-  --secondary: 230 20% 93%;
-  --secondary-foreground: 230 15% 22%;
+  --secondary: 32 25% 93%;
+  --secondary-foreground: 25 20% 22%;
 
   /* Muted */
-  --muted: 230 15% 92%;
-  --muted-foreground: 230 10% 46%;
+  --muted: 32 20% 91%;
+  --muted-foreground: 25 10% 46%;
 
-  /* Accent — soft indigo tint */
-  --accent: 258 60% 94%;
-  --accent-foreground: 258 70% 40%;
+  /* Accent — soft amber tint */
+  --accent: 35 70% 93%;
+  --accent-foreground: 35 80% 30%;
 
   --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 230 15% 91%;
-  --ring: 258 80% 58%;
+  --input: 32 20% 91%;
+  --ring: 35 85% 52%;
 
-  --chart-1: 258 80% 58%;
-  --chart-2: 258 60% 72%;
-  --chart-3: 37 55% 55%;
-  --chart-4: 160 50% 45%;
-  --chart-5: 16 70% 55%;
+  --chart-1: 35 85% 52%;
+  --chart-2: 22 70% 45%;
+  --chart-3: 160 45% 42%;
+  --chart-4: 200 60% 48%;
+  --chart-5: 0 65% 52%;
 
   --app-font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --app-font-serif: 'DM Serif Display', Georgia, ui-serif, serif;
@@ -112,54 +112,54 @@
   --radius: 0.75rem;
 }
 
-/* ── DARK MODE ── */
+/* ── DARK MODE — Dark Cocoa ── */
 .dark {
   --elevate-1: rgba(255,255,255,.03);
   --elevate-2: rgba(255,255,255,.07);
 
-  --background: 230 20% 8%;
-  --foreground: 220 20% 88%;
-  --border: 230 18% 18%;
+  --background: 22 20% 8%;
+  --foreground: 32 25% 88%;
+  --border: 22 18% 18%;
 
-  --card: 230 20% 11%;
-  --card-foreground: 220 20% 88%;
+  --card: 22 20% 11%;
+  --card-foreground: 32 25% 88%;
 
-  /* Sidebar — deeper indigo */
-  --sidebar: 240 35% 7%;
-  --sidebar-foreground: 220 18% 80%;
-  --sidebar-border: 235 28% 14%;
-  --sidebar-primary: 258 75% 68%;
-  --sidebar-primary-foreground: 258 100% 97%;
-  --sidebar-accent: 235 28% 15%;
-  --sidebar-accent-foreground: 220 18% 88%;
-  --sidebar-ring: 258 75% 68%;
+  /* Sidebar — espresso dark */
+  --sidebar: 20 30% 7%;
+  --sidebar-foreground: 32 22% 78%;
+  --sidebar-border: 22 25% 13%;
+  --sidebar-primary: 35 80% 62%;
+  --sidebar-primary-foreground: 35 100% 97%;
+  --sidebar-accent: 22 25% 14%;
+  --sidebar-accent-foreground: 32 22% 86%;
+  --sidebar-ring: 35 80% 62%;
 
-  --popover: 230 20% 11%;
-  --popover-foreground: 220 20% 88%;
+  --popover: 22 20% 11%;
+  --popover-foreground: 32 25% 88%;
 
-  --primary: 258 75% 68%;
+  --primary: 35 80% 58%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 230 18% 17%;
-  --secondary-foreground: 220 18% 85%;
+  --secondary: 22 18% 17%;
+  --secondary-foreground: 32 22% 82%;
 
-  --muted: 230 16% 15%;
-  --muted-foreground: 230 12% 52%;
+  --muted: 22 16% 15%;
+  --muted-foreground: 25 12% 52%;
 
-  --accent: 258 40% 18%;
-  --accent-foreground: 258 70% 78%;
+  --accent: 35 45% 18%;
+  --accent-foreground: 35 75% 72%;
 
   --destructive: 0 65% 48%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 230 18% 18%;
-  --ring: 258 75% 68%;
+  --input: 22 18% 18%;
+  --ring: 35 80% 58%;
 
-  --chart-1: 258 75% 68%;
-  --chart-2: 258 60% 78%;
-  --chart-3: 37 52% 58%;
-  --chart-4: 160 45% 52%;
-  --chart-5: 16 65% 60%;
+  --chart-1: 35 80% 58%;
+  --chart-2: 22 65% 50%;
+  --chart-3: 160 42% 50%;
+  --chart-4: 200 55% 55%;
+  --chart-5: 0 60% 56%;
 }
 
 @layer base {
@@ -192,7 +192,6 @@
   .font-brand { font-family: var(--app-font-brand); }
   .font-serif { font-family: 'DM Serif Display', Georgia, ui-serif, serif; }
 
-  /* Page transitions */
   @keyframes page-in {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -201,21 +200,18 @@
     animation: page-in 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
 
-  /* Fade in */
   @keyframes fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }
   }
   .fade-in { animation: fade-in 0.3s ease both; }
 
-  /* Slide up */
   @keyframes slide-up {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   .slide-up { animation: slide-up 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
 
-  /* Progress bar fill animation */
   @keyframes progress-fill {
     from { width: 0%; }
   }
@@ -223,7 +219,6 @@
     animation: progress-fill 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
 
-  /* Counter pop */
   @keyframes counter-pop {
     0%   { transform: scale(0.85); opacity: 0; }
     60%  { transform: scale(1.08); }
@@ -231,7 +226,6 @@
   }
   .counter-pop { animation: counter-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-  /* Shimmer for skeletons */
   @keyframes shimmer {
     from { background-position: -200% 0; }
     to   { background-position: 200% 0; }
@@ -247,46 +241,28 @@
     animation: shimmer 1.6s ease-in-out infinite;
   }
 
-  /* Card hover lift */
   .card-hover {
     transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   }
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.15);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--primary) / 0.25);
   }
 
-  /* Pill glow on hover */
-  .pill-glow:hover {
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
-  }
-
-  /* Gradient text */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(258 60% 72%));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(35 70% 68%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Sidebar gradient */
-  .sidebar-gradient {
-    background: linear-gradient(
-      160deg,
-      hsl(var(--sidebar)) 0%,
-      hsl(240 38% 10%) 100%
-    );
-  }
-
-  /* Glass card */
   .glass {
     background: hsl(var(--card) / 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Stagger children animations */
   .stagger-children > * {
     animation: slide-up 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
