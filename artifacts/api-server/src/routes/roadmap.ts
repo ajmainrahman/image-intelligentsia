@@ -24,6 +24,9 @@ const RoadmapBody = z.object({
   status: z.enum(["planned", "in_progress", "completed"]).default("planned"),
   goalId: z.number().int().nullable().optional(),
   order: z.number().int().default(0),
+  pinned: z.boolean().default(false),
+  archived: z.boolean().default(false),
+  reflection: z.string().nullable().optional(),
 });
 
 function normaliseDescription(raw: string | object | null | undefined): string | null {
@@ -86,6 +89,27 @@ router.delete("/roadmap/:id", requireAuth, async (req: AuthRequest, res, next): 
   } catch (err) { next(err); }
 });
 
+// PATCH for pin/archive/reflection without full body
+router.patch("/roadmap/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const patch = z.object({
+      pinned: z.boolean().optional(),
+      archived: z.boolean().optional(),
+      status: z.enum(["planned", "in_progress", "completed"]).optional(),
+      reflection: z.string().nullable().optional(),
+    }).safeParse(req.body);
+    if (!patch.success) { res.status(400).json({ error: patch.error.message }); return; }
+    const [item] = await db.update(roadmapTable)
+      .set({ ...patch.data, updatedAt: new Date() })
+      .where(and(eq(roadmapTable.id, id), eq(roadmapTable.userId, req.userId!)))
+      .returning();
+    if (!item) { res.status(404).json({ error: "Item not found" }); return; }
+    res.json(serializeRoadmapItem(item));
+  } catch (err) { next(err); }
+});
+
 function serializeRoadmapItem(r: typeof roadmapTable.$inferSelect) {
   return {
     id: r.id,
@@ -96,6 +120,9 @@ function serializeRoadmapItem(r: typeof roadmapTable.$inferSelect) {
     status: r.status,
     goalId: r.goalId,
     order: r.order,
+    pinned: r.pinned ?? false,
+    archived: r.archived ?? false,
+    reflection: r.reflection ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
