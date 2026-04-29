@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type ProgressEntry = {
@@ -23,7 +23,14 @@ type ProgressEntry = {
   resourceUrl: string | null;
   durationHours: number;
   completedAt: string | null;
+  goalId: number | null;
   createdAt: string;
+};
+
+type Goal = {
+  id: number;
+  title: string;
+  targetRole: string;
 };
 
 type FormState = {
@@ -35,6 +42,7 @@ type FormState = {
   resourceUrl: string;
   durationHours: string;
   completedAt: string;
+  goalId: string;
 };
 
 const CATEGORIES = [
@@ -59,9 +67,11 @@ const FILTER_TABS = [
   { id: "practice",      label: "Practice" },
 ];
 
+const MAX_NOTES = 1000;
+
 const emptyForm = (): FormState => ({
   title: "", category: "course", description: "", status: "not_started",
-  toolOrResource: "", resourceUrl: "", durationHours: "0", completedAt: "",
+  toolOrResource: "", resourceUrl: "", durationHours: "0", completedAt: "", goalId: "",
 });
 
 function categoryMeta(id: string) {
@@ -146,10 +156,16 @@ export default function ProgressPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
   const { data: entries = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["progress"],
     queryFn: () => api<ProgressEntry[]>("/progress"),
+  });
+
+  const { data: goals = [] } = useQuery<Goal[]>({
+    queryKey: ["goals"],
+    queryFn: () => api<Goal[]>("/goals"),
   });
 
   const createEntry = useMutation({
@@ -192,9 +208,18 @@ export default function ProgressPage() {
       toolOrResource: entry.toolOrResource ?? "", resourceUrl: entry.resourceUrl ?? "",
       durationHours: String(entry.durationHours ?? 0),
       completedAt: entry.completedAt ? entry.completedAt.slice(0, 10) : "",
+      goalId: entry.goalId ? String(entry.goalId) : "",
     });
     setEditingId(entry.id);
     setOpen(true);
+  };
+
+  const toggleCard = (id: number) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   const submit = () => {
@@ -206,6 +231,7 @@ export default function ProgressPage() {
       resourceUrl: form.resourceUrl.trim() || null,
       durationHours: Number(form.durationHours) || 0,
       completedAt: form.completedAt ? new Date(form.completedAt).toISOString() : null,
+      goalId: form.goalId ? Number(form.goalId) : null,
     };
     if (editingId) updateEntry.mutate({ id: editingId, data: payload });
     else createEntry.mutate(payload);
@@ -224,12 +250,8 @@ export default function ProgressPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>
-            How you're growing
-          </h1>
-          <p className="text-[14px] text-muted-foreground mt-1.5">
-            Every hour logged compounds over time.
-          </p>
+          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>How you're growing</h1>
+          <p className="text-[14px] text-muted-foreground mt-1.5">Every hour logged compounds over time.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? openCreate() : closeDialog())}>
           <DialogTrigger asChild>
@@ -238,7 +260,7 @@ export default function ProgressPage() {
               Log Progress
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[520px] rounded-2xl p-8">
+          <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl p-8">
             <DialogHeader className="mb-1">
               <DialogTitle className="text-[20px]" style={serif}>
                 {editingId ? "Edit entry" : "Log new progress"}
@@ -254,15 +276,14 @@ export default function ProgressPage() {
                   className="bg-secondary border-border text-[13px]"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-medium text-muted-foreground">Category</label>
                   <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
                     <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
-                      ))}
+                      {CATEGORIES.map((c) => <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -278,6 +299,25 @@ export default function ProgressPage() {
                   </Select>
                 </div>
               </div>
+
+              {/* Link to Goal */}
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-medium text-muted-foreground">Link to Goal (optional)</label>
+                <Select value={form.goalId} onValueChange={(v) => setForm((f) => ({ ...f, goalId: v === "none" ? "" : v }))}>
+                  <SelectTrigger className="bg-secondary border-border text-[13px]">
+                    <SelectValue placeholder="Select a parent goal…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No goal</SelectItem>
+                    {goals.map((g) => (
+                      <SelectItem key={g.id} value={String(g.id)}>
+                        {g.targetRole} — {g.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-medium text-muted-foreground">Duration (hours)</label>
@@ -296,6 +336,7 @@ export default function ProgressPage() {
                   />
                 </div>
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-[12px] font-medium text-muted-foreground">Resource URL</label>
                 <Input
@@ -305,6 +346,7 @@ export default function ProgressPage() {
                   className="bg-secondary border-border text-[13px]"
                 />
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-[12px] font-medium text-muted-foreground">Resource name (optional)</label>
                 <Input
@@ -314,13 +356,20 @@ export default function ProgressPage() {
                   className="bg-secondary border-border text-[13px]"
                 />
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Notes</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[12px] font-medium text-muted-foreground">Notes</label>
+                  <span className={`text-[11px] ${form.description.length > MAX_NOTES * 0.9 ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {form.description.length}/{MAX_NOTES}
+                  </span>
+                </div>
                 <Textarea
                   value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  className="resize-none bg-secondary border-border text-[13px]"
-                  rows={3}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value.slice(0, MAX_NOTES) }))}
+                  placeholder="What did you learn? Key takeaways, blockers, next steps…"
+                  className="resize-y bg-secondary border-border text-[13px] min-h-[120px]"
+                  rows={5}
                 />
               </div>
             </div>
@@ -343,12 +392,8 @@ export default function ProgressPage() {
           { label: "Most active",         value: stats.topCategoryLabel },
         ].map((stat) => (
           <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              {stat.label}
-            </p>
-            <p className="text-[28px] text-foreground leading-none" style={serif}>
-              {stat.value}
-            </p>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
+            <p className="text-[28px] text-foreground leading-none" style={serif}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -400,9 +445,7 @@ export default function ProgressPage() {
             key={tab.id}
             onClick={() => setActiveFilter(tab.id)}
             className={`px-3 py-1 text-[12px] font-medium rounded-full transition-colors ${
-              activeFilter === tab.id
-                ? "bg-accent text-primary"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+              activeFilter === tab.id ? "bg-accent text-primary" : "bg-secondary text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -420,6 +463,9 @@ export default function ProgressPage() {
           {filtered.map((entry, index) => {
             const cat = categoryMeta(entry.category);
             const isCompleted = entry.status === "completed" || !!entry.completedAt;
+            const isExpanded = expandedCards.has(entry.id);
+            const notesLong = (entry.description?.length ?? 0) > 120;
+            const linkedGoal = entry.goalId ? goals.find((g) => g.id === entry.goalId) : null;
             return (
               <motion.div
                 key={entry.id}
@@ -432,28 +478,18 @@ export default function ProgressPage() {
                   {/* Card top row */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${cat.bg} ${cat.text}`}>
-                        {cat.label}
-                      </span>
+                      <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${cat.bg} ${cat.text}`}>{cat.label}</span>
                       <span className="text-[11px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                         {entry.durationHours.toFixed(entry.durationHours % 1 === 0 ? 0 : 1)} hr
                       </span>
                       {entry.resourceUrl && (
-                        <a
-                          href={entry.resourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                        >
+                        <a href={entry.resourceUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       )}
                     </div>
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEdit(entry)}
-                        className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                      >
+                      <button onClick={() => openEdit(entry)} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
@@ -465,28 +501,41 @@ export default function ProgressPage() {
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-[14px] font-medium text-foreground leading-snug line-clamp-2 mb-1">
-                    {entry.title}
-                  </h3>
+                  <h3 className="text-[14px] font-medium text-foreground leading-snug line-clamp-2 mb-1">{entry.title}</h3>
 
-                  {/* Resource name */}
                   {entry.toolOrResource && (
                     <p className="text-[11px] text-muted-foreground mb-2">{entry.toolOrResource}</p>
                   )}
 
-                  {/* Notes */}
-                  <p className="text-[13px] text-muted-foreground line-clamp-2 flex-1 mb-4">
-                    {entry.description || "No notes yet."}
-                  </p>
+                  {/* Linked goal badge */}
+                  {linkedGoal && (
+                    <div className="mb-2">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary">
+                        ↗ {linkedGoal.targetRole}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Notes with expand */}
+                  {entry.description && (
+                    <div className="mb-4 flex-1">
+                      <p className={`text-[13px] text-muted-foreground leading-relaxed ${!isExpanded && notesLong ? "line-clamp-2" : ""}`}>
+                        {entry.description}
+                      </p>
+                      {notesLong && (
+                        <button onClick={() => toggleCard(entry.id)} className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1">
+                          {isExpanded ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Read more</>}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {!entry.description && (
+                    <p className="text-[13px] text-muted-foreground flex-1 mb-4">No notes yet.</p>
+                  )}
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                      isCompleted
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${isCompleted ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
                       {isCompleted ? "Completed" : "In Progress"}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
@@ -500,12 +549,8 @@ export default function ProgressPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
-          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>
-            No learning entries yet
-          </p>
-          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">
-            Track courses, tools, and projects you're working on.
-          </p>
+          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>No learning entries yet</p>
+          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Track courses, tools, and projects you're working on.</p>
           <Button onClick={openCreate} className="gap-2 text-[13px]">
             <Plus className="h-3.5 w-3.5" />
             Log your first entry
