@@ -9,6 +9,7 @@ import dashboardRouter from "./dashboard.js";
 import authRouter from "./auth.js";
 import activityRouter from "./activity.js";
 import profileRouter from "./profile.js";
+import featuresRouter from "./features.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -21,8 +22,6 @@ router.use(remindersRouter);
 router.use(dashboardRouter);
 router.use(activityRouter);
 router.use(profileRouter);
+router.use(featuresRouter);
 
 export default router;
-
-import featuresRouter from "./features.js";
-router.use("/", featuresRouter);
