@@ -23,3 +23,6 @@ router.use(activityRouter);
 router.use(profileRouter);
 
 export default router;
+
+import featuresRouter from "./features.js";
+router.use("/", featuresRouter);
