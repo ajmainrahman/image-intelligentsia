@@ -16,6 +16,7 @@ const JWT_SECRET =
   process.env.JWT_SECRET ??
   process.env.AUTH_SECRET ??
   process.env.NEXTAUTH_SECRET ??
+  process.env.SESSION_SECRET ??
   (process.env.NODE_ENV === "production"
     ? undefined
     : "image-intelligentsia-development-secret");
@@ -23,7 +24,7 @@ const JWT_SECRET =
 function getJwtSecret(): string {
   if (!JWT_SECRET) {
     throw new ServerConfigurationError(
-      "Server auth is not configured. Set JWT_SECRET or AUTH_SECRET in Vercel environment variables.",
+      "Server auth is not configured. Set JWT_SECRET or SESSION_SECRET in environment variables.",
     );
   }
   return JWT_SECRET;
