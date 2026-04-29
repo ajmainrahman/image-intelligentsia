@@ -116,3 +116,45 @@ export type RoadmapItem = typeof roadmapTable.$inferSelect;
 export type Reminder = typeof remindersTable.$inferSelect;
 export type WeeklyReview = typeof weeklyReviewsTable.$inferSelect;
 export type NewWeeklyReview = typeof weeklyReviewsTable.$inferInsert;
+
+export const jobsTable = pgTable("jobs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  company: text("company"),
+  description: text("description").notNull(),
+  keywords: text("keywords").array().default([]),
+  skills: text("skills").array().default([]),
+  notes: text("notes"),
+  status: text("status").default("saved"),
+  url: text("url"),
+  applyDate: timestamp("apply_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const profileTable = pgTable("profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique(),
+  tagline: text("tagline").default(""),
+  about: text("about").default(""),
+  expertise: text("expertise").array().default([]),
+  skills: text("skills").array().default([]),
+  interests: text("interests").array().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const activityLogTable = pgTable("activity_log_v2", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  relatedId: integer("related_id"),
+  action: text("action"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Job = typeof jobsTable.$inferSelect;
+export type Profile = typeof profileTable.$inferSelect;
+export type ActivityLog = typeof activityLogTable.$inferSelect;
