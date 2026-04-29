@@ -49,61 +49,78 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/*
+  ============================================================
+  PALETTE REFERENCE
+  --sky:   #B5C0D0  → hsl(213 22% 76%)   hero bg, info tints
+  --sage:  #CCD3CA  → hsl(114  8% 80%)   secondary, subtle bg
+  --cream: #F5E8DD  → hsl( 28 46% 91%)   page bg, card warmth
+  --blush: #EED3D9  → hsl(348 34% 88%)   accent, highlights
+  ============================================================
+*/
+
 /* ── LIGHT MODE ── */
 :root {
   --elevate-1: rgba(0,0,0,.02);
-  --elevate-2: rgba(0,0,0,.05);
+  --elevate-2: rgba(0,0,0,.04);
 
-  /* Warm white background */
-  --background: 40 25% 97%;
-  --foreground: 230 15% 12%;
-  --border: 230 15% 88%;
+  /* Page — warm cream            #F5E8DD */
+  --background: 28 46% 91%;
+  --foreground: 22 18% 18%;
 
-  /* Cards */
+  /* Border — soft warm gray */
+  --border: 28 20% 82%;
+
+  /* Cards — pure white so they lift off the cream bg */
   --card: 0 0% 100%;
-  --card-foreground: 230 15% 12%;
+  --card-foreground: 22 18% 18%;
 
-  /* Sidebar — deep indigo/slate */
-  --sidebar: 230 35% 13%;
-  --sidebar-foreground: 220 20% 85%;
-  --sidebar-border: 230 30% 19%;
-  --sidebar-primary: 258 80% 70%;
-  --sidebar-primary-foreground: 258 100% 97%;
-  --sidebar-accent: 230 30% 20%;
-  --sidebar-accent-foreground: 220 20% 92%;
-  --sidebar-ring: 258 80% 70%;
-
+  /* Popover */
   --popover: 0 0% 100%;
-  --popover-foreground: 230 15% 12%;
+  --popover-foreground: 22 18% 18%;
 
-  /* Primary — vibrant indigo */
-  --primary: 258 80% 58%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary — deep sky blue derived from #3A4E62   */
+  --primary: 213 26% 31%;
+  --primary-foreground: 213 22% 96%;
 
-  /* Secondary */
-  --secondary: 230 20% 93%;
-  --secondary-foreground: 230 15% 22%;
+  /* Secondary — sage tint        #CCD3CA */
+  --secondary: 114 8% 80%;
+  --secondary-foreground: 114 10% 22%;
 
-  /* Muted */
-  --muted: 230 15% 92%;
-  --muted-foreground: 230 10% 46%;
+  /* Muted — lighter sage */
+  --muted: 114 8% 90%;
+  --muted-foreground: 22 10% 46%;
 
-  /* Accent — soft indigo tint */
-  --accent: 258 60% 94%;
-  --accent-foreground: 258 70% 40%;
+  /* Accent — blush               #EED3D9 */
+  --accent: 348 34% 88%;
+  --accent-foreground: 348 22% 30%;
 
-  --destructive: 0 72% 52%;
+  /* Destructive */
+  --destructive: 0 65% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 230 15% 91%;
-  --ring: 258 80% 58%;
+  /* Input / ring */
+  --input: 28 20% 86%;
+  --ring: 213 26% 31%;
 
-  --chart-1: 258 80% 58%;
-  --chart-2: 258 60% 72%;
-  --chart-3: 37 55% 55%;
-  --chart-4: 160 50% 45%;
-  --chart-5: 16 70% 55%;
+  /* Sidebar — deep warm charcoal so it contrasts the cream page */
+  --sidebar: 22 18% 14%;
+  --sidebar-foreground: 28 30% 88%;
+  --sidebar-border: 22 15% 20%;
+  --sidebar-primary: 213 22% 76%;
+  --sidebar-primary-foreground: 22 18% 14%;
+  --sidebar-accent: 22 15% 20%;
+  --sidebar-accent-foreground: 28 30% 92%;
+  --sidebar-ring: 213 22% 62%;
 
+  /* Charts: sky · blush · sage · warm amber · dusty rose */
+  --chart-1: 213 22% 62%;
+  --chart-2: 348 34% 72%;
+  --chart-3: 114  8% 58%;
+  --chart-4: 32  45% 58%;
+  --chart-5: 340 28% 55%;
+
+  /* Fonts */
   --app-font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --app-font-serif: 'DM Serif Display', Georgia, ui-serif, serif;
   --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -115,51 +132,59 @@
 /* ── DARK MODE ── */
 .dark {
   --elevate-1: rgba(255,255,255,.03);
-  --elevate-2: rgba(255,255,255,.07);
+  --elevate-2: rgba(255,255,255,.06);
 
-  --background: 230 20% 8%;
-  --foreground: 220 20% 88%;
-  --border: 230 18% 18%;
+  /* Page — deep desaturated navy-brown */
+  --background: 220 18% 10%;
+  --foreground: 28 20% 88%;
 
-  --card: 230 20% 11%;
-  --card-foreground: 220 20% 88%;
+  --border: 220 14% 20%;
 
-  /* Sidebar — deeper indigo */
-  --sidebar: 240 35% 7%;
-  --sidebar-foreground: 220 18% 80%;
-  --sidebar-border: 235 28% 14%;
-  --sidebar-primary: 258 75% 68%;
-  --sidebar-primary-foreground: 258 100% 97%;
-  --sidebar-accent: 235 28% 15%;
-  --sidebar-accent-foreground: 220 18% 88%;
-  --sidebar-ring: 258 75% 68%;
+  /* Cards — one step lighter than bg */
+  --card: 220 16% 14%;
+  --card-foreground: 28 20% 88%;
 
-  --popover: 230 20% 11%;
-  --popover-foreground: 220 20% 88%;
+  --popover: 220 16% 14%;
+  --popover-foreground: 28 20% 88%;
 
-  --primary: 258 75% 68%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary — sky blue brightened for dark bg */
+  --primary: 213 35% 68%;
+  --primary-foreground: 220 18% 10%;
 
-  --secondary: 230 18% 17%;
-  --secondary-foreground: 220 18% 85%;
+  /* Secondary — muted sage on dark */
+  --secondary: 114 8% 22%;
+  --secondary-foreground: 114 8% 80%;
 
-  --muted: 230 16% 15%;
-  --muted-foreground: 230 12% 52%;
+  /* Muted */
+  --muted: 220 14% 18%;
+  --muted-foreground: 28 10% 55%;
 
-  --accent: 258 40% 18%;
-  --accent-foreground: 258 70% 78%;
+  /* Accent — deep blush on dark */
+  --accent: 348 20% 22%;
+  --accent-foreground: 348 34% 82%;
 
-  --destructive: 0 65% 48%;
+  --destructive: 0 60% 45%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 230 18% 18%;
-  --ring: 258 75% 68%;
+  --input: 220 14% 20%;
+  --ring: 213 35% 68%;
 
-  --chart-1: 258 75% 68%;
-  --chart-2: 258 60% 78%;
-  --chart-3: 37 52% 58%;
-  --chart-4: 160 45% 52%;
-  --chart-5: 16 65% 60%;
+  /* Sidebar — darker than card */
+  --sidebar: 220 20% 7%;
+  --sidebar-foreground: 28 18% 80%;
+  --sidebar-border: 220 16% 14%;
+  --sidebar-primary: 213 35% 68%;
+  --sidebar-primary-foreground: 220 20% 7%;
+  --sidebar-accent: 220 16% 14%;
+  --sidebar-accent-foreground: 28 18% 88%;
+  --sidebar-ring: 213 35% 58%;
+
+  /* Charts — brightened for dark bg */
+  --chart-1: 213 35% 68%;
+  --chart-2: 348 34% 72%;
+  --chart-3: 114 10% 62%;
+  --chart-4: 32  45% 62%;
+  --chart-5: 340 28% 65%;
 }
 
 @layer base {
@@ -234,27 +259,27 @@
   /* Shimmer for skeletons */
   @keyframes shimmer {
     from { background-position: -200% 0; }
-    to   { background-position: 200% 0; }
+    to   { background-position:  200% 0; }
   }
   .shimmer {
     background: linear-gradient(
       90deg,
-      hsl(var(--muted)) 25%,
-      hsl(var(--secondary)) 50%,
-      hsl(var(--muted)) 75%
+      hsl(var(--muted))      25%,
+      hsl(var(--secondary))  50%,
+      hsl(var(--muted))      75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
   }
 
-  /* Card hover lift */
+  /* Card hover lift — uses sky blue glow */
   .card-hover {
     transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.15);
-    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.18);
+    border-color: hsl(var(--primary) / 0.28);
   }
 
   /* Pill glow on hover */
@@ -262,36 +287,70 @@
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
   }
 
-  /* Gradient text */
+  /* Gradient text — sky to blush */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(258 60% 72%));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)),
+      hsl(var(--accent-foreground))
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Sidebar gradient */
+  /* Sidebar gradient — warm dark */
   .sidebar-gradient {
     background: linear-gradient(
       160deg,
-      hsl(var(--sidebar)) 0%,
-      hsl(240 38% 10%) 100%
+      hsl(var(--sidebar))      0%,
+      hsl(22 20% 10%)          100%
     );
   }
 
   /* Glass card */
   .glass {
-    background: hsl(var(--card) / 0.7);
+    background: hsl(var(--card) / 0.72);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Hero section — sky colour band */
+  .hero-sky {
+    background-color: hsl(213 22% 76%);          /* --sky #B5C0D0 */
+    color: hsl(213 26% 24%);
+  }
+
+  /* Sage tinted surface */
+  .surface-sage {
+    background-color: hsl(114 8% 90%);            /* lighter than --sage */
+    border: 0.5px solid hsl(114 8% 76%);
+  }
+
+  /* Blush tinted surface */
+  .surface-blush {
+    background-color: hsl(348 34% 94%);           /* lighter than --blush */
+    border: 0.5px solid hsl(348 22% 80%);
+  }
+
+  /* Upload drop zone */
+  .upload-zone {
+    border: 1.5px dashed hsl(var(--border));
+    border-radius: var(--radius-xl);
+    transition: border-color 200ms ease, background-color 200ms ease;
+  }
+  .upload-zone:hover,
+  .upload-zone[data-drag-over] {
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary) / 0.05);
   }
 
   /* Stagger children animations */
   .stagger-children > * {
     animation: slide-up 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
-  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-children > *:nth-child(1) { animation-delay:   0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay:  50ms; }
   .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
   .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
   .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
