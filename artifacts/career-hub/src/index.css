@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -51,140 +51,142 @@
 
 /*
   ============================================================
-  PALETTE REFERENCE
-  --sky:   #B5C0D0  → hsl(213 22% 76%)   hero bg, info tints
-  --sage:  #CCD3CA  → hsl(114  8% 80%)   secondary, subtle bg
-  --cream: #F5E8DD  → hsl( 28 46% 91%)   page bg, card warmth
-  --blush: #EED3D9  → hsl(348 34% 88%)   accent, highlights
+  SLATE STUDIO PALETTE REFERENCE
+  --slate:    #E8ECF0  → hsl(210 18% 93%)   page bg, cool neutral
+  --steel:    #C4CDD8  → hsl(210 16% 81%)   secondary, borders
+  --ice:      #F0F4F8  → hsl(210 30% 96%)   card surfaces, lifted bg
+  --cobalt:   #2563EB  → hsl(221 83% 53%)   primary CTA, active states
+  --ink:      #1E2530  → hsl(218 22% 15%)   headings, high-contrast text
+  --mist:     #6B7A8D  → hsl(213 13% 48%)   muted copy, placeholders
   ============================================================
 */
 
 /* ── LIGHT MODE ── */
 :root {
-  --elevate-1: rgba(0,0,0,.02);
-  --elevate-2: rgba(0,0,0,.04);
+  --elevate-1: rgba(0, 0, 0, 0.025);
+  --elevate-2: rgba(0, 0, 0, 0.05);
 
-  /* Page — warm cream            #F5E8DD */
-  --background: 28 46% 91%;
-  --foreground: 22 18% 18%;
+  /* Page — cool slate          #E8ECF0 */
+  --background: 210 18% 93%;
+  --foreground: 218 22% 15%;
 
-  /* Border — soft warm gray */
-  --border: 28 20% 82%;
+  /* Border — steel blue-gray */
+  --border: 210 16% 82%;
 
-  /* Cards — pure white so they lift off the cream bg */
-  --card: 0 0% 100%;
-  --card-foreground: 22 18% 18%;
+  /* Cards — icy white so they lift off the slate bg */
+  --card: 210 30% 97%;
+  --card-foreground: 218 22% 15%;
 
   /* Popover */
-  --popover: 0 0% 100%;
-  --popover-foreground: 22 18% 18%;
+  --popover: 210 30% 97%;
+  --popover-foreground: 218 22% 15%;
 
-  /* Primary — deep sky blue derived from #3A4E62   */
-  --primary: 213 26% 31%;
-  --primary-foreground: 213 22% 96%;
+  /* Primary — cobalt blue      #2563EB */
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
 
-  /* Secondary — sage tint        #CCD3CA */
-  --secondary: 114 8% 80%;
-  --secondary-foreground: 114 10% 22%;
+  /* Secondary — steel          #C4CDD8 */
+  --secondary: 210 16% 81%;
+  --secondary-foreground: 218 18% 22%;
 
-  /* Muted — lighter sage */
-  --muted: 114 8% 90%;
-  --muted-foreground: 22 10% 46%;
+  /* Muted — lighter steel */
+  --muted: 210 20% 90%;
+  --muted-foreground: 213 13% 48%;
 
-  /* Accent — blush               #EED3D9 */
-  --accent: 348 34% 88%;
-  --accent-foreground: 348 22% 30%;
+  /* Accent — electric cyan tint */
+  --accent: 199 80% 90%;
+  --accent-foreground: 199 60% 22%;
 
   /* Destructive */
-  --destructive: 0 65% 50%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
 
   /* Input / ring */
-  --input: 28 20% 86%;
-  --ring: 213 26% 31%;
+  --input: 210 18% 87%;
+  --ring: 221 83% 53%;
 
-  /* Sidebar — deep warm charcoal so it contrasts the cream page */
-  --sidebar: 22 18% 14%;
-  --sidebar-foreground: 28 30% 88%;
-  --sidebar-border: 22 15% 20%;
-  --sidebar-primary: 213 22% 76%;
-  --sidebar-primary-foreground: 22 18% 14%;
-  --sidebar-accent: 22 15% 20%;
-  --sidebar-accent-foreground: 28 30% 92%;
-  --sidebar-ring: 213 22% 62%;
+  /* Sidebar — deep ink so it anchors the layout */
+  --sidebar: 218 28% 11%;
+  --sidebar-foreground: 210 20% 82%;
+  --sidebar-border: 218 22% 18%;
+  --sidebar-primary: 221 70% 65%;
+  --sidebar-primary-foreground: 218 28% 11%;
+  --sidebar-accent: 218 22% 17%;
+  --sidebar-accent-foreground: 210 20% 90%;
+  --sidebar-ring: 221 70% 55%;
 
-  /* Charts: sky · blush · sage · warm amber · dusty rose */
-  --chart-1: 213 22% 62%;
-  --chart-2: 348 34% 72%;
-  --chart-3: 114  8% 58%;
-  --chart-4: 32  45% 58%;
-  --chart-5: 340 28% 55%;
+  /* Charts: cobalt · cyan · teal · violet · slate */
+  --chart-1: 221 83% 53%;
+  --chart-2: 199 80% 48%;
+  --chart-3: 174 62% 42%;
+  --chart-4: 258 60% 58%;
+  --chart-5: 210 16% 55%;
 
   /* Fonts */
-  --app-font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  --app-font-serif: 'DM Serif Display', Georgia, ui-serif, serif;
-  --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --app-font-brand: 'DM Serif Display', Georgia, ui-serif, serif;
+  --app-font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --app-font-serif: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --app-font-mono: 'DM Mono', ui-monospace, monospace;
+  --app-font-brand: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 /* ── DARK MODE ── */
 .dark {
-  --elevate-1: rgba(255,255,255,.03);
-  --elevate-2: rgba(255,255,255,.06);
+  --elevate-1: rgba(255, 255, 255, 0.03);
+  --elevate-2: rgba(255, 255, 255, 0.06);
 
-  /* Page — deep desaturated navy-brown */
-  --background: 220 18% 10%;
-  --foreground: 28 20% 88%;
+  /* Page — deep cool navy */
+  --background: 218 28% 9%;
+  --foreground: 210 20% 88%;
 
-  --border: 220 14% 20%;
+  --border: 218 22% 18%;
 
-  /* Cards — one step lighter than bg */
-  --card: 220 16% 14%;
-  --card-foreground: 28 20% 88%;
+  /* Cards — one step lighter */
+  --card: 218 24% 13%;
+  --card-foreground: 210 20% 88%;
 
-  --popover: 220 16% 14%;
-  --popover-foreground: 28 20% 88%;
+  --popover: 218 24% 13%;
+  --popover-foreground: 210 20% 88%;
 
-  /* Primary — sky blue brightened for dark bg */
-  --primary: 213 35% 68%;
-  --primary-foreground: 220 18% 10%;
+  /* Primary — cobalt brightened for dark */
+  --primary: 221 90% 65%;
+  --primary-foreground: 218 28% 9%;
 
-  /* Secondary — muted sage on dark */
-  --secondary: 114 8% 22%;
-  --secondary-foreground: 114 8% 80%;
+  /* Secondary — muted steel on dark */
+  --secondary: 218 18% 20%;
+  --secondary-foreground: 210 16% 75%;
 
   /* Muted */
-  --muted: 220 14% 18%;
-  --muted-foreground: 28 10% 55%;
+  --muted: 218 20% 16%;
+  --muted-foreground: 213 12% 52%;
 
-  /* Accent — deep blush on dark */
-  --accent: 348 20% 22%;
-  --accent-foreground: 348 34% 82%;
+  /* Accent — deep cyan on dark */
+  --accent: 199 50% 18%;
+  --accent-foreground: 199 80% 78%;
 
-  --destructive: 0 60% 45%;
+  --destructive: 0 65% 48%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 220 14% 20%;
-  --ring: 213 35% 68%;
+  --input: 218 22% 18%;
+  --ring: 221 90% 65%;
 
-  /* Sidebar — darker than card */
-  --sidebar: 220 20% 7%;
-  --sidebar-foreground: 28 18% 80%;
-  --sidebar-border: 220 16% 14%;
-  --sidebar-primary: 213 35% 68%;
-  --sidebar-primary-foreground: 220 20% 7%;
-  --sidebar-accent: 220 16% 14%;
-  --sidebar-accent-foreground: 28 18% 88%;
-  --sidebar-ring: 213 35% 58%;
+  /* Sidebar — darkest layer */
+  --sidebar: 218 32% 6%;
+  --sidebar-foreground: 210 18% 75%;
+  --sidebar-border: 218 24% 13%;
+  --sidebar-primary: 221 90% 65%;
+  --sidebar-primary-foreground: 218 32% 6%;
+  --sidebar-accent: 218 24% 13%;
+  --sidebar-accent-foreground: 210 18% 88%;
+  --sidebar-ring: 221 80% 60%;
 
   /* Charts — brightened for dark bg */
-  --chart-1: 213 35% 68%;
-  --chart-2: 348 34% 72%;
-  --chart-3: 114 10% 62%;
-  --chart-4: 32  45% 62%;
-  --chart-5: 340 28% 65%;
+  --chart-1: 221 90% 65%;
+  --chart-2: 199 80% 58%;
+  --chart-3: 174 62% 52%;
+  --chart-4: 258 65% 68%;
+  --chart-5: 210 20% 62%;
 }
 
 @layer base {
@@ -195,68 +197,88 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    letter-spacing: -0.01em;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   }
 
-  h1, h2 {
-    font-family: 'DM Serif Display', Georgia, ui-serif, serif;
-    font-weight: 400;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
   }
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  h1 { letter-spacing: -0.04em; }
+  h2 { letter-spacing: -0.035em; }
+
+  p, li, span {
+    letter-spacing: -0.005em;
+  }
+
+  code, pre, kbd {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    letter-spacing: 0;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.4);
+    background: hsl(var(--muted-foreground) / 0.35);
   }
 }
 
 @layer utilities {
   .font-brand { font-family: var(--app-font-brand); }
-  .font-serif { font-family: 'DM Serif Display', Georgia, ui-serif, serif; }
+  .font-serif  { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
 
-  /* Page transitions */
+  /* ── TRACKING UTILITIES ── */
+  .tracking-tightest { letter-spacing: -0.04em; }
+  .tracking-tight-xl  { letter-spacing: -0.03em; }
+
+  /* ── PAGE TRANSITIONS ── */
   @keyframes page-in {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   .page-enter {
-    animation: page-in 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    animation: page-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Fade in */
+  /* ── FADE IN ── */
   @keyframes fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-  .fade-in { animation: fade-in 0.3s ease both; }
+  .fade-in { animation: fade-in 0.25s ease both; }
 
-  /* Slide up */
+  /* ── SLIDE UP ── */
   @keyframes slide-up {
-    from { opacity: 0; transform: translateY(16px); }
+    from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .slide-up { animation: slide-up 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+  .slide-up { animation: slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-  /* Progress bar fill animation */
+  /* ── PROGRESS BAR ── */
   @keyframes progress-fill {
     from { width: 0%; }
   }
   .progress-animate {
-    animation: progress-fill 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    animation: progress-fill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Counter pop */
+  /* ── COUNTER POP ── */
   @keyframes counter-pop {
-    0%   { transform: scale(0.85); opacity: 0; }
-    60%  { transform: scale(1.08); }
+    0%   { transform: scale(0.88); opacity: 0; }
+    60%  { transform: scale(1.06); }
     100% { transform: scale(1);    opacity: 1; }
   }
-  .counter-pop { animation: counter-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .counter-pop { animation: counter-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-  /* Shimmer for skeletons */
+  /* ── SHIMMER SKELETON ── */
   @keyframes shimmer {
     from { background-position: -200% 0; }
     to   { background-position:  200% 0; }
@@ -269,92 +291,115 @@
       hsl(var(--muted))      75%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.6s ease-in-out infinite;
+    animation: shimmer 1.5s ease-in-out infinite;
   }
 
-  /* Card hover lift — uses sky blue glow */
+  /* ── CARD HOVER — cobalt glow ── */
   .card-hover {
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
   }
   .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.18);
-    border-color: hsl(var(--primary) / 0.28);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -6px hsl(var(--primary) / 0.22),
+                0 1px 4px -1px hsl(var(--primary) / 0.10);
+    border-color: hsl(var(--primary) / 0.30);
   }
 
-  /* Pill glow on hover */
+  /* ── PILL GLOW ── */
   .pill-glow:hover {
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
   }
 
-  /* Gradient text — sky to blush */
+  /* ── GRADIENT TEXT — cobalt to cyan ── */
   .text-gradient {
     background: linear-gradient(
-      135deg,
-      hsl(var(--primary)),
-      hsl(var(--accent-foreground))
+      128deg,
+      hsl(221 83% 53%),
+      hsl(199 80% 48%)
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Sidebar gradient — warm dark */
+  /* ── SIDEBAR GRADIENT — deep ink ── */
   .sidebar-gradient {
     background: linear-gradient(
       160deg,
-      hsl(var(--sidebar))      0%,
-      hsl(22 20% 10%)          100%
+      hsl(var(--sidebar)) 0%,
+      hsl(218 32% 5%)     100%
     );
   }
 
-  /* Glass card */
+  /* ── GLASS CARD ── */
   .glass {
-    background: hsl(var(--card) / 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: hsl(var(--card) / 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
-  /* Hero section — sky colour band */
+  /* ── HERO SECTION — slate band ── */
   .hero-sky {
-    background-color: hsl(213 22% 76%);          /* --sky #B5C0D0 */
-    color: hsl(213 26% 24%);
+    background-color: hsl(210 22% 88%);
+    color: hsl(218 28% 16%);
   }
 
-  /* Sage tinted surface */
+  /* ── STEEL TINTED SURFACE ── */
   .surface-sage {
-    background-color: hsl(114 8% 90%);            /* lighter than --sage */
-    border: 0.5px solid hsl(114 8% 76%);
+    background-color: hsl(210 18% 91%);
+    border: 0.5px solid hsl(210 16% 80%);
   }
 
-  /* Blush tinted surface */
+  /* ── ICE TINTED SURFACE ── */
   .surface-blush {
-    background-color: hsl(348 34% 94%);           /* lighter than --blush */
-    border: 0.5px solid hsl(348 22% 80%);
+    background-color: hsl(199 60% 94%);
+    border: 0.5px solid hsl(199 40% 82%);
   }
 
-  /* Upload drop zone */
+  /* ── UPLOAD DROP ZONE ── */
   .upload-zone {
     border: 1.5px dashed hsl(var(--border));
     border-radius: var(--radius-xl);
-    transition: border-color 200ms ease, background-color 200ms ease;
+    transition: border-color 180ms ease, background-color 180ms ease;
   }
   .upload-zone:hover,
   .upload-zone[data-drag-over] {
     border-color: hsl(var(--primary));
-    background-color: hsl(var(--primary) / 0.05);
+    background-color: hsl(var(--primary) / 0.04);
   }
 
-  /* Stagger children animations */
+  /* ── STAGGER CHILDREN ── */
   .stagger-children > * {
-    animation: slide-up 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    animation: slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .stagger-children > *:nth-child(1) { animation-delay:   0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay:  50ms; }
-  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+  .stagger-children > *:nth-child(2) { animation-delay:  40ms; }
+  .stagger-children > *:nth-child(3) { animation-delay:  80ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+
+  /* ── TECHNICAL LABEL STYLE — for tags, badges, captions ── */
+  .label-mono {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  /* ── CRISP DIVIDER LINE ── */
+  .divider-crisp {
+    border-top: 1px solid hsl(var(--border));
+    opacity: 0.7;
+  }
+
+  /* ── FOCUS RING — cobalt ── */
+  .focus-cobalt:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 
   input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
 }
