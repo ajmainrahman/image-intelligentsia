@@ -1,6 +1,6 @@
 import { db, activityLogTable } from "@workspace/db";
 
-export type ActivityType = "job" | "goal" | "progress" | "reminder" | "note" | "roadmap";
+export type ActivityType = "job" | "goal" | "progress" | "reminder" | "note" | "roadmap" | "research";
 
 export async function logActivity(
   userId: number,

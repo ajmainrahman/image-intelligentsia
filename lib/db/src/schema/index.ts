@@ -6,3 +6,4 @@ export * from "./reminders";
 export * from "./users";
 export * from "./activity";
 export * from "./profile";
+export * from "./research";

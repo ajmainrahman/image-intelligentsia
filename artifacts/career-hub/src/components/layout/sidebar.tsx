@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/contexts/theme-context";
+import { BrandLogo } from "@/components/brand-logo";
 import {
   LayoutDashboard,
   Target,
@@ -15,6 +16,7 @@ import {
   Sun,
   Moon,
   CalendarCheck,
+  Microscope,
 } from "lucide-react";
 
 const navSections = [
@@ -32,6 +34,12 @@ const navSections = [
       { href: "/goals", label: "Goals", icon: Target },
       { href: "/progress", label: "Learning", icon: BookOpen },
       { href: "/roadmap", label: "Roadmap", icon: MapIcon },
+    ],
+  },
+  {
+    label: "Discover",
+    items: [
+      { href: "/research", label: "Research", icon: Microscope },
     ],
   },
   {
@@ -53,16 +61,16 @@ export function Sidebar() {
     <aside className="fixed inset-y-0 left-0 w-56 flex flex-col border-r border-sidebar-border bg-sidebar z-30">
 
       {/* Brand */}
-      <div className="px-6 pt-7 pb-6 border-b border-sidebar-border">
-        <span
-          className="text-[19px] text-sidebar-foreground leading-none tracking-tight"
-          style={{ fontFamily: "'DM Serif Display', serif" }}
-        >
-          Intelligentsia
-        </span>
-        <p className="text-[11px] text-sidebar-foreground/50 mt-1.5 leading-none">
-          Career dashboard
-        </p>
+      <div className="px-5 pt-6 pb-5 border-b border-sidebar-border flex items-center gap-3">
+        <BrandLogo className="h-9 w-9" iconClassName="h-5 w-5" />
+        <div className="leading-tight">
+          <div className="text-[18px] font-semibold text-sidebar-foreground tracking-tight">
+            Atlas
+          </div>
+          <p className="text-[10.5px] text-sidebar-foreground/50 mt-0.5 leading-none">
+            Career &amp; research
+          </p>
+        </div>
       </div>
 
       {/* Nav */}

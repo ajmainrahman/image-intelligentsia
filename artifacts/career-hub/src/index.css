@@ -51,76 +51,77 @@
 
   /*
     ============================================================
-    SLATE STUDIO PALETTE REFERENCE
-    --slate:    #E8ECF0  → hsl(210 18% 93%)   page bg, cool neutral
-    --steel:    #C4CDD8  → hsl(210 16% 81%)   secondary, borders
-    --ice:      #F0F4F8  → hsl(210 30% 96%)   card surfaces, lifted bg
-    --cobalt:   #2563EB  → hsl(221 83% 53%)   primary CTA, active states
-    --ink:      #1E2530  → hsl(218 22% 15%)   headings, high-contrast text
-    --mist:     #6B7A8D  → hsl(213 13% 48%)   muted copy, placeholders
+    ATLAS PALETTE — Career & Research
+    --canvas:   #FAF8F4  → hsl(36 30% 97%)    warm cream page bg
+    --paper:    #FFFFFF  → hsl(0 0% 100%)     pure card surfaces
+    --emerald:  #0D9488  → hsl(173 80% 32%)   primary CTA
+    --teal:     #14B8A6  → hsl(173 80% 40%)   primary alt
+    --amber:    #F59E0B  → hsl(38 92% 50%)    accent / highlight
+    --ink:      #0F172A  → hsl(220 35% 11%)   headings, sidebar
+    --slate:    #64748B  → hsl(215 16% 47%)   muted copy
     ============================================================
   */
 
   /* ── LIGHT MODE ── */
   :root {
-    --elevate-1: rgba(0, 0, 0, 0.025);
-    --elevate-2: rgba(0, 0, 0, 0.05);
+    --elevate-1: rgba(15, 23, 42, 0.03);
+    --elevate-2: rgba(15, 23, 42, 0.06);
 
-    /* Page — cool slate          #E8ECF0 */
-    --background: 210 18% 93%;
-    --foreground: 218 22% 15%;
+    /* Page — warm cream off-white */
+    --background: 36 30% 97%;
+    --foreground: 220 35% 12%;
 
-    /* Border — steel blue-gray */
-    --border: 210 16% 82%;
+    /* Border — warm sand */
+    --border: 30 14% 88%;
 
-    /* Cards — icy white so they lift off the slate bg */
-    --card: 210 30% 97%;
-    --card-foreground: 218 22% 15%;
+    /* Cards — pure white lifted off the cream bg */
+    --card: 0 0% 100%;
+    --card-foreground: 220 35% 12%;
 
     /* Popover */
-    --popover: 210 30% 97%;
-    --popover-foreground: 218 22% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 35% 12%;
 
-    /* Primary — cobalt blue      #2563EB */
-    --primary: 221 83% 53%;
+    /* Primary — deep emerald-teal */
+    --primary: 173 78% 32%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — steel          #C4CDD8 */
-    --secondary: 210 16% 81%;
-    --secondary-foreground: 218 18% 22%;
+    /* Secondary — warm sand */
+    --secondary: 30 22% 92%;
+    --secondary-foreground: 220 30% 18%;
 
-    /* Muted — lighter steel */
-    --muted: 210 20% 90%;
-    --muted-foreground: 213 13% 48%;
+    /* Muted — soft warm gray */
+    --muted: 30 18% 94%;
+    --muted-foreground: 215 12% 42%;
 
-    /* Accent — electric cyan tint */
-    --accent: 199 80% 90%;
-    --accent-foreground: 199 60% 22%;
+    /* Accent — warm amber tint */
+    --accent: 38 92% 90%;
+    --accent-foreground: 30 70% 25%;
 
     /* Destructive */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     /* Input / ring */
-    --input: 210 18% 87%;
-    --ring: 221 83% 53%;
+    --input: 30 14% 88%;
+    --ring: 173 75% 38%;
 
-    /* Sidebar — deep ink so it anchors the layout */
-    --sidebar: 218 28% 11%;
-    --sidebar-foreground: 210 20% 82%;
-    --sidebar-border: 218 22% 18%;
-    --sidebar-primary: 221 70% 65%;
-    --sidebar-primary-foreground: 218 28% 11%;
-    --sidebar-accent: 218 22% 17%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-ring: 221 70% 55%;
+    /* Sidebar — deep ink anchors the layout */
+    --sidebar: 220 32% 10%;
+    --sidebar-foreground: 30 18% 84%;
+    --sidebar-border: 220 24% 16%;
+    --sidebar-primary: 173 65% 55%;
+    --sidebar-primary-foreground: 220 32% 10%;
+    --sidebar-accent: 220 24% 15%;
+    --sidebar-accent-foreground: 30 15% 90%;
+    --sidebar-ring: 173 65% 50%;
 
-    /* Charts: cobalt · cyan · teal · violet · slate */
-    --chart-1: 221 83% 53%;
-    --chart-2: 199 80% 48%;
-    --chart-3: 174 62% 42%;
-    --chart-4: 258 60% 58%;
-    --chart-5: 210 16% 55%;
+    /* Charts: emerald · amber · teal · plum · slate */
+    --chart-1: 173 78% 32%;
+    --chart-2: 38 92% 50%;
+    --chart-3: 188 78% 38%;
+    --chart-4: 280 50% 58%;
+    --chart-5: 215 16% 50%;
 
     /* Fonts */
     --app-font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
@@ -136,57 +137,57 @@
     --elevate-1: rgba(255, 255, 255, 0.03);
     --elevate-2: rgba(255, 255, 255, 0.06);
 
-    /* Page — deep cool navy */
-    --background: 218 28% 9%;
-    --foreground: 210 20% 88%;
+    /* Page — deep ink */
+    --background: 220 32% 7%;
+    --foreground: 30 18% 92%;
 
-    --border: 218 22% 18%;
+    --border: 220 22% 16%;
 
-    /* Cards — one step lighter */
-    --card: 218 24% 13%;
-    --card-foreground: 210 20% 88%;
+    /* Cards — one step lighter than page */
+    --card: 220 26% 11%;
+    --card-foreground: 30 18% 92%;
 
-    --popover: 218 24% 13%;
-    --popover-foreground: 210 20% 88%;
+    --popover: 220 26% 11%;
+    --popover-foreground: 30 18% 92%;
 
-    /* Primary — cobalt brightened for dark */
-    --primary: 221 90% 65%;
-    --primary-foreground: 218 28% 9%;
+    /* Primary — emerald brightened for dark */
+    --primary: 173 70% 52%;
+    --primary-foreground: 220 32% 7%;
 
-    /* Secondary — muted steel on dark */
-    --secondary: 218 18% 20%;
-    --secondary-foreground: 210 16% 75%;
+    /* Secondary — muted slate on dark */
+    --secondary: 220 18% 18%;
+    --secondary-foreground: 30 12% 80%;
 
     /* Muted */
-    --muted: 218 20% 16%;
-    --muted-foreground: 213 12% 52%;
+    --muted: 220 22% 14%;
+    --muted-foreground: 220 8% 56%;
 
-    /* Accent — deep cyan on dark */
-    --accent: 199 50% 18%;
-    --accent-foreground: 199 80% 78%;
+    /* Accent — warm amber on dark */
+    --accent: 38 60% 22%;
+    --accent-foreground: 38 92% 78%;
 
     --destructive: 0 65% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --input: 218 22% 18%;
-    --ring: 221 90% 65%;
+    --input: 220 22% 16%;
+    --ring: 173 70% 52%;
 
     /* Sidebar — darkest layer */
-    --sidebar: 218 32% 6%;
-    --sidebar-foreground: 210 18% 75%;
-    --sidebar-border: 218 24% 13%;
-    --sidebar-primary: 221 90% 65%;
-    --sidebar-primary-foreground: 218 32% 6%;
-    --sidebar-accent: 218 24% 13%;
-    --sidebar-accent-foreground: 210 18% 88%;
-    --sidebar-ring: 221 80% 60%;
+    --sidebar: 220 36% 5%;
+    --sidebar-foreground: 30 14% 82%;
+    --sidebar-border: 220 24% 11%;
+    --sidebar-primary: 173 65% 58%;
+    --sidebar-primary-foreground: 220 36% 5%;
+    --sidebar-accent: 220 24% 11%;
+    --sidebar-accent-foreground: 30 14% 90%;
+    --sidebar-ring: 173 65% 55%;
 
     /* Charts — brightened for dark bg */
-    --chart-1: 221 90% 65%;
-    --chart-2: 199 80% 58%;
-    --chart-3: 174 62% 52%;
-    --chart-4: 258 65% 68%;
-    --chart-5: 210 20% 62%;
+    --chart-1: 173 70% 55%;
+    --chart-2: 38 92% 60%;
+    --chart-3: 188 78% 55%;
+    --chart-4: 280 60% 70%;
+    --chart-5: 215 18% 60%;
   }
 
   @layer base {
@@ -310,12 +311,12 @@
       box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
     }
 
-    /* ── GRADIENT TEXT — cobalt to cyan ── */
+    /* ── GRADIENT TEXT — emerald to amber ── */
     .text-gradient {
       background: linear-gradient(
         128deg,
-        hsl(221 83% 53%),
-        hsl(199 80% 48%)
+        hsl(173 78% 32%),
+        hsl(38 92% 50%)
       );
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;

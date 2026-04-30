@@ -85,9 +85,11 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <BrandLogo className="h-16 w-16 mb-4" iconClassName="h-8 w-8" />
-          <h1 className="text-2xl font-bold text-foreground">Image Intelligentsia</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your intelligent image workflow dashboard</p>
+          <BrandLogo className="h-16 w-16 mb-4" iconClassName="h-9 w-9" />
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Atlas</h1>
+          <p className="text-sm text-muted-foreground mt-1.5 text-center">
+            Map your career &amp; research journey
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">

@@ -10,6 +10,7 @@ import authRouter from "./auth.js";
 import activityRouter from "./activity.js";
 import profileRouter from "./profile.js";
 import featuresRouter from "./features.js";
+import researchRouter from "./research.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -23,5 +24,6 @@ router.use(dashboardRouter);
 router.use(activityRouter);
 router.use(profileRouter);
 router.use(featuresRouter);
+router.use(researchRouter);
 
 export default router;

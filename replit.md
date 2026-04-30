@@ -28,7 +28,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Replit Workflows
 
-- **Start application** — Runs the Image Intelligentsia frontend and Express API together:
+- **Start application** — Runs the Atlas frontend and Express API together:
   - API: `PORT=8080 pnpm --filter @workspace/api-server run dev`
   - Frontend: `PORT=5000 BASE_PATH=/ pnpm --filter @workspace/career-hub run dev`
 - Frontend is served at `/` on port `5000` (Replit webview) and proxies `/api` requests to the local API server on port `8080`.
@@ -49,20 +49,22 @@ For Vercel deployment, additionally set:
 
 ## Artifacts
 
-### Image Intelligentsia (`artifacts/career-hub`)
+### Atlas (`artifacts/career-hub`)
 - **Type**: React + Vite web app
 - **Preview path**: `/`
-- **Purpose**: Image Intelligentsia dashboard, currently retaining the existing planning/workflow modules while branding is updated
+- **Purpose**: Atlas — "Map your career & research journey." A unified workspace for career goals, learning, opportunities, and a personal research library.
+- **Brand**: Emerald-teal primary (`hsl(173 78% 32%)`) + warm amber accent (`hsl(38 92% 50%)`) on a warm cream canvas; deep ink sidebar. Logo is a peaked "A" mark on a gradient rounded square.
 
 #### Features
-- **Dashboard**: Summary stats (goals, progress, jobs, reminders), top skills from job descriptions, recent activity timeline
+- **Overview**: Summary stats (goals, progress, jobs, reminders), top skills from job descriptions, recent activity timeline
 - **Goals**: Track career goals with target roles, status, and target year
-- **Progress**: Log learning activities — courses, AI tools (Google AI Studio, ChatGPT), projects, certifications
-- **Roadmap**: 5-10 year visual timeline split into short/mid/long term phases
-- **Jobs**: Save job descriptions, extract keywords and required skills, track application status
-- **Jobs Apply Date**: Each job can store an optional apply date shown on job cards
+- **Learning**: Log learning activities — courses, AI tools, projects, certifications
+- **Roadmap**: 5–10 year visual timeline split into short/mid/long term phases
+- **Research** *(new)*: Personal research library — papers, articles, books, datasets, theses, topics, and notes. Tagged, status-tracked (to_explore / reading / completed), with source URL, summary and personal notes; can be linked to a goal.
+- **Opportunities (Jobs)**: Save job descriptions, extract keywords and required skills, track application status; optional apply date per job
 - **Reminders**: Task reminders with priority, due dates, and categories
-- **Notepad**: Local browser-saved notes section for quick writing and interview/application notes
+- **Notepad**: Local browser-saved notes for quick writing and interview/application notes
+- **Mobile**: Top app bar + 5-tab bottom nav (Home / Goals / Research / Learning / Jobs) with safe-area insets, slide-down full-nav drawer, larger touch targets
 
 #### Tech
 - React 19 + Vite, TailwindCSS, shadcn/ui components
@@ -74,7 +76,7 @@ For Vercel deployment, additionally set:
 ### API Server (`artifacts/api-server`)
 - **Type**: Express 5 API
 - **Preview path**: `/api`
-- **Purpose**: Backend API for Image Intelligentsia
+- **Purpose**: Backend API for Atlas
 
 #### Database Tables
 - `goals` — career goals
@@ -84,6 +86,11 @@ For Vercel deployment, additionally set:
 - `jobs.apply_date` — optional timestamp for when an application was submitted
 - `reminders` — task reminders with due dates
 - `users` — registered users (id, name, email)
+- `research` *(new)* — research library items (title, type, authors, source, summary, tags[], status, notes, optional `goal_id` link)
+- `activity_log_v2` — activity feed events (type now includes `research`)
+
+#### Schema Note
+The legacy `lib/db/src/schema.ts` (single-file) is the active schema source resolved by Node module resolution; the newer `lib/db/src/schema/` directory mirrors it. When adding tables, define them in **both** places to keep types and runtime in sync.
 
 #### Utility
 - `artifacts/api-server/src/lib/serialize.ts` — converts Date objects to ISO strings before Zod validation
@@ -102,3 +109,7 @@ Simple name + email sign-in. No passwords or hashing dependency. Session stored 
 ## Vercel / Neon DB Fix
 
 `vercel.json` buildCommand runs `pnpm --filter @workspace/db push-force` before building the frontend. This ensures all DB tables are created/updated in Neon on every deploy.
+
+## Database (Replit)
+
+In the Replit dev environment the app uses Replit's built-in PostgreSQL via `DATABASE_URL` (host `helium`). To use an external Neon database instead, set `DATABASE_URL` in Secrets to your Neon connection string and re-run `pnpm --filter @workspace/db run push`.
