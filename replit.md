@@ -30,8 +30,8 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 - **Start application** — Runs the Image Intelligentsia frontend and Express API together:
   - API: `PORT=8080 pnpm --filter @workspace/api-server run dev`
-  - Frontend: `PORT=20829 BASE_PATH=/ pnpm --filter @workspace/career-hub run dev`
-- Frontend is served at `/` and proxies `/api` requests to the local API server on port `8080`.
+  - Frontend: `PORT=5000 BASE_PATH=/ pnpm --filter @workspace/career-hub run dev`
+- Frontend is served at `/` on port `5000` (Replit webview) and proxies `/api` requests to the local API server on port `8080`.
 - Frontend Vite config binds to `0.0.0.0`, uses the workflow-provided `PORT`, enables Replit preview hosts, and proxies `/api` to the local API server on port `8080`.
 
 ## Environment Variables (Secrets)
