@@ -7,3 +7,5 @@ export * from "./users";
 export * from "./activity";
 export * from "./profile";
 export * from "./research";
+export * from "./weekly-reviews";
+export * from "./notepad";
