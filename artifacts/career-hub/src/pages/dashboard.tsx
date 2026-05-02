@@ -2,6 +2,7 @@ import { useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList, TrendingUp, Microscope } from "lucide-react";
+import { format, formatDistanceToNow, subWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -21,7 +22,7 @@ type Summary = {
 };
 type Skill = { skill: string; count: number };
 type ActivityItem = {
-  id: number; type: "job"|"goal"|"progress"|"reminder"|"note"|"roadmap";
+  id: number; type: "job"|"goal"|"progress"|"reminder"|"note"|"roadmap"|"research";
   title: string; action: string; createdAt: string;
 };
 type Reminder = {
@@ -29,18 +30,25 @@ type Reminder = {
   priority: string; completed: boolean; category: string; createdAt: string;
 };
 type Profile = { tagline: string; about: string; expertise: string[]; skills: string[]; interests: string[] };
+type ProgressEntry = { id: number; category: string; durationHours: number; status: string; createdAt: string };
+type ResearchItem = { id: number; status: string; title: string };
 
-const ACTIVITY_META: Record<ActivityItem["type"], { label: string }> = {
+const ACTIVITY_META: Record<string, { label: string }> = {
   job: { label: "Job added" }, goal: { label: "Goal created" }, progress: { label: "Progress logged" },
   reminder: { label: "Reminder set" }, note: { label: "Note saved" }, roadmap: { label: "Milestone added" },
+  research: { label: "Research added" },
 };
-const FILTERS: { id: "all"|ActivityItem["type"]; label: string }[] = [
+const FILTERS = [
   { id: "all", label: "All" }, { id: "job", label: "Jobs" }, { id: "goal", label: "Goals" },
   { id: "progress", label: "Progress" }, { id: "reminder", label: "Reminders" }, { id: "note", label: "Notes" },
-];
+] as const;
+
 const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 const emptyProfile = (): Profile => ({ tagline: "", about: "", expertise: [], skills: [], interests: [] });
 
+const CHART_COLORS = ["#6366f1","#22d3ee","#f59e0b","#10b981","#f43f5e","#8b5cf6","#ec4899","#14b8a6","#f97316"];
+
+// ─── TagInput ───────────────────────────────────────────────────────────────
 function TagInput({ values, onChange, placeholder }: { values: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [draft, setDraft] = useState("");
   const add = (raw: string) => {
@@ -57,10 +65,7 @@ function TagInput({ values, onChange, placeholder }: { values: string[]; onChang
     <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-secondary p-2 min-h-[40px]">
       {values.map((v) => (
         <span key={v} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">
-          {v}
-          <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:text-foreground transition-colors">
-            <X className="h-2.5 w-2.5" />
-          </button>
+          {v}<button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:text-foreground transition-colors"><X className="h-2.5 w-2.5" /></button>
         </span>
       ))}
       <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown} onBlur={() => add(draft)}
@@ -70,14 +75,10 @@ function TagInput({ values, onChange, placeholder }: { values: string[]; onChang
   );
 }
 
+// ─── DueWarningBanner ────────────────────────────────────────────────────────
 function DueWarningBanner() {
   const { user } = useAuth();
-  const { data } = useQuery({
-    queryKey: ["due-warnings"],
-    queryFn: () => api<any>("/due-warnings"),
-    refetchInterval: 5 * 60 * 1000,
-    enabled: !!user,
-  });
+  const { data } = useQuery({ queryKey: ["due-warnings"], queryFn: () => api<any>("/due-warnings"), refetchInterval: 5 * 60 * 1000, enabled: !!user });
   if (!data) return null;
   const { overdueReminders = [], soonReminders = [], overdueGoals = [], soonGoals = [] } = data;
   const overdueCount = overdueReminders.length + overdueGoals.length;
@@ -91,16 +92,8 @@ function DueWarningBanner() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-red-700">{overdueCount} item{overdueCount > 1 ? "s" : ""} overdue</p>
             <div className="flex flex-wrap gap-2 mt-1">
-              {overdueReminders.map((r: any) => (
-                <Link href="/reminders" key={r.id}>
-                  <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200">⏰ {r.title}</span>
-                </Link>
-              ))}
-              {overdueGoals.map((g: any) => (
-                <Link href={`/goals/${g.id}`} key={g.id}>
-                  <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200">🎯 {g.title}</span>
-                </Link>
-              ))}
+              {overdueReminders.map((r: any) => <Link href="/reminders" key={r.id}><span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200">⏰ {r.title}</span></Link>)}
+              {overdueGoals.map((g: any) => <Link href={`/goals/${g.id}`} key={g.id}><span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200">🎯 {g.title}</span></Link>)}
             </div>
           </div>
         </div>
@@ -111,18 +104,8 @@ function DueWarningBanner() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-700">{soonCount} item{soonCount > 1 ? "s" : ""} due in the next 7 days</p>
             <div className="flex flex-wrap gap-2 mt-1">
-              {soonReminders.map((r: any) => (
-                <Link href="/reminders" key={r.id}>
-                  <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-200">
-                    ⏰ {r.title}{r.dueDate ? ` · ${format(new Date(r.dueDate), "MMM d")}` : ""}
-                  </span>
-                </Link>
-              ))}
-              {soonGoals.map((g: any) => (
-                <Link href={`/goals/${g.id}`} key={g.id}>
-                  <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-200">🎯 {g.title}</span>
-                </Link>
-              ))}
+              {soonReminders.map((r: any) => <Link href="/reminders" key={r.id}><span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-200">⏰ {r.title}{r.dueDate ? ` · ${format(new Date(r.dueDate), "MMM d")}` : ""}</span></Link>)}
+              {soonGoals.map((g: any) => <Link href={`/goals/${g.id}`} key={g.id}><span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-200">🎯 {g.title}</span></Link>)}
             </div>
           </div>
         </div>
@@ -131,51 +114,131 @@ function DueWarningBanner() {
   );
 }
 
+// ─── SkillsGapCard ───────────────────────────────────────────────────────────
 function SkillsGapCard() {
   const { user } = useAuth();
-  const { data, isLoading } = useQuery({
-    queryKey: ["skills-gap"],
-    queryFn: () => api<any>("/skills-gap"),
-    staleTime: 2 * 60 * 1000,
-    enabled: !!user,
-  });
+  const { data, isLoading } = useQuery({ queryKey: ["skills-gap"], queryFn: () => api<any>("/skills-gap"), staleTime: 2 * 60 * 1000, enabled: !!user });
   if (isLoading || !data || data.goalSkills.length === 0) return null;
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
-      <h2 className="text-[15px] text-foreground mb-1 flex items-center gap-2" style={serif}>
-        <Zap className="w-4 h-4 text-yellow-500" /> Skills Gap
-      </h2>
+      <h2 className="text-[15px] text-foreground mb-1 flex items-center gap-2" style={serif}><Zap className="w-4 h-4 text-yellow-500" /> Skills Gap</h2>
       <div className="space-y-1 mb-3">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Coverage</span><span>{data.covered.length}/{data.goalSkills.length} skills</span>
-        </div>
+        <div className="flex justify-between text-xs text-muted-foreground"><span>Coverage</span><span>{data.covered.length}/{data.goalSkills.length} skills</span></div>
         <Progress value={data.coveragePercent} className="h-1.5" />
       </div>
-      {data.gaps.length > 0 && (
-        <div className="mb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-red-400 mb-1">Missing</p>
-          <div className="flex flex-wrap gap-1.5">
-            {data.gaps.map((s: string) => (
-              <Badge key={s} className="bg-red-50 text-red-600 border border-red-200 text-xs">{s}</Badge>
-            ))}
-          </div>
-        </div>
-      )}
-      {data.covered.length > 0 && (
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400 mb-1">Covered</p>
-          <div className="flex flex-wrap gap-1.5">
-            {data.covered.map((s: string) => (
-              <Badge key={s} className="bg-green-50 text-green-700 border border-green-200 text-xs">✓ {s}</Badge>
-            ))}
-          </div>
-        </div>
-      )}
+      {data.gaps.length > 0 && <div className="mb-2"><p className="text-[10px] font-semibold uppercase tracking-wider text-red-400 mb-1">Missing</p><div className="flex flex-wrap gap-1.5">{data.gaps.map((s: string) => <Badge key={s} className="bg-red-50 text-red-600 border border-red-200 text-xs">{s}</Badge>)}</div></div>}
+      {data.covered.length > 0 && <div><p className="text-[10px] font-semibold uppercase tracking-wider text-green-400 mb-1">Covered</p><div className="flex flex-wrap gap-1.5">{data.covered.map((s: string) => <Badge key={s} className="bg-green-50 text-green-700 border border-green-200 text-xs">✓ {s}</Badge>)}</div></div>}
     </div>
   );
 }
 
-function ProfileSection() {
+// ─── Learning Charts ─────────────────────────────────────────────────────────
+function LearningCharts({ entries }: { entries: ProgressEntry[] }) {
+  const weeklyHours = useMemo(() => {
+    const weeks = Array.from({ length: 8 }, (_, i) => {
+      const weekStart = startOfWeek(subWeeks(new Date(), 7 - i));
+      const weekEnd = endOfWeek(weekStart);
+      const label = format(weekStart, "MMM d");
+      const hours = entries
+        .filter((e) => { const d = new Date(e.createdAt); return d >= weekStart && d <= weekEnd; })
+        .reduce((sum, e) => sum + (e.durationHours || 0), 0);
+      return { label, hours: Math.round(hours * 10) / 10 };
+    });
+    return weeks;
+  }, [entries]);
+
+  const categoryBreakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of entries) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
+    return Array.from(counts.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 6);
+  }, [entries]);
+
+  const statusBreakdown = useMemo(() => [
+    { name: "Completed",   value: entries.filter((e) => e.status === "completed").length,   color: "#10b981" },
+    { name: "In Progress", value: entries.filter((e) => e.status === "in_progress").length, color: "#f59e0b" },
+    { name: "Not Started", value: entries.filter((e) => e.status === "not_started").length, color: "#e2e8f0" },
+  ].filter((s) => s.value > 0), [entries]);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="space-y-5">
+      {/* Weekly hours bar chart */}
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <h2 className="text-[15px] text-foreground" style={serif}>Weekly learning hours</h2>
+        </div>
+        <ResponsiveContainer width="100%" height={140}>
+          <BarChart data={weeklyHours} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+            <ReTooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v} hr`, "Hours"]} />
+            <Bar dataKey="hours" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Category breakdown pie + status */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <h2 className="text-[13px] text-foreground mb-3" style={serif}>By category</h2>
+          {categoryBreakdown.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={100}>
+                <PieChart>
+                  <Pie data={categoryBreakdown} cx="50%" cy="50%" innerRadius={28} outerRadius={44} dataKey="value" paddingAngle={2}>
+                    {categoryBreakdown.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-1 mt-2">
+                {categoryBreakdown.map((c, i) => (
+                  <div key={c.name} className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                      <span className="text-muted-foreground capitalize">{c.name.replace("_", " ")}</span>
+                    </div>
+                    <span className="font-medium text-foreground">{c.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <p className="text-[12px] text-muted-foreground">No data yet</p>}
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <h2 className="text-[13px] text-foreground mb-3" style={serif}>By status</h2>
+          {statusBreakdown.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={100}>
+                <PieChart>
+                  <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={28} outerRadius={44} dataKey="value" paddingAngle={2}>
+                    {statusBreakdown.map((s, i) => <Cell key={i} fill={s.color} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-1 mt-2">
+                {statusBreakdown.map((s) => (
+                  <div key={s.name} className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
+                      <span className="text-muted-foreground">{s.name}</span>
+                    </div>
+                    <span className="font-medium text-foreground">{s.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <p className="text-[12px] text-muted-foreground">No data yet</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ProfileSection ──────────────────────────────────────────────────────────
+function ProfileSection({ summary, progressEntries }: { summary?: Summary; progressEntries: ProgressEntry[] }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -191,7 +254,16 @@ function ProfileSection() {
     setEditing(true);
   };
   const hasContent = profile && (profile.tagline || profile.about || profile.expertise.length > 0 || profile.skills.length > 0 || profile.interests.length > 0);
+
+  // Live stats derived from actual data
+  const liveStats = useMemo(() => {
+    const totalHours = progressEntries.reduce((s, e) => s + (e.durationHours || 0), 0);
+    const completed = progressEntries.filter((e) => e.status === "completed").length;
+    return { totalHours: Math.round(totalHours * 10) / 10, completed, activeGoals: summary?.activeGoals ?? 0 };
+  }, [progressEntries, summary]);
+
   if (isLoading) return <Skeleton className="h-48 w-full rounded-2xl" />;
+
   if (!editing && !hasContent) return (
     <div className="bg-card border border-dashed border-border rounded-2xl p-6 flex items-center justify-between">
       <div>
@@ -201,6 +273,7 @@ function ProfileSection() {
       <Button onClick={startEdit} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" /> Add Profile</Button>
     </div>
   );
+
   if (editing) return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
       <div className="flex items-center justify-between">
@@ -212,23 +285,14 @@ function ProfileSection() {
           </Button>
         </div>
       </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Tagline</label>
-        <Input value={form.tagline} onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))} placeholder="e.g. ML Engineer passionate about Computer Vision" className="bg-secondary border-border text-[13px]" />
-      </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">About</label>
-        <Textarea value={form.about} onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))} placeholder="A short summary about your background…" className="resize-y bg-secondary border-border text-[13px] min-h-[100px]" rows={4} />
-      </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Expertise</label>
-        <TagInput values={form.expertise} onChange={(v) => setForm((f) => ({ ...f, expertise: v }))} placeholder="e.g. Computer Vision, NLP… press Enter" />
-      </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Skills</label>
-        <TagInput values={form.skills} onChange={(v) => setForm((f) => ({ ...f, skills: v }))} placeholder="e.g. Python, PyTorch… press Enter" />
-      </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Interests</label>
-        <TagInput values={form.interests} onChange={(v) => setForm((f) => ({ ...f, interests: v }))} placeholder="e.g. Robotics, Open Source… press Enter" />
-      </div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Tagline</label><Input value={form.tagline} onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))} placeholder="e.g. ML Engineer passionate about Computer Vision" className="bg-secondary border-border text-[13px]" /></div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">About</label><Textarea value={form.about} onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))} placeholder="A short summary about your background…" className="resize-y bg-secondary border-border text-[13px] min-h-[100px]" rows={4} /></div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Expertise</label><TagInput values={form.expertise} onChange={(v) => setForm((f) => ({ ...f, expertise: v }))} placeholder="e.g. Computer Vision, NLP… press Enter" /></div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Skills</label><TagInput values={form.skills} onChange={(v) => setForm((f) => ({ ...f, skills: v }))} placeholder="e.g. Python, PyTorch… press Enter" /></div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Interests</label><TagInput values={form.interests} onChange={(v) => setForm((f) => ({ ...f, interests: v }))} placeholder="e.g. Robotics, Open Source… press Enter" /></div>
     </div>
   );
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-start justify-between mb-4">
@@ -238,6 +302,23 @@ function ProfileSection() {
         </div>
         <button onClick={startEdit} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-4"><Pencil className="h-3.5 w-3.5" /></button>
       </div>
+
+      {/* Live stats row — auto-updates from real data */}
+      <div className="grid grid-cols-3 gap-3 mb-4 p-3 rounded-xl bg-secondary/60">
+        <div className="text-center">
+          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.totalHours}</p>
+          <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">hrs learned</p>
+        </div>
+        <div className="text-center border-x border-border">
+          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.completed}</p>
+          <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">completed</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.activeGoals}</p>
+          <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">active goals</p>
+        </div>
+      </div>
+
       <div className="space-y-4">
         {profile?.expertise && profile.expertise.length > 0 && (
           <div><p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Expertise</p>
@@ -259,12 +340,40 @@ function ProfileSection() {
   );
 }
 
+// ─── WorkingResearchCard ─────────────────────────────────────────────────────
+function WorkingResearchCard() {
+  const { data: items } = useQuery({ queryKey: ["research"], queryFn: () => api<ResearchItem[]>("/research") });
+  const working = (items ?? []).filter((i) => i.status === "working");
+  if (working.length === 0) return null;
+  return (
+    <div className="bg-card border border-violet-200 dark:border-violet-500/20 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[15px] text-foreground flex items-center gap-2" style={serif}>
+          <Microscope className="w-4 h-4 text-violet-500" /> Currently Working On
+        </h2>
+        <Link href="/research" className="text-[12px] text-primary hover:underline underline-offset-2">View all</Link>
+      </div>
+      <div className="space-y-2">
+        {working.slice(0, 4).map((item) => (
+          <div key={item.id} className="flex items-center gap-2 py-1.5 border-b border-border last:border-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0" />
+            <span className="text-[13px] text-foreground line-clamp-1">{item.title}</span>
+          </div>
+        ))}
+        {working.length > 4 && <p className="text-[11px] text-muted-foreground">+{working.length - 4} more</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [filter, setFilter] = useState<typeof FILTERS[number]["id"]>("all");
   const { data: summary, isLoading: isLoadingSummary } = useQuery<Summary>({ queryKey: ["dashboard-summary"], queryFn: () => api<Summary>("/dashboard/summary") });
   const { data: skills, isLoading: isLoadingSkills } = useQuery<Skill[]>({ queryKey: ["dashboard-skills"], queryFn: () => api<Skill[]>("/dashboard/top-skills") });
   const { data: activity, isLoading: isLoadingActivity } = useQuery<ActivityItem[]>({ queryKey: ["activity"], queryFn: () => api<ActivityItem[]>("/activity?limit=20") });
   const { data: reminders, isLoading: isLoadingReminders } = useQuery<Reminder[]>({ queryKey: ["dashboard-reminders"], queryFn: () => api<Reminder[]>("/reminders") });
+  const { data: progressEntries = [] } = useQuery<ProgressEntry[]>({ queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress") });
 
   const recentReminder = reminders?.filter((r) => !r.completed).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   const filteredActivity = useMemo(() => { const list = activity ?? []; return filter === "all" ? list : list.filter((item) => item.type === filter); }, [activity, filter]);
@@ -277,29 +386,27 @@ export default function Dashboard() {
         <p className="text-[14px] text-muted-foreground mt-1.5">Here's where things stand today.</p>
       </div>
 
-      {/* Due Warning Banner */}
       <DueWarningBanner />
 
-      {/* Weekly Review Link */}
       <div className="flex justify-end">
         <Link href="/weekly-review">
-          <Button variant="outline" size="sm" className="gap-2 text-[13px]">
-            <ClipboardList className="h-3.5 w-3.5" /> Weekly Review
-          </Button>
+          <Button variant="outline" size="sm" className="gap-2 text-[13px]"><ClipboardList className="h-3.5 w-3.5" /> Weekly Review</Button>
         </Link>
       </div>
 
-      <ProfileSection />
+      {/* Profile card — now receives live data */}
+      <ProfileSection summary={summary} progressEntries={progressEntries} />
 
+      {/* Summary stats */}
       {isLoadingSummary ? (
         <div className="grid grid-cols-2 gap-4">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}</div>
       ) : summary ? (
         <div className="grid grid-cols-2 gap-4">
           {[
-            { label: "Active goals", value: summary.activeGoals, hint: `of ${summary.totalGoals} total` },
+            { label: "Active goals",       value: summary.activeGoals,       hint: `of ${summary.totalGoals} total` },
             { label: "Learning completed", value: summary.progressCompleted, hint: `${summary.progressInProgress} in progress` },
-            { label: "Jobs applied", value: summary.appliedJobs, hint: `of ${summary.totalJobs} saved` },
-            { label: "Pending reminders", value: summary.pendingReminders, hint: "awaiting action" },
+            { label: "Jobs applied",       value: summary.appliedJobs,       hint: `of ${summary.totalJobs} saved` },
+            { label: "Pending reminders",  value: summary.pendingReminders,  hint: "awaiting action" },
           ].map((stat) => (
             <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
@@ -309,6 +416,9 @@ export default function Dashboard() {
           ))}
         </div>
       ) : null}
+
+      {/* Charts */}
+      <LearningCharts entries={progressEntries} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Activity timeline */}
@@ -360,8 +470,10 @@ export default function Dashboard() {
 
         {/* Right column */}
         <div className="space-y-5">
-          {/* Skills Gap */}
           <SkillsGapCard />
+
+          {/* Working Research card */}
+          <WorkingResearchCard />
 
           {/* Reminder */}
           <div className="bg-card border border-border rounded-2xl p-5">
@@ -373,11 +485,7 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
                   <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">{recentReminder.category}</span>
                   <span className="px-2 py-0.5 rounded-full bg-accent text-primary capitalize">{recentReminder.priority} priority</span>
-                  {recentReminder.dueDate && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                      <CalendarDays className="h-3 w-3" />{format(new Date(recentReminder.dueDate), "MMM d")}
-                    </span>
-                  )}
+                  {recentReminder.dueDate && <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground"><CalendarDays className="h-3 w-3" />{format(new Date(recentReminder.dueDate), "MMM d")}</span>}
                 </div>
                 <Button variant="outline" size="sm" asChild className="w-full text-[12px] mt-1"><Link href="/reminders">View reminders</Link></Button>
               </div>

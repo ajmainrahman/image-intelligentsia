@@ -129,3 +129,18 @@ function serializeRoadmapItem(r: typeof roadmapTable.$inferSelect) {
 }
 
 export default router;
+// Bulk reorder — receives [{id, order}, ...]
+router.patch("/roadmap/reorder", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const schema = z.array(z.object({ id: z.number().int(), order: z.number().int() }));
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    await Promise.all(
+      parsed.data.map(({ id, order }) =>
+        db.update(roadmapTable).set({ order, updatedAt: new Date() })
+          .where(and(eq(roadmapTable.id, id), eq(roadmapTable.userId, req.userId!)))
+      )
+    );
+    res.sendStatus(204);
+  } catch (err) { next(err); }
+});

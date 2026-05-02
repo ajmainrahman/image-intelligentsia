@@ -15,21 +15,32 @@ export function BrandLogo({ className = "", iconClassName = "" }: BrandLogoProps
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
+        {/* Eye shape */}
         <path
-          d="M8 24 L16 7 L24 24"
+          d="M4 16 Q16 6 28 16 Q16 26 4 16Z"
+          fill="white"
+          fillOpacity="0.12"
+        />
+        <path
+          d="M4 16 Q16 6 28 16 Q16 26 4 16Z"
           stroke="white"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="1.2"
+          strokeOpacity="0.5"
           fill="none"
         />
-        <path
-          d="M11.6 18.5 L20.4 18.5"
-          stroke="white"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        <circle cx="16" cy="11.5" r="1.5" fill="white" />
+        {/* Iris ring */}
+        <circle cx="16" cy="16" r="6.5" fill="white" fillOpacity="0.18" />
+        <circle cx="16" cy="16" r="6.5" stroke="white" strokeWidth="0.8" strokeOpacity="0.6" fill="none" />
+        {/* Neural triangle nodes */}
+        <circle cx="16" cy="11.5" r="1.6" fill="white" />
+        <circle cx="19.8" cy="18" r="1.6" fill="white" />
+        <circle cx="12.2" cy="18" r="1.6" fill="white" />
+        {/* Neural connections */}
+        <line x1="16" y1="11.5" x2="19.8" y2="18" stroke="white" strokeWidth="0.9" strokeLinecap="round" strokeOpacity="0.85" />
+        <line x1="19.8" y1="18" x2="12.2" y2="18" stroke="white" strokeWidth="0.9" strokeLinecap="round" strokeOpacity="0.85" />
+        <line x1="12.2" y1="18" x2="16" y2="11.5" stroke="white" strokeWidth="0.9" strokeLinecap="round" strokeOpacity="0.85" />
+        {/* Pupil center */}
+        <circle cx="16" cy="16" r="1.8" fill="white" fillOpacity="0.4" />
       </svg>
     </div>
   );
