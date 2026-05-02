@@ -145,7 +145,7 @@ export const profileTable = pgTable("profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const activityLogTable = pgTable("activity_log_v2", {
+export const activityLogTable = pgTable("activity_log", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   type: text("type").notNull(),
