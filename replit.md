@@ -53,7 +53,7 @@ For Vercel deployment, additionally set:
 - **Type**: React + Vite web app
 - **Preview path**: `/`
 - **Purpose**: Atlas — "Map your career & research journey." A unified workspace for career goals, learning, opportunities, and a personal research library.
-- **Brand**: Emerald-teal primary (`hsl(173 78% 32%)`) + warm amber accent (`hsl(38 92% 50%)`) on a warm cream canvas; deep ink sidebar. Logo is a peaked "A" mark on a gradient rounded square.
+- **Brand**: "Luminary" design — Plus Jakarta Sans only (no serif/mono), emerald-600 primary (`hsl(160 84% 39%)`), amber accent (`hsl(38 92% 50%)`), warm white background (`#FAFAF8` / `hsl(60 12% 98%)`), warm neutral foreground (no black). Horizontal sticky top-nav replacing sidebar. Logo is a gradient rounded-square eye mark.
 
 #### Features
 - **Overview**: Summary stats (goals, progress, jobs, reminders), top skills from job descriptions, recent activity timeline
@@ -65,6 +65,7 @@ For Vercel deployment, additionally set:
 - **Reminders**: Task reminders with priority, due dates, and categories
 - **Notepad**: Local browser-saved notes for quick writing and interview/application notes
 - **Mobile**: Top app bar + 5-tab bottom nav (Home / Goals / Research / Learning / Jobs) with safe-area insets, slide-down full-nav drawer, larger touch targets
+- **Dashboard Kanban**: Job pipeline board (Wishlist → Applied → Interviewing → Offered / Rejected columns) displayed on the dashboard below the summary grid
 
 #### Tech
 - React 19 + Vite, TailwindCSS, shadcn/ui components
@@ -84,6 +85,7 @@ For Vercel deployment, additionally set:
 - `roadmap_items` — long-term roadmap milestones
 - `jobs` — saved job descriptions with keywords/skills arrays
 - `jobs.apply_date` — optional timestamp for when an application was submitted
+- `progress_entries.start_date` — optional timestamp for when a learning activity began
 - `reminders` — task reminders with due dates
 - `users` — registered users (id, name, email)
 - `research` *(new)* — research library items (title, type, authors, source, summary, tags[], status, notes, optional `goal_id` link)

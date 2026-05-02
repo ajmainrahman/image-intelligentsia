@@ -46,6 +46,7 @@ export const progressTable = pgTable("progress_entries", {
   toolOrResource: text("tool_or_resource"),
   resourceUrl: text("resource_url"),
   durationHours: numeric("duration_hours").default("0"),
+  startDate: timestamp("start_date"),
   completedAt: timestamp("completed_at"),
   goalId: integer("goal_id"),
   pinned: boolean("pinned").default(false),

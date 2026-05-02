@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { Check, ChevronRight, User, Target, BookOpen } from "lucide-react";
 
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 type Step = 1 | 2 | 3;
 
@@ -103,7 +102,7 @@ export default function OnboardingPage() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-[32px] text-foreground leading-tight mb-2" style={serif}>
+          <h1 className="text-[32px] text-foreground leading-tight mb-2">
             Welcome{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
           </h1>
           <p className="text-[14px] text-muted-foreground">
@@ -151,7 +150,7 @@ export default function OnboardingPage() {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-[20px] text-foreground mb-1" style={serif}>About you</h2>
+                  <h2 className="text-[20px] text-foreground mb-1">About you</h2>
                   <p className="text-[13px] text-muted-foreground">This shows on your dashboard overview.</p>
                 </div>
                 <div className="space-y-1.5">
@@ -206,7 +205,7 @@ export default function OnboardingPage() {
             {step === 2 && (
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-[20px] text-foreground mb-1" style={serif}>Your first goal</h2>
+                  <h2 className="text-[20px] text-foreground mb-1">Your first goal</h2>
                   <p className="text-[13px] text-muted-foreground">What career milestone are you working toward?</p>
                 </div>
                 <div className="space-y-1.5">
@@ -252,7 +251,7 @@ export default function OnboardingPage() {
             {step === 3 && (
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-[20px] text-foreground mb-1" style={serif}>What are you learning?</h2>
+                  <h2 className="text-[20px] text-foreground mb-1">What are you learning?</h2>
                   <p className="text-[13px] text-muted-foreground">Log your first learning entry to start tracking.</p>
                 </div>
                 <div className="space-y-1.5">

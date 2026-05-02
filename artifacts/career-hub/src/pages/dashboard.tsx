@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList, TrendingUp, Microscope } from "lucide-react";
+import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList, TrendingUp, Microscope, Briefcase } from "lucide-react";
 import { format, formatDistanceToNow, subWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,6 +32,7 @@ type Reminder = {
 type Profile = { tagline: string; about: string; expertise: string[]; skills: string[]; interests: string[] };
 type ProgressEntry = { id: number; category: string; durationHours: number; status: string; createdAt: string };
 type ResearchItem = { id: number; status: string; title: string };
+type Job = { id: number; title: string; company: string | null; status: string };
 
 const ACTIVITY_META: Record<string, { label: string }> = {
   job: { label: "Job added" }, goal: { label: "Goal created" }, progress: { label: "Progress logged" },
@@ -43,7 +44,6 @@ const FILTERS = [
   { id: "progress", label: "Progress" }, { id: "reminder", label: "Reminders" }, { id: "note", label: "Notes" },
 ] as const;
 
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 const emptyProfile = (): Profile => ({ tagline: "", about: "", expertise: [], skills: [], interests: [] });
 
 const CHART_COLORS = ["#6366f1","#22d3ee","#f59e0b","#10b981","#f43f5e","#8b5cf6","#ec4899","#14b8a6","#f97316"];
@@ -121,7 +121,7 @@ function SkillsGapCard() {
   if (isLoading || !data || data.goalSkills.length === 0) return null;
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
-      <h2 className="text-[15px] text-foreground mb-1 flex items-center gap-2" style={serif}><Zap className="w-4 h-4 text-yellow-500" /> Skills Gap</h2>
+      <h2 className="text-[15px] text-foreground mb-1 flex items-center gap-2"><Zap className="w-4 h-4 text-yellow-500" /> Skills Gap</h2>
       <div className="space-y-1 mb-3">
         <div className="flex justify-between text-xs text-muted-foreground"><span>Coverage</span><span>{data.covered.length}/{data.goalSkills.length} skills</span></div>
         <Progress value={data.coveragePercent} className="h-1.5" />
@@ -167,7 +167,7 @@ function LearningCharts({ entries }: { entries: ProgressEntry[] }) {
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-primary" />
-          <h2 className="text-[15px] text-foreground" style={serif}>Weekly learning hours</h2>
+          <h2 className="text-[15px] text-foreground">Weekly learning hours</h2>
         </div>
         <ResponsiveContainer width="100%" height={140}>
           <BarChart data={weeklyHours} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
@@ -182,7 +182,7 @@ function LearningCharts({ entries }: { entries: ProgressEntry[] }) {
       {/* Category breakdown pie + status */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5">
-          <h2 className="text-[13px] text-foreground mb-3" style={serif}>By category</h2>
+          <h2 className="text-[13px] text-foreground mb-3">By category</h2>
           {categoryBreakdown.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={100}>
@@ -208,7 +208,7 @@ function LearningCharts({ entries }: { entries: ProgressEntry[] }) {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-5">
-          <h2 className="text-[13px] text-foreground mb-3" style={serif}>By status</h2>
+          <h2 className="text-[13px] text-foreground mb-3">By status</h2>
           {statusBreakdown.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={100}>
@@ -267,7 +267,7 @@ function ProfileSection({ summary, progressEntries }: { summary?: Summary; progr
   if (!editing && !hasContent) return (
     <div className="bg-card border border-dashed border-border rounded-2xl p-6 flex items-center justify-between">
       <div>
-        <p className="text-[15px] font-medium text-foreground" style={serif}>Set up your profile</p>
+        <p className="text-[15px] font-medium text-foreground">Set up your profile</p>
         <p className="text-[13px] text-muted-foreground mt-0.5">Add your expertise, skills and interests.</p>
       </div>
       <Button onClick={startEdit} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" /> Add Profile</Button>
@@ -277,7 +277,7 @@ function ProfileSection({ summary, progressEntries }: { summary?: Summary; progr
   if (editing) return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] text-foreground" style={serif}>Edit Profile</h2>
+        <h2 className="text-[17px] text-foreground">Edit Profile</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setEditing(false)} className="text-[12px]">Cancel</Button>
           <Button size="sm" onClick={() => saveProfile.mutate(form)} disabled={saveProfile.isPending} className="gap-1.5 text-[12px]">
@@ -306,15 +306,15 @@ function ProfileSection({ summary, progressEntries }: { summary?: Summary; progr
       {/* Live stats row — auto-updates from real data */}
       <div className="grid grid-cols-3 gap-3 mb-4 p-3 rounded-xl bg-secondary/60">
         <div className="text-center">
-          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.totalHours}</p>
+          <p className="text-[22px] text-foreground leading-none">{liveStats.totalHours}</p>
           <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">hrs learned</p>
         </div>
         <div className="text-center border-x border-border">
-          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.completed}</p>
+          <p className="text-[22px] text-foreground leading-none">{liveStats.completed}</p>
           <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">completed</p>
         </div>
         <div className="text-center">
-          <p className="text-[22px] text-foreground leading-none" style={serif}>{liveStats.activeGoals}</p>
+          <p className="text-[22px] text-foreground leading-none">{liveStats.activeGoals}</p>
           <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">active goals</p>
         </div>
       </div>
@@ -348,7 +348,7 @@ function WorkingResearchCard() {
   return (
     <div className="bg-card border border-violet-200 dark:border-violet-500/20 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[15px] text-foreground flex items-center gap-2" style={serif}>
+        <h2 className="text-[15px] text-foreground flex items-center gap-2">
           <Microscope className="w-4 h-4 text-violet-500" /> Currently Working On
         </h2>
         <Link href="/research" className="text-[12px] text-primary hover:underline underline-offset-2">View all</Link>
@@ -362,6 +362,94 @@ function WorkingResearchCard() {
         ))}
         {working.length > 4 && <p className="text-[11px] text-muted-foreground">+{working.length - 4} more</p>}
       </div>
+    </div>
+  );
+}
+
+// ─── Job Pipeline Kanban ─────────────────────────────────────────────────────
+const KANBAN_COLS = [
+  { id: "saved",        label: "Wishlist",     bg: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300" },
+  { id: "applied",      label: "Applied",      bg: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  { id: "interviewing", label: "Interviewing", bg: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { id: "offered",      label: "Offered",      bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+  { id: "rejected",     label: "Rejected",     bg: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+];
+
+function JobKanban() {
+  const { data: jobs = [], isLoading } = useQuery<Job[]>({
+    queryKey: ["jobs"],
+    queryFn: () => api<Job[]>("/jobs"),
+  });
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, Job[]>(KANBAN_COLS.map((c) => [c.id, []]));
+    for (const job of jobs) {
+      const list = map.get(job.status) ?? [];
+      list.push(job);
+      map.set(job.status, list);
+    }
+    return map;
+  }, [jobs]);
+
+  if (isLoading) return (
+    <div className="bg-card border border-border rounded-2xl p-5">
+      <Skeleton className="h-6 w-44 mb-4" />
+      <div className="grid grid-cols-5 gap-3">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
+    </div>
+  );
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-[17px] font-bold text-foreground flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-primary" /> Job Pipeline
+          </h2>
+          <p className="text-[12px] text-muted-foreground mt-0.5">{jobs.length} {jobs.length === 1 ? "opportunity" : "opportunities"} tracked</p>
+        </div>
+        <Link href="/jobs" className="text-[12px] text-primary hover:underline underline-offset-2">Manage all →</Link>
+      </div>
+
+      {jobs.length === 0 ? (
+        <div className="text-center py-10 border-2 border-dashed border-border rounded-xl">
+          <p className="text-[13px] text-muted-foreground mb-2">No jobs tracked yet.</p>
+          <Link href="/jobs" className="text-[13px] text-primary hover:underline">Add your first opportunity →</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+          {KANBAN_COLS.map((col) => {
+            const colJobs = grouped.get(col.id) ?? [];
+            return (
+              <div key={col.id} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${col.bg}`}>
+                    {col.label}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{colJobs.length}</span>
+                </div>
+                <div className="flex flex-col gap-1.5 min-h-[80px]">
+                  {colJobs.slice(0, 4).map((job) => (
+                    <Link key={job.id} href="/jobs">
+                      <div className="bg-secondary/70 hover:bg-secondary border border-border/50 rounded-lg px-2.5 py-2 cursor-pointer transition-colors group">
+                        <p className="text-[12px] font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">{job.title}</p>
+                        {job.company && <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{job.company}</p>}
+                      </div>
+                    </Link>
+                  ))}
+                  {colJobs.length > 4 && (
+                    <p className="text-[10px] text-muted-foreground pl-1">+{colJobs.length - 4} more</p>
+                  )}
+                  {colJobs.length === 0 && (
+                    <div className="h-14 border-2 border-dashed border-border/40 rounded-lg flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground/40">Empty</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -382,7 +470,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 page-enter">
       <div>
-        <h1 className="text-[28px] text-foreground leading-tight" style={serif}>Your overview</h1>
+        <h1 className="text-[28px] font-bold text-foreground leading-tight">Your overview</h1>
         <p className="text-[14px] text-muted-foreground mt-1.5">Here's where things stand today.</p>
       </div>
 
@@ -410,7 +498,7 @@ export default function Dashboard() {
           ].map((stat) => (
             <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
-              <p className="text-[28px] text-foreground leading-none" style={serif}>{stat.value}</p>
+              <p className="text-[28px] text-foreground leading-none">{stat.value}</p>
               <p className="text-[12px] text-muted-foreground mt-1.5">{stat.hint}</p>
             </div>
           ))}
@@ -426,7 +514,7 @@ export default function Dashboard() {
           <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-[17px] text-foreground" style={serif}>Recent activity</h2>
+                <h2 className="text-[17px] text-foreground">Recent activity</h2>
                 <p className="text-[12px] text-muted-foreground mt-0.5">Last 20 events across the app</p>
               </div>
               <Link href="/activity" className="text-[12px] text-primary hover:underline underline-offset-2">View all</Link>
@@ -477,7 +565,7 @@ export default function Dashboard() {
 
           {/* Reminder */}
           <div className="bg-card border border-border rounded-2xl p-5">
-            <h2 className="text-[15px] text-foreground mb-4" style={serif}>Don't forget</h2>
+            <h2 className="text-[15px] text-foreground mb-4">Don't forget</h2>
             {isLoadingReminders ? <Skeleton className="h-20 w-full rounded-xl" /> : recentReminder ? (
               <div className="space-y-3">
                 <p className="text-[13px] font-medium text-foreground">{recentReminder.title}</p>
@@ -494,7 +582,7 @@ export default function Dashboard() {
 
           {/* Top skills */}
           <div className="bg-card border border-border rounded-2xl p-5">
-            <h2 className="text-[15px] text-foreground mb-4" style={serif}>Skills in demand</h2>
+            <h2 className="text-[15px] text-foreground mb-4">Skills in demand</h2>
             {isLoadingSkills ? (
               <div className="space-y-2.5">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
             ) : skills && skills.length > 0 ? (
@@ -515,7 +603,7 @@ export default function Dashboard() {
           {/* Roadmap progress */}
           {summary && (
             <div className="bg-card border border-border rounded-2xl p-5">
-              <h2 className="text-[15px] text-foreground mb-1" style={serif}>Roadmap progress</h2>
+              <h2 className="text-[15px] font-semibold text-foreground mb-1">Roadmap progress</h2>
               <p className="text-[12px] text-muted-foreground mb-4">{summary.roadmapCompleted} of {summary.roadmapTotal} milestones complete</p>
               <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                 <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${roadmapPct}%` }} />
@@ -525,6 +613,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Job Pipeline Kanban */}
+      <JobKanban />
     </div>
   );
 }

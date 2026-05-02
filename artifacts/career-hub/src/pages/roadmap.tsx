@@ -48,7 +48,6 @@ const PHASES = [
 
 const LEVEL_LABELS = ["Junior", "Mid-Junior", "Mid", "Senior", "Lead"];
 const MAX_FOCUS = 1000;
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 const emptyForm = (phase: Phase = "short_term"): FormState => ({
   title: "", yearTarget: String(new Date().getFullYear() + 1),
@@ -198,7 +197,7 @@ export default function RoadmapPage() {
     <div className="space-y-10 page-enter">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>The bigger picture</h1>
+          <h1 className="text-[28px] font-bold text-foreground leading-tight">The bigger picture</h1>
           <p className="text-[14px] text-muted-foreground mt-1.5">Your 1–10 year trajectory, broken into phases. Drag to reorder.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? (editingId ? null : openCreate()) : closeDialog())}>
@@ -207,7 +206,7 @@ export default function RoadmapPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto rounded-2xl p-8">
             <DialogHeader className="mb-1">
-              <DialogTitle className="text-[20px]" style={serif}>{editingId ? "Edit milestone" : "Add milestone"}</DialogTitle>
+              <DialogTitle className="text-[20px]">{editingId ? "Edit milestone" : "Add milestone"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-3">
@@ -309,7 +308,7 @@ export default function RoadmapPage() {
             <div key={phase.id} className={`rounded-2xl border bg-card p-5 flex flex-col ${phase.colBorder}`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className={`text-[14px] font-medium ${phase.colHeader}`} style={serif}>{phase.label}</h2>
+                  <h2 className={`text-[14px] font-medium ${phase.colHeader}`}>{phase.label}</h2>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{list.length}</span>
                 </div>
                 <button onClick={() => openCreate(phase.id)} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"><Plus className="h-3 w-3" /> Add</button>

@@ -13,7 +13,6 @@ import { ArrowLeft, BookOpen, Map, Clock, Target, Trophy, CheckCircle2 } from "l
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 const STATUS_COLORS: Record<string, string> = {
   active:    "bg-blue-100 text-blue-700",
@@ -78,7 +77,7 @@ export default function GoalDetailPage() {
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>{goal.title}</h1>
+          <h1 className="text-[28px] font-bold text-foreground leading-tight">{goal.title}</h1>
           <Badge className={STATUS_COLORS[goal.status] ?? ""}>
             {goal.status?.replace("_", " ")}
           </Badge>

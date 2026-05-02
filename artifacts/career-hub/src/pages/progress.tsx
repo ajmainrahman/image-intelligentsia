@@ -133,7 +133,6 @@ function computeStats(entries: ProgressEntry[]) {
   };
 }
 
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 export default function ProgressPage() {
   const queryClient = useQueryClient();
@@ -209,7 +208,7 @@ export default function ProgressPage() {
     <div className="space-y-10 page-enter">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>How you're growing</h1>
+          <h1 className="text-[28px] font-bold text-foreground leading-tight">How you're growing</h1>
           <p className="text-[14px] text-muted-foreground mt-1.5">Every hour logged compounds over time.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? openCreate() : closeDialog())}>
@@ -218,7 +217,7 @@ export default function ProgressPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl p-8">
             <DialogHeader className="mb-1">
-              <DialogTitle className="text-[20px]" style={serif}>{editingId ? "Edit entry" : "Log new progress"}</DialogTitle>
+              <DialogTitle className="text-[20px]">{editingId ? "Edit entry" : "Log new progress"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
@@ -305,7 +304,7 @@ export default function ProgressPage() {
         ].map((stat) => (
           <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
-            <p className="text-[28px] text-foreground leading-none" style={serif}>{stat.value}</p>
+            <p className="text-[28px] text-foreground leading-none">{stat.value}</p>
           </div>
         ))}
       </div>
@@ -314,7 +313,7 @@ export default function ProgressPage() {
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[15px] text-foreground" style={serif}>Last 12 weeks</h2>
+            <h2 className="text-[15px] text-foreground">Last 12 weeks</h2>
             <p className="text-[12px] text-muted-foreground mt-0.5">Daily learning activity</p>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -443,7 +442,7 @@ export default function ProgressPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
-          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>No learning entries yet</p>
+          <p className="text-[15px] font-medium text-foreground mb-1">No learning entries yet</p>
           <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Track courses, tools, and projects you're working on.</p>
           <Button onClick={openCreate} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Log your first entry</Button>
         </div>

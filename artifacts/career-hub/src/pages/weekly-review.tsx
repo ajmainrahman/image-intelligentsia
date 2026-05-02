@@ -11,7 +11,6 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clock, BookOpen, Target } from "l
 import { format, startOfWeek, endOfWeek, addDays } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 
 export default function WeeklyReviewPage() {
   const { user } = useAuth();
@@ -58,7 +57,7 @@ export default function WeeklyReviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>Weekly Review</h1>
+          <h1 className="text-[28px] font-bold text-foreground leading-tight">Weekly Review</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{weekLabel()}</p>
         </div>
         <div className="flex gap-2">

@@ -27,7 +27,6 @@ const STATUS_META: Record<Goal["status"], StatusMeta> = {
 };
 
 const emptyForm = (): GoalFormState => ({ title: "", targetRole: "", description: "", skills: [], progress: 0, status: "active", targetYear: String(new Date().getFullYear()), skillDraft: "" });
-const serif = { fontFamily: "'DM Serif Display', serif", fontWeight: 400 };
 const MAX_DESC = 1000;
 
 export default function GoalsPage() {
@@ -92,7 +91,7 @@ export default function GoalsPage() {
     <div className="space-y-10 page-enter">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[28px] text-foreground leading-tight" style={serif}>What you're working toward</h1>
+          <h1 className="text-[28px] font-bold text-foreground leading-tight">What you're working toward</h1>
           <p className="text-[14px] text-muted-foreground mt-1.5">Track your career ambitions and the skills that get you there.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? openCreate() : closeDialog())}>
@@ -101,7 +100,7 @@ export default function GoalsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[520px] rounded-2xl p-8">
             <DialogHeader className="mb-1">
-              <DialogTitle className="text-[20px]" style={serif}>{editingId ? "Edit goal" : "Create a goal"}</DialogTitle>
+              <DialogTitle className="text-[20px]">{editingId ? "Edit goal" : "Create a goal"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Title</label>
@@ -226,7 +225,7 @@ export default function GoalsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
-          <p className="text-[15px] font-medium text-foreground mb-1" style={serif}>No goals defined yet</p>
+          <p className="text-[15px] font-medium text-foreground mb-1">No goals defined yet</p>
           <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Start by setting a long-term career objective.</p>
           <Button onClick={openCreate} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Create first goal</Button>
         </div>

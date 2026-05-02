@@ -15,6 +15,7 @@ const ProgressBody = z.object({
   toolOrResource: z.string().nullable().optional(),
   resourceUrl: z.string().url().nullable().optional().or(z.literal("")),
   durationHours: z.number().min(0).max(10000).default(0),
+  startDate: z.string().nullable().optional(),
   completedAt: z.string().nullable().optional(),
   goalId: z.number().int().nullable().optional(),
   pinned: z.boolean().default(false),
@@ -34,12 +35,13 @@ router.post("/progress", requireAuth, async (req: AuthRequest, res, next): Promi
   try {
     const parsed = ProgressBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const { resourceUrl, completedAt, durationHours, ...rest } = parsed.data;
+    const { resourceUrl, startDate, completedAt, durationHours, ...rest } = parsed.data;
     const [entry] = await db.insert(progressTable).values({
       ...rest,
       userId: req.userId!,
       resourceUrl: resourceUrl || null,
       durationHours: String(durationHours ?? 0),
+      startDate: startDate ? new Date(startDate) : null,
       completedAt: completedAt ? new Date(completedAt) : null,
     }).returning();
     await logActivity(req.userId!, "progress", entry.title, entry.id, "logged");
@@ -53,12 +55,13 @@ router.put("/progress/:id", requireAuth, async (req: AuthRequest, res, next): Pr
     if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
     const parsed = ProgressBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const { resourceUrl, completedAt, durationHours, ...rest } = parsed.data;
+    const { resourceUrl, startDate, completedAt, durationHours, ...rest } = parsed.data;
     const [entry] = await db.update(progressTable)
       .set({
         ...rest,
         resourceUrl: resourceUrl || null,
         durationHours: String(durationHours ?? 0),
+        startDate: startDate ? new Date(startDate) : null,
         completedAt: completedAt ? new Date(completedAt) : null,
         updatedAt: new Date(),
       })
@@ -89,7 +92,6 @@ router.patch("/progress/:id", requireAuth, async (req: AuthRequest, res, next): 
     const patch = z.object({
       pinned: z.boolean().optional(),
       archived: z.boolean().optional(),
-      status: z.enum(["not_started", "in_progress", "completed"]).optional(),
     }).safeParse(req.body);
     if (!patch.success) { res.status(400).json({ error: patch.error.message }); return; }
     const [entry] = await db.update(progressTable)
@@ -111,6 +113,7 @@ function serializeProgress(p: typeof progressTable.$inferSelect) {
     toolOrResource: p.toolOrResource,
     resourceUrl: p.resourceUrl,
     durationHours: Number(p.durationHours ?? 0),
+    startDate: p.startDate ? p.startDate.toISOString() : null,
     completedAt: p.completedAt ? p.completedAt.toISOString() : null,
     goalId: p.goalId,
     pinned: p.pinned ?? false,
