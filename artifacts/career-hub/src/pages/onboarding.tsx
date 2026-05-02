@@ -89,7 +89,7 @@ export default function OnboardingPage() {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["progress"] });
-      toast({ title: "You're all set! Welcome to Atlas 🎉" });
+      toast({ title: "You're all set! Welcome to Image Intelligentsia 🎉" });
       navigate("/");
     }
   };

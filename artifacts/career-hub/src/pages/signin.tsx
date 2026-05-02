@@ -86,7 +86,7 @@ export default function SignInPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <BrandLogo className="h-16 w-16 mb-4" iconClassName="h-9 w-9" />
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Atlas</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Image Intelligentsia</h1>
           <p className="text-sm text-muted-foreground mt-1.5 text-center">
             Map your career &amp; research journey
           </p>

@@ -67,7 +67,7 @@ export function PageWrapper({ children }: PageWrapperProps) {
         <Link href="/" className="flex items-center gap-2.5 px-1 py-1 -ml-1 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
           <BrandLogo className="h-8 w-8" iconClassName="h-4.5 w-4.5" />
           <span className="text-[16px] font-semibold text-sidebar-foreground tracking-tight">
-            Atlas
+            Image Intelligentsia
           </span>
         </Link>
         <button

@@ -65,7 +65,7 @@ export function Sidebar() {
         <BrandLogo className="h-9 w-9" iconClassName="h-5 w-5" />
         <div className="leading-tight">
           <div className="text-[18px] font-semibold text-sidebar-foreground tracking-tight">
-            Atlas
+            Image Intelligentsia
           </div>
           <p className="text-[10.5px] text-sidebar-foreground/50 mt-0.5 leading-none">
             Career &amp; research
