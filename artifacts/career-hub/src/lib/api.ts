@@ -1,5 +1,4 @@
 const TOKEN_KEY = "image_intelligentsia_token";
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -18,8 +17,7 @@ export async function api<T = unknown>(
   options?: RequestInit,
 ): Promise<T> {
   const token = getToken();
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const res = await fetch(`${API_BASE}${normalizedPath}`, {
+  const res = await fetch(`/api${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

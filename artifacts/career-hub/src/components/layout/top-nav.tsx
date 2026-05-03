@@ -15,12 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const PRIMARY_LINKS = [
-  { href: "/",         label: "Overview",  icon: LayoutDashboard },
+  { href: "/",         label: "Dashboard", icon: LayoutDashboard },
   { href: "/goals",    label: "Goals",     icon: Target },
   { href: "/progress", label: "Learning",  icon: BookOpen },
   { href: "/research", label: "Research",  icon: Microscope },
-  { href: "/jobs",     label: "Jobs",      icon: Briefcase },
-  { href: "/roadmap",  label: "Roadmap",   icon: MapIcon },
+  { href: "/jobs",     label: "Pipeline",  icon: Briefcase },
 ];
 
 const MORE_LINKS = [
