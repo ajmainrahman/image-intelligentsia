@@ -88,7 +88,7 @@ export const remindersTable = pgTable("reminders", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const activityTable = pgTable("activity_log", {
+export const activityLogTable = pgTable("activity_log", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   type: text("type").notNull(),
@@ -109,14 +109,6 @@ export const weeklyReviewsTable = pgTable("weekly_reviews", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-export type User = typeof usersTable.$inferSelect;
-export type Goal = typeof goalsTable.$inferSelect;
-export type Progress = typeof progressTable.$inferSelect;
-export type RoadmapItem = typeof roadmapTable.$inferSelect;
-export type Reminder = typeof remindersTable.$inferSelect;
-export type WeeklyReview = typeof weeklyReviewsTable.$inferSelect;
-export type NewWeeklyReview = typeof weeklyReviewsTable.$inferInsert;
 
 export const jobsTable = pgTable("jobs", {
   id: serial("id").primaryKey(),
@@ -146,6 +138,17 @@ export const interviewQuestionsTable = pgTable("interview_questions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const interviewItemsTable = pgTable("interview_items", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  category: text("category"),
+  jobId: integer("job_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
 export const profileTable = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().unique(),
@@ -156,16 +159,6 @@ export const profileTable = pgTable("profiles", {
   interests: text("interests").array().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const activityLogTable = pgTable("activity_log", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  type: text("type").notNull(),
-  title: text("title").notNull(),
-  relatedId: integer("related_id"),
-  action: text("action"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const researchTable = pgTable("research", {
@@ -181,23 +174,25 @@ export const researchTable = pgTable("research", {
   notes: text("notes"),
   goalId: integer("goal_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
-
-export type Research = typeof researchTable.$inferSelect;
-
-export const interviewItemsTable = pgTable("interview_items", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  question: text("question").notNull(),
-  answer: text("answer"),
-  category: text("category"),
-  jobId: integer("job_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+export const notesTable = pgTable("notes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull().default(""),
+  content: text("content").notNull().default(""),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type User = typeof usersTable.$inferSelect;
+export type Goal = typeof goalsTable.$inferSelect;
+export type Progress = typeof progressTable.$inferSelect;
+export type RoadmapItem = typeof roadmapTable.$inferSelect;
+export type Reminder = typeof remindersTable.$inferSelect;
+export type WeeklyReview = typeof weeklyReviewsTable.$inferSelect;
+export type NewWeeklyReview = typeof weeklyReviewsTable.$inferInsert;
+export type Job = typeof jobsTable.$inferSelect;
+export type Research = typeof researchTable.$inferSelect;
 export type InterviewItem = typeof interviewItemsTable.$inferSelect;
