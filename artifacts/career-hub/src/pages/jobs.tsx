@@ -105,6 +105,7 @@ export default function JobsPage() {
       skills: data.skills.split(",").map(s => s.trim()).filter(Boolean),
       interviewQuestions: data.interviewQuestions.split("\n").map(s => s.trim()).filter(Boolean),
       interviewAnswers: data.interviewAnswers.split("\n").map(s => s.trim()).filter(Boolean),
+      pinned: Boolean(data.pinned),
     };
     editingJobId ? updateJob.mutate({ id: editingJobId, data: payload }) : createJob.mutate(payload);
   };
