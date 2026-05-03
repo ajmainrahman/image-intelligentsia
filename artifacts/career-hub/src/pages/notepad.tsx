@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,9 @@ export default function NotepadPage() {
   const [lastSaved, setLastSaved] = useState("Ready");
   const [legacySeeded, setLegacySeeded] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const saveTimer = useRef<number | null>(null);
 
   const { data: notes = [], isLoading } = useQuery<Note[]>({
     queryKey: ["notes"],
@@ -70,6 +73,12 @@ export default function NotepadPage() {
     () => notes.find((note) => note.id === selectedNoteId) ?? notes[0],
     [notes, selectedNoteId],
   );
+
+  useEffect(() => {
+    if (!selectedNote) return;
+    setDraftTitle(selectedNote.title);
+    setDraftContent(selectedNote.content);
+  }, [selectedNote?.id]);
 
   useEffect(() => {
     if (selectedNoteId == null && notes[0]?.id) setSelectedNoteId(notes[0].id);
@@ -131,13 +140,16 @@ export default function NotepadPage() {
   }, [notes, search, tagFilter, sortMode]);
 
   const persist = (updates: Partial<Pick<Note, "title" | "content">>) => {
-    if (!selectedNote) return;
     setLastSaved("Saving...");
-    const payload = {
-      title: updates.title ?? selectedNote.title,
-      content: updates.content ?? selectedNote.content,
-    };
-    updateNote.mutate({ id: selectedNote.id, data: payload });
+    const nextTitle = updates.title ?? draftTitle;
+    const nextContent = updates.content ?? draftContent;
+    setDraftTitle(nextTitle);
+    setDraftContent(nextContent);
+    if (!selectedNote) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      updateNote.mutate({ id: selectedNote.id, data: { title: nextTitle, content: nextContent } });
+    }, 450);
   };
 
   const addNote = () => {
@@ -151,7 +163,8 @@ export default function NotepadPage() {
 
   const insertIntoNote = (snippet: string) => {
     if (!selectedNote) return;
-    persist({ content: `${selectedNote.content}${selectedNote.content && !selectedNote.content.endsWith("\n") ? "\n" : ""}${snippet}` });
+    const base = draftContent;
+    persist({ content: `${base}${base && !base.endsWith("\n") ? "\n" : ""}${snippet}` });
   };
 
   const toolbarActions: ToolbarAction[] = [
@@ -281,7 +294,7 @@ export default function NotepadPage() {
                 </div>
                 {showPrompt && (
                   <div className="rounded-xl bg-background/80 border border-border p-4 text-sm text-muted-foreground">
-                    {PROMPTS[0]}
+                    {PROMPTS[selectedNote.id % PROMPTS.length]}
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border bg-background/80 p-2">
@@ -294,14 +307,14 @@ export default function NotepadPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
-                <Input value={selectedNote.title} onChange={(event) => persist({ title: event.target.value })} placeholder="Note title" className="bg-background/70" />
+                <Input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} onBlur={() => persist({ title: draftTitle })} placeholder="Note title" className="bg-background/70" />
                 <Button type="button" variant="outline" onClick={toggleDelete}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#idea ` })}><Sparkles className="h-4 w-4" />Tag idea</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#research ` })}><Hash className="h-4 w-4" />Tag research</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${draftContent}${draftContent.trim() ? "\n" : ""}#idea ` })}><Sparkles className="h-4 w-4" />Tag idea</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${draftContent}${draftContent.trim() ? "\n" : ""}#research ` })}><Hash className="h-4 w-4" />Tag research</Button>
               </div>
-              <Textarea value={selectedNote.content} onChange={(event) => persist({ content: event.target.value })} placeholder="What progress did you make? Any thoughts..." className="min-h-[520px] resize-none border-primary/10 bg-background/70 text-base leading-7" />
+              <Textarea value={draftContent} onChange={(event) => setDraftContent(event.target.value)} onBlur={() => persist({ content: draftContent })} placeholder="What progress did you make? Any thoughts..." className="min-h-[520px] resize-none border-primary/10 bg-background/70 text-base leading-7" />
             </CardContent>
           )}
         </Card>
