@@ -13,6 +13,7 @@ type Goal = { id: number; title: string; progress: number; status: string; skill
 type ResearchItem = { id: number; title: string; type: string; status: string; tags: string[]; authors: string | null; source: string | null; };
 type ProgressEntry = { id: number; title: string; category: string; durationHours: number; status: string; createdAt: string; };
 type Job = { id: number; title: string; company: string | null; status: string; pinned: boolean; interviewQuestions: string[]; };
+type RoadmapItem = { id: number; title: string; description: string | null; yearTarget: number; phase: string; status: string; goalId: number | null; order: number; pinned: boolean; archived: boolean; reflection: string | null; createdAt: string; updatedAt: string; };
 type Analytics = { totalJobs: number; pinned: number; interviewCount: number; questionsCount: number; topSkills: { skill: string; count: number }[]; };
 
 function getGreeting(): string { const h = new Date().getHours(); if (h < 12) return "Good morning"; if (h < 17) return "Good afternoon"; return "Good evening"; }
@@ -26,12 +27,14 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useQuery<Summary>({ queryKey: ["dashboard-summary"], queryFn: () => api<Summary>("/dashboard/summary") });
   const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["goals"], queryFn: () => api<Goal[]>("/goals") });
+  const { data: roadmap = [] } = useQuery<RoadmapItem[]>({ queryKey: ["roadmap"], queryFn: () => api<RoadmapItem[]>("/roadmap") });
   const { data: research = [] } = useQuery<ResearchItem[]>({ queryKey: ["research"], queryFn: () => api<ResearchItem[]>("/research") });
   const { data: progressEntries = [], isLoading: loadingProgress } = useQuery<ProgressEntry[]>({ queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress") });
   const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
   const { data: skillGap } = useQuery<any>({ queryKey: ["skill-gap"], queryFn: () => api<any>("/dashboard/skill-gap") });
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
   const activeGoals = goals.filter(g => g.status === "active");
+  const completedRoadmap = roadmap.filter((item) => item.status === "completed");
   const recentProgress = [...progressEntries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const firstName = user?.name?.split(" ")[0] ?? "there";
   const initials = user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
@@ -70,7 +73,7 @@ export default function Dashboard() {
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
       <Link href="/goals" className="h-full block"><div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors"><div className="flex items-center justify-between mb-4"><h2 className="text-[16px] font-semibold text-slate-800">Profile</h2><UserRound className="h-4 w-4 text-slate-400" /></div><p className="text-sm text-slate-600">View your goals, skills, and career focus in one place.</p><div className="mt-4 space-y-2">{goals.slice(0, 2).map((goal) => <div key={goal.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3"><p className="text-sm font-medium text-slate-800">{goal.title}</p><p className="text-xs text-muted-foreground">{goal.skills.length} skills · {goal.progress}% complete</p></div>)}{goals.length === 0 && <p className="text-sm text-muted-foreground">Add a goal to build your profile.</p>}</div></div></Link>
-      <Link href="/roadmap" className="h-full block"><div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors"><div className="flex items-center justify-between mb-4"><h2 className="text-[16px] font-semibold text-slate-800">Roadmap</h2><Route className="h-4 w-4 text-slate-400" /></div><p className="text-sm text-slate-600">Plan what to learn and what to do next.</p><div className="mt-4 space-y-2">{summary?.roadmapTotal ? <p className="text-sm text-slate-700">{summary.roadmapCompleted}/{summary.roadmapTotal} roadmap items completed</p> : <p className="text-sm text-muted-foreground">No roadmap items yet.</p>}</div></div></Link>
+      <Link href="/roadmap" className="h-full block"><div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors"><div className="flex items-center justify-between mb-4"><h2 className="text-[16px] font-semibold text-slate-800">Roadmap</h2><Route className="h-4 w-4 text-slate-400" /></div><p className="text-sm text-slate-600">Plan what to learn and what to do next.</p><div className="mt-4 space-y-2">{roadmap.length ? <>{completedRoadmap.length > 0 && <p className="text-sm text-slate-700">{completedRoadmap.length}/{roadmap.length} roadmap items completed</p>} {roadmap.slice(0, 2).map((item) => <div key={item.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3"><p className="text-sm font-medium text-slate-800">{item.title}</p><p className="text-xs text-muted-foreground">{item.phase.replace("_", " ")} · {item.yearTarget}</p></div>)}</> : <p className="text-sm text-muted-foreground">No roadmap items yet.</p>}</div></div></Link>
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
