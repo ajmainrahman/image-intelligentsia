@@ -30,6 +30,7 @@ export default function Dashboard() {
   const { data: progressEntries = [], isLoading: loadingProgress } = useQuery<ProgressEntry[]>({ queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress") });
   const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
   const { data: skillGap } = useQuery<any>({ queryKey: ["skill-gap"], queryFn: () => api<any>("/dashboard/skill-gap") });
+  const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
   const activeGoals = goals.filter(g => g.status === "active");
   const recentProgress = [...progressEntries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const pinnedJobs = jobs.filter((j) => j.pinned);
@@ -61,7 +62,7 @@ export default function Dashboard() {
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
       {loadingSummary ? [1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-[28px]" />) : (<>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-emerald-500"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Research items</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{researchCount}</div><p className="mt-2 text-[12px] text-emerald-600">{researchCount > 0 ? "tracked" : "add your reading"}</p></div>
-        <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-amber-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Active goals</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{summary?.activeGoals ?? 0}</div><p className="mt-2 text-[12px] text-amber-600">of {summary?.totalGoals ?? 0} total</p></div>
+        <Link key="goals-progress" href="/goals"><div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-amber-400 cursor-pointer hover:border-emerald-200 transition-colors"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Active goals</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{summary?.activeGoals ?? 0}</div><p className="mt-2 text-[12px] text-amber-600">of {summary?.totalGoals ?? 0} total</p></div></Link>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-sky-500"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Learning done</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{learningCount}</div><p className="mt-2 text-[12px] text-sky-600">{summary?.progressInProgress ?? 0} in progress</p></div>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-orange-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Skills tracked</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{skillsSet.size}</div><p className="mt-2 text-[12px] text-orange-500">from {goals.length} goal{goals.length !== 1 ? "s" : ""}</p></div>
       </>)}
