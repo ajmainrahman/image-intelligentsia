@@ -152,7 +152,6 @@ export default function JobsPage() {
     rejected: jobs.filter((job) => job.status === "rejected").length,
   }), [jobs]);
 
-  const pinnedJobs = jobs.filter((job) => job.pinned);
   const interviewJobs = jobs.filter((job) => job.interviewQuestions.length > 0 || job.interviewAnswers.length > 0);
 
   return (
@@ -203,15 +202,14 @@ export default function JobsPage() {
       </div>
 
       {analytics && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardContent className="p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><Sparkles className="h-4 w-4" />Pinned</div><p className="text-3xl font-bold">{analytics.pinned}</p><p className="text-xs text-muted-foreground">{analytics.totalJobs} tracked</p></CardContent></Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardContent className="p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><HelpCircle className="h-4 w-4" />Interview questions</div><p className="text-3xl font-bold">{analytics.questionsCount}</p><p className="text-xs text-muted-foreground">Stored in your pipeline</p></CardContent></Card>
           <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardContent className="p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><MessageSquareText className="h-4 w-4" />Interviewing</div><p className="text-3xl font-bold">{analytics.interviewCount}</p><p className="text-xs text-muted-foreground">Active stage</p></CardContent></Card>
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardHeader><CardTitle className="flex items-center gap-2"><Pin className="h-4 w-4" />Pinned items</CardTitle></CardHeader><CardContent className="space-y-3">{pinnedJobs.length === 0 ? <p className="text-sm text-muted-foreground">Pin jobs to keep them at the top.</p> : pinnedJobs.map((job) => <div key={job.id} className="rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-3 flex items-start justify-between gap-3"><div><p className="font-medium text-slate-800">{job.title}</p><p className="text-xs text-muted-foreground">{job.company ?? "No company"}</p></div><Button variant="ghost" size="icon" onClick={() => togglePin.mutate(job.id)}><Pin className="h-4 w-4" /></Button></div>)}</CardContent></Card>
+      <div className="rounded-3xl border-[#e4ddd2] bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4"><div><h2 className="text-[16px] font-semibold text-slate-800">Interview prep tracker</h2><p className="text-[12px] text-slate-400">Add questions and answer notes to jobs.</p></div></div>
         <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardHeader><CardTitle className="flex items-center gap-2"><HelpCircle className="h-4 w-4" />Interview prep tracker</CardTitle></CardHeader><CardContent className="space-y-3">{interviewJobs.length === 0 ? <p className="text-sm text-muted-foreground">Add interview questions to any job and keep your answers here.</p> : interviewJobs.slice(0, 4).map((job) => <div key={job.id} className="rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-3"><p className="font-medium text-slate-800">{job.title}</p><p className="text-xs text-muted-foreground mt-1">{job.interviewQuestions.length} questions · {job.interviewAnswers.length} answers</p></div>)}</CardContent></Card>
       </div>
 
