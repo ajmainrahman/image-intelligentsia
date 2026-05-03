@@ -56,6 +56,20 @@ const jobSchema = z.object({
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
+type JobApiPayload = {
+  title: string;
+  company: string | null;
+  description: string;
+  keywords: string[];
+  skills: string[];
+  notes: string | null;
+  status: JobFormValues["status"];
+  url: string | null;
+  applyDate: string | null;
+  interviewQuestions: string[];
+  interviewAnswers: string[];
+  pinned: boolean;
+};
 
 export default function JobsPage() {
   const queryClient = useQueryClient();
@@ -67,13 +81,13 @@ export default function JobsPage() {
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
 
   const createJob = useMutation({
-    mutationFn: (data: object) => api("/jobs", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: JobApiPayload) => api("/jobs", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["jobs"] }); queryClient.invalidateQueries({ queryKey: ["jobs-analytics"] }); setIsCreateOpen(false); form.reset(); toast({ title: "Job saved" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateJob = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: object }) => api(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, data }: { id: number; data: JobApiPayload }) => api(`/jobs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["jobs"] }); queryClient.invalidateQueries({ queryKey: ["jobs-analytics"] }); setEditingJobId(null); form.reset(); toast({ title: "Job updated" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -95,7 +109,7 @@ export default function JobsPage() {
   });
 
   const onSubmit = (data: JobFormValues) => {
-    const payload = {
+    const apiPayload: JobApiPayload = {
       ...data,
       company: data.company || null,
       notes: data.notes || null,
@@ -107,7 +121,7 @@ export default function JobsPage() {
       interviewAnswers: data.interviewAnswers.split("\n").map(s => s.trim()).filter(Boolean),
       pinned: Boolean(data.pinned),
     };
-    editingJobId ? updateJob.mutate({ id: editingJobId, data: payload }) : createJob.mutate(payload);
+    editingJobId ? updateJob.mutate({ id: editingJobId, data: apiPayload }) : createJob.mutate(apiPayload);
   };
 
   const handleEdit = (job: Job) => {
