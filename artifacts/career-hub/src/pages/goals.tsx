@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 type Goal = { id: number; title: string; targetRole: string; description: string | null; skills: string[]; progress: number; status: "active"|"completed"|"paused"; targetYear: number | null; createdAt: string; };
 type ProgressEntry = { id: number; goalId: number | null; status: string; };
 type RoadmapItem = { id: number; goalId: number | null; status: string; };
-type GoalFormState = { title: string; targetRole: string; description: string; skills: string[]; progress: number; status: Goal["status"]; targetYear: string; skillDraft: string; };
+type GoalFormState = { title: string; targetRole: string; description: string; skills: string[]; progress: number; status: Goal["status"]; targetYear: string; targetHorizon: string; skillDraft: string; };
 type StatusMeta = { label: string; pillBg: string; pillText: string; barColor: string; rank: number };
 
 const STATUS_META: Record<Goal["status"], StatusMeta> = {
@@ -26,7 +26,7 @@ const STATUS_META: Record<Goal["status"], StatusMeta> = {
   completed: { label: "Achieved",    pillBg: "bg-emerald-50", pillText: "text-emerald-700",       barColor: "bg-emerald-500", rank: 2 },
 };
 
-const emptyForm = (): GoalFormState => ({ title: "", targetRole: "", description: "", skills: [], progress: 0, status: "active", targetYear: String(new Date().getFullYear()), skillDraft: "" });
+const emptyForm = (): GoalFormState => ({ title: "", targetRole: "", description: "", skills: [], progress: 0, status: "active", targetYear: String(new Date().getFullYear()), targetHorizon: "short_term", skillDraft: "" });
 const MAX_DESC = 1000;
 
 export default function GoalsPage() {
@@ -60,7 +60,7 @@ export default function GoalsPage() {
   const closeDialog = () => { setOpen(false); setEditingId(null); setForm(emptyForm()); };
   const openCreate = () => { setForm(emptyForm()); setEditingId(null); setOpen(true); };
   const openEdit = (goal: Goal) => {
-    setForm({ title: goal.title, targetRole: goal.targetRole, description: goal.description ?? "", skills: goal.skills ?? [], progress: goal.progress ?? 0, status: goal.status, targetYear: goal.targetYear ? String(goal.targetYear) : "", skillDraft: "" });
+    setForm({ title: goal.title, targetRole: goal.targetRole, description: goal.description ?? "", skills: goal.skills ?? [], progress: goal.progress ?? 0, status: goal.status, targetYear: goal.targetYear ? String(goal.targetYear) : "", targetHorizon: "short_term", skillDraft: "" });
     setEditingId(goal.id); setOpen(true);
   };
   const addSkill = (raw: string) => {
@@ -119,7 +119,7 @@ export default function GoalsPage() {
               <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Title</label>
                 <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Transition to Machine Learning" className="bg-secondary border-border text-[13px]" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Target Role</label>
                   <Input value={form.targetRole} onChange={(e) => setForm((f) => ({ ...f, targetRole: e.target.value }))} placeholder="e.g. ML Engineer" className="bg-secondary border-border text-[13px]" />
                 </div>
@@ -127,6 +127,18 @@ export default function GoalsPage() {
                   <Input type="number" value={form.targetYear} onChange={(e) => setForm((f) => ({ ...f, targetYear: e.target.value }))} placeholder="2026" className="bg-secondary border-border text-[13px]" />
                 </div>
               </div>
+      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Horizon</label>
+        <Select value={form.targetHorizon} onValueChange={(v) => setForm((f) => ({ ...f, targetHorizon: v }))}>
+          <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="short_term">Short term goals</SelectItem>
+            <SelectItem value="long_term">Long term goals</SelectItem>
+            <SelectItem value="1_2_years">1-2 years</SelectItem>
+            <SelectItem value="3_5_years">3-5 years</SelectItem>
+            <SelectItem value="10_15_years">10-15 years</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
               <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}>
                   <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
