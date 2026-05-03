@@ -26,8 +26,12 @@ router.post("/auth/signup", async (req, res, next): Promise<void> => {
     const passwordHash = await bcrypt.hash(password, 10);
     const [user] = await db.insert(usersTable).values({ name, email, passwordHash }).returning();
 
-    const token = signToken(user.id);
-    res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    try {
+      const token = signToken(user.id);
+      res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    } catch {
+      res.status(500).json({ error: "Auth is not configured. Set JWT_SECRET in production." });
+    }
   } catch (err) {
     next(err);
   }
@@ -47,8 +51,12 @@ router.post("/auth/signin", async (req, res, next): Promise<void> => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) { res.status(401).json({ error: "Invalid email or password" }); return; }
 
-    const token = signToken(user.id);
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    try {
+      const token = signToken(user.id);
+      res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    } catch {
+      res.status(500).json({ error: "Auth is not configured. Set JWT_SECRET in production." });
+    }
   } catch (err) {
     next(err);
   }
