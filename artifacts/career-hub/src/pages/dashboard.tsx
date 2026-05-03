@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Clock } from "lucide-react";
+import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -21,6 +21,18 @@ type ResearchItem = {
 type ProgressEntry = {
   id: number; title: string; category: string;
   durationHours: number; status: string; createdAt: string;
+};
+type Job = {
+  id: number;
+  title: string;
+  company: string | null;
+  description: string;
+  keywords: string[];
+  skills: string[];
+  notes: string | null;
+  status: string;
+  url: string | null;
+  applyDate: string | null;
 };
 
 // ─── Status dot colors for research ──────────────────────────────────────────
@@ -126,6 +138,10 @@ export default function Dashboard() {
     queryKey: ["progress"],
     queryFn: () => api<ProgressEntry[]>("/progress"),
   });
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({
+    queryKey: ["jobs"],
+    queryFn: () => api<Job[]>("/jobs"),
+  });
 
   // Derived stats
   const paperCount   = research.filter(r => r.type === "paper" || r.type === "thesis").length;
@@ -138,6 +154,12 @@ export default function Dashboard() {
   const recentProgress = [...progressEntries]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
+  const pipelineOrder = ["saved", "applied", "interviewing", "offered", "rejected"];
+  const pipelineCounts = pipelineOrder.map((status) => ({
+    status,
+    count: jobs.filter((job) => job.status === status).length,
+  }));
+  const pipelineTotal = jobs.length || 1;
 
   const today = new Date();
   const dateLabel = format(today, "EEEE, d MMM yyyy");
@@ -196,6 +218,47 @@ export default function Dashboard() {
               <p className="mt-1 text-[12px] text-orange-500">from {goals.length} goal{goals.length !== 1 ? "s" : ""}</p>
             </div>
           </>
+        )}
+      </div>
+
+      <div className="rounded-3xl border border-[#e4ddd2] bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-[15px] font-semibold text-slate-800">Pipeline tracker</h2>
+            <p className="text-[12px] text-slate-400">Connect job search status with your dashboard.</p>
+          </div>
+          <Link href="/jobs" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link>
+        </div>
+        {loadingJobs ? (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {pipelineCounts.map((item) => {
+              const meta = {
+                saved: { label: "Saved", icon: Briefcase, tone: "text-slate-600 bg-slate-100" },
+                applied: { label: "Applied", icon: Clock3, tone: "text-sky-600 bg-sky-100" },
+                interviewing: { label: "Interviewing", icon: Sparkles, tone: "text-amber-600 bg-amber-100" },
+                offered: { label: "Offered", icon: CircleCheckBig, tone: "text-emerald-600 bg-emerald-100" },
+                rejected: { label: "Rejected", icon: XCircle, tone: "text-rose-600 bg-rose-100" },
+              }[item.status];
+              const Icon = meta.icon;
+              const percent = Math.round((item.count / pipelineTotal) * 100);
+              return (
+                <Link key={item.status} href="/jobs">
+                  <div className="rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-4 hover:border-emerald-200 transition-colors cursor-pointer">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${meta.tone}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-[13px] font-medium text-slate-700">{meta.label}</p>
+                    <p className="text-[24px] font-bold text-slate-800 leading-none mt-1">{item.count}</p>
+                    <div className="mt-3 h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </div>
 

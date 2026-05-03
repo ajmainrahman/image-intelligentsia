@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink, CalendarDays } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink, CalendarDays, CircleCheckBig, Clock3, XCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -122,6 +122,13 @@ export default function JobsPage() {
   };
 
   const isOpen = isCreateOpen || editingJobId !== null;
+  const pipeline = {
+    saved: jobs?.filter((job) => job.status === "saved").length ?? 0,
+    applied: jobs?.filter((job) => job.status === "applied").length ?? 0,
+    interviewing: jobs?.filter((job) => job.status === "interviewing").length ?? 0,
+    offered: jobs?.filter((job) => job.status === "offered").length ?? 0,
+    rejected: jobs?.filter((job) => job.status === "rejected").length ?? 0,
+  };
 
   return (
     <div className="space-y-8 page-enter">
@@ -187,6 +194,31 @@ export default function JobsPage() {
             </Form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        {[
+          { label: "Saved", value: pipeline.saved, icon: Briefcase, tone: "text-slate-600 bg-slate-100" },
+          { label: "Applied", value: pipeline.applied, icon: Clock3, tone: "text-sky-600 bg-sky-100" },
+          { label: "Interviewing", value: pipeline.interviewing, icon: Sparkles, tone: "text-amber-600 bg-amber-100" },
+          { label: "Offered", value: pipeline.offered, icon: CircleCheckBig, tone: "text-emerald-600 bg-emerald-100" },
+          { label: "Rejected", value: pipeline.rejected, icon: XCircle, tone: "text-rose-600 bg-rose-100" },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <Card key={item.label} className="border-[#ebe5d8] bg-[#fdfcf8]">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${item.tone}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-slate-400">{item.label}</p>
+                  <p className="text-2xl font-bold text-slate-800 leading-none mt-1">{item.value}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {isLoading ? (
