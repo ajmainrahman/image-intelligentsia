@@ -55,31 +55,31 @@ export default function Dashboard() {
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-amber-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Active goals</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{summary?.activeGoals ?? 0}</div><p className="mt-2 text-[12px] text-amber-600">of {summary?.totalGoals ?? 0} total</p></div>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-sky-500"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Learning done</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{learningCount}</div><p className="mt-2 text-[12px] text-sky-600">{summary?.progressInProgress ?? 0} in progress</p></div>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-orange-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Skills tracked</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{skillsSet.size}</div><p className="mt-2 text-[12px] text-orange-500">from {goals.length} goal{goals.length !== 1 ? "s" : ""}</p></div>
-      </>)}
+      </>) }
     </div>
 
-    <div className="rounded-[26px] border border-[#e4ddd2] bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-4"><h2 className="text-[15px] font-semibold text-slate-800">Quick access</h2><span className="text-[12px] text-slate-400">tap to open</span></div>
-      <div className="grid grid-cols-2 gap-2.5">
-        {[
-          { label: "Goals", sub: `${summary?.activeGoals ?? 0} active`, href: "/goals", tone: "border-l-emerald-400" },
-          { label: "Learning", sub: `${summary?.progressCompleted ?? 0} done`, href: "/progress", tone: "border-l-sky-400" },
-          { label: "Pipeline", sub: `${summary?.totalJobs ?? 0} tracked`, href: "/jobs", tone: "border-l-violet-400" },
-          { label: "Roadmap", sub: `${summary?.roadmapCompleted ?? 0}/${summary?.roadmapTotal ?? 0} done`, href: "/roadmap", tone: "border-l-amber-400" },
-          { label: "Research", sub: `${researchCount} items`, href: "/research", tone: "border-l-rose-400" },
-          { label: "Reminders", sub: `${remindersCount} pending`, href: "/reminders", tone: "border-l-orange-400" },
-        ].map((item) => <Link key={item.label} href={item.href}><div className={`rounded-[22px] border ${item.tone} bg-[#fcfbf6] p-4 shadow-sm hover:border-primary/30 transition-colors min-h-[82px]`}><p className="text-[16px] font-medium text-slate-800">{item.label}</p><p className="mt-0.5 text-[12px] text-slate-400">{item.sub}</p></div></Link>)}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Goals progress</h2><span className="text-[12px] text-slate-400">{summary?.activeGoals ?? 0} active</span></div>
+        {goals.length ? <div className="space-y-4">{goals.slice(0, 4).map((goal) => <div key={goal.id} className="space-y-2"><div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-slate-700">{goal.title}</p><span className="text-sm text-slate-400">{goal.progress}%</span></div><div className="h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${goal.progress}%` }} /></div></div>)}</div> : <p className="text-sm text-muted-foreground">No goals yet.</p>}
+      </div>
+      <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Research items</h2><Link href="/research" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
+        <div className="space-y-3">
+          {research.slice(0, 5).map((item) => <div key={item.id} className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 flex items-start gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-800 truncate">{item.title}</p><span className="text-xs text-muted-foreground">{item.status.replace(/_/g, " ")}</span></div><p className="text-xs text-muted-foreground mt-1">{item.type} · {item.source ?? "No source"}</p></div></div>)}
+          {research.length === 0 && <p className="text-sm text-muted-foreground">No research items yet.</p>}
+        </div>
       </div>
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Skill gap analyzer</h2><span className="text-[12px] text-slate-400">Goals vs learning vs jobs</span></div>
-        {skillGap ? <div className="space-y-4"><div className="grid grid-cols-3 gap-3"><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Coverage</p><p className="text-2xl font-bold text-slate-800">{skillGap.coveragePercent}%</p></div><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Gaps</p><p className="text-2xl font-bold text-slate-800">{skillGap.gaps.length}</p></div><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Covered</p><p className="text-2xl font-bold text-slate-800">{skillGap.covered.length}</p></div></div><div className="flex flex-wrap gap-2">{skillGap.gaps.slice(0, 8).map((gap: string) => <Badge key={gap} variant="outline" className="text-xs">{gap}</Badge>)}</div></div> : <Skeleton className="h-36 w-full rounded-[28px]" />}
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Learning streak</h2><span className="text-[12px] text-slate-400">14 days</span></div>
+        <div className="space-y-3"><div className="flex items-center gap-2 pb-2"><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">M</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">W</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">F</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">S</span><span className="text-xs text-white bg-emerald-600 px-2.5 py-1 rounded-full">S</span></div>{recentProgress.map((entry) => <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0"><span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span><span className="text-[12px] text-emerald-600 shrink-0 ml-2">{entry.durationHours > 0 ? `${entry.durationHours} hr` : entry.status.replace("_", " ")}</span></div>)}</div>
       </div>
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Study plan generator</h2><span className="text-[12px] text-slate-400">Next steps</span></div>
-        {skillGap?.studyPlan?.length ? <div className="space-y-3">{skillGap.studyPlan.map((item: any) => <div key={item.skill} className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-4"><p className="font-medium text-slate-800">{item.skill}</p><p className="text-xs text-muted-foreground">{item.action}</p></div>)}</div> : <p className="text-sm text-muted-foreground">Add goals and progress to generate a plan.</p>}
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Skill gap analyzer</h2><span className="text-[12px] text-slate-400">Goals vs learning vs jobs</span></div>
+        {skillGap ? <div className="space-y-4"><div className="grid grid-cols-3 gap-3"><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Coverage</p><p className="text-2xl font-bold text-slate-800">{skillGap.coveragePercent}%</p></div><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Gaps</p><p className="text-2xl font-bold text-slate-800">{skillGap.gaps.length}</p></div><div className="rounded-[22px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Covered</p><p className="text-2xl font-bold text-slate-800">{skillGap.covered.length}</p></div></div><div className="flex flex-wrap gap-2">{skillGap.gaps.slice(0, 8).map((gap: string) => <Badge key={gap} variant="outline" className="text-xs">{gap}</Badge>)}</div></div> : <Skeleton className="h-36 w-full rounded-[28px]" />}
       </div>
     </div>
 
@@ -96,14 +96,6 @@ export default function Dashboard() {
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Recent learning</h2><Link href="/progress" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
         {loadingProgress ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-9 w-full rounded-2xl" />)}</div> : <div className="space-y-3"><div className="flex items-center gap-2 pb-2"><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">M</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">W</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">F</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">S</span><span className="text-xs text-white bg-emerald-600 px-2.5 py-1 rounded-full">S</span></div>{recentProgress.map((entry) => <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0"><span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span><span className="text-[12px] text-emerald-600 shrink-0 ml-2">{entry.durationHours > 0 ? `${entry.durationHours} hr` : entry.status.replace("_", " ")}</span></div>)}</div>}
-      </div>
-    </div>
-
-    <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Research items</h2><Link href="/research" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
-      <div className="space-y-3">
-        {research.slice(0, 3).map((item) => <div key={item.id} className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 flex items-start gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-800 truncate">{item.title}</p><span className="text-xs text-muted-foreground">{item.status.replace(/_/g, " ")}</span></div><p className="text-xs text-muted-foreground mt-1">{item.type} · {item.source ?? "No source"}</p></div></div>)}
-        {research.length === 0 && <p className="text-sm text-muted-foreground">No research items yet.</p>}
       </div>
     </div>
   </div>;
