@@ -37,6 +37,23 @@ router.post("/interview-questions", requireAuth, async (req: AuthRequest, res, n
   }
 });
 
+router.put("/interview-questions/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+    const parsed = QuestionBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+    const [row] = await db.update(interviewQuestionsTable)
+      .set({ question: parsed.data.question, answer: parsed.data.answer ?? null, category: parsed.data.category ?? null })
+      .where(and(eq(interviewQuestionsTable.id, id), eq(interviewQuestionsTable.userId, req.userId!)))
+      .returning();
+    if (!row) { res.status(404).json({ error: "Question not found" }); return; }
+    res.json(serializeQuestion(row));
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.delete("/interview-questions/:id", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
     const id = Number(req.params.id);
