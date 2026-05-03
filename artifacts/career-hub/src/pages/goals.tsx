@@ -75,7 +75,20 @@ export default function GoalsPage() {
   };
   const submit = () => {
     if (!form.title.trim() || !form.targetRole.trim()) { toast({ title: "Title and target role are required", variant: "destructive" }); return; }
-    const payload = { title: form.title.trim(), targetRole: form.targetRole.trim(), description: form.description.trim() || null, skills: form.skills, progress: form.progress, status: form.status, targetYear: form.targetYear ? Number(form.targetYear) : undefined };
+    const targetYear = form.targetYear.trim() ? Number(form.targetYear) : undefined;
+    if (targetYear !== undefined && Number.isNaN(targetYear)) {
+      toast({ title: "Target year must be a number", variant: "destructive" });
+      return;
+    }
+    const payload = {
+      title: form.title.trim(),
+      targetRole: form.targetRole.trim(),
+      description: form.description.trim() || null,
+      skills: form.skills,
+      progress: form.progress,
+      status: form.status,
+      ...(targetYear !== undefined ? { targetYear } : {}),
+    };
     if (editingId) updateGoal.mutate({ id: editingId, data: payload });
     else createGoal.mutate(payload);
   };
@@ -98,7 +111,7 @@ export default function GoalsPage() {
           <DialogTrigger asChild>
             <Button className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Add Goal</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[520px] rounded-2xl p-8">
+          <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl p-8">
             <DialogHeader className="mb-1">
               <DialogTitle className="text-[20px]">{editingId ? "Edit goal" : "Create a goal"}</DialogTitle>
             </DialogHeader>
