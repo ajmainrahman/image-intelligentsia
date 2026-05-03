@@ -1,0 +1,29 @@
+Audit and fix the following issues across the entire project:
+
+CRITICAL:
+1. Move Notepad/interview questions from localStorage to the database. Add an `interview_questions` table (id, userId, question, answer, category, createdAt), add GET/POST/DELETE /api/interview-questions routes, and replace all localStorage reads/writes in the Notepad page with TanStack Query hooks.
+
+2. Verify all DB tables (especially `jobs` and any new tables) exist in the Drizzle schema and that `push-force` is called on every Vercel deploy via vercel.json buildCommand.
+
+3. Ensure JWT_SECRET (or AUTH_SECRET) is read from environment variables in the API auth routes. If missing, throw a clear startup error rather than silently breaking auth.
+
+SERIOUS:
+4. If ALLOWED_ORIGINS env var is missing or empty, default to allowing the Vercel deployment URL rather than blocking all origins.
+
+5. Add session expiry to the JWT token (e.g. 7 days). On the frontend, detect 401 responses from the API and automatically clear localStorage and redirect to /signin.
+
+6. Validate that SESSION_SECRET / JWT_SECRET are not default placeholder values at startup.
+
+MODERATE:
+7. Add error boundaries around each page so API failures show a user-friendly message ("Could not load your jobs — please refresh") instead of a silent empty state.
+
+8. Add toast notifications on save success and failure for all forms (jobs, goals, progress, reminders, notepad).
+
+9. Guard against null apply_date when rendering job cards — display "No date set" instead of crashing.
+
+BUILD/DEPLOYMENT:
+10. Confirm Vite's outDir matches vercel.json's outputDirectory ("public"). If Vite outputs to "dist", change vercel.json to "outputDirectory": "dist" or update vite.config.ts to output to "public".
+
+11. Add "engines": { "node": ">=24" } to the root package.json to ensure Vercel uses the correct Node version.
+
+12. Use Neon's connection pooling URL (ends in -pooler.neon.tech) for DATABASE_URL in production to avoid exhausting DB connections on serverless cold starts.
