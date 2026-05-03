@@ -46,11 +46,7 @@ type InterviewItem = {
   question: string;
   answer: string | null;
   category: string | null;
-  jobId: number | null;
-  jobTitle: string | null;
-  company: string | null;
   createdAt: string;
-  updatedAt: string;
 };
 
 const jobSchema = z.object({
@@ -72,7 +68,6 @@ const interviewSchema = z.object({
   question: z.string().min(1, "Question is required"),
   answer: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),
-  jobId: z.string().optional().or(z.literal("")),
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -103,14 +98,13 @@ export default function JobsPage() {
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
   const [editingInterviewId, setEditingInterviewId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [jobFilter, setJobFilter] = useState<string>("all");
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
   const { data: interviews = [], isLoading: interviewsLoading } = useQuery<InterviewItem[]>({
-    queryKey: ["interview-items"],
-    queryFn: () => api<InterviewItem[]>("/interview-items"),
+    queryKey: ["interview-questions"],
+    queryFn: () => api<InterviewItem[]>("/interview-questions"),
   });
 
   // — Job mutations —
@@ -139,22 +133,22 @@ export default function JobsPage() {
 
   // — Interview item mutations —
   const createInterview = useMutation({
-    mutationFn: (data: { question: string; answer: string | null; category: string | null; jobId: number | null }) =>
-      api("/interview-items", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-items"] }); setIsInterviewOpen(false); interviewForm.reset(); toast({ title: "Interview item saved" }); },
+    mutationFn: (data: { question: string; answer: string | null; category: string | null }) =>
+      api("/interview-questions", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-questions"] }); setIsInterviewOpen(false); interviewForm.reset(); toast({ title: "Interview question saved" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateInterview = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { question: string; answer: string | null; category: string | null; jobId: number | null } }) =>
-      api(`/interview-items/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-items"] }); setEditingInterviewId(null); setIsInterviewOpen(false); interviewForm.reset(); toast({ title: "Interview item updated" }); },
+    mutationFn: ({ id, data }: { id: number; data: { question: string; answer: string | null; category: string | null } }) =>
+      api(`/interview-questions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-questions"] }); setEditingInterviewId(null); setIsInterviewOpen(false); interviewForm.reset(); toast({ title: "Interview question updated" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteInterview = useMutation({
-    mutationFn: (id: number) => api(`/interview-items/${id}`, { method: "DELETE" }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-items"] }); toast({ title: "Interview item deleted" }); },
+    mutationFn: (id: number) => api(`/interview-questions/${id}`, { method: "DELETE" }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-questions"] }); toast({ title: "Interview question deleted" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -166,7 +160,7 @@ export default function JobsPage() {
 
   const interviewForm = useForm<InterviewFormValues>({
     resolver: zodResolver(interviewSchema),
-    defaultValues: { question: "", answer: "", category: "", jobId: "" },
+    defaultValues: { question: "", answer: "", category: "" },
   });
 
   const onJobSubmit = (data: JobFormValues) => {
@@ -193,7 +187,6 @@ export default function JobsPage() {
       question: data.question,
       answer: data.answer || null,
       category: data.category || null,
-      jobId: data.jobId ? Number(data.jobId) : null,
     };
     editingInterviewId ? updateInterview.mutate({ id: editingInterviewId, data: payload }) : createInterview.mutate(payload);
   };
@@ -214,7 +207,6 @@ export default function JobsPage() {
       question: item.question,
       answer: item.answer || "",
       category: item.category || "",
-      jobId: item.jobId ? String(item.jobId) : "",
     });
     setEditingInterviewId(item.id);
     setIsInterviewOpen(true);
@@ -264,10 +256,9 @@ export default function JobsPage() {
   const filteredInterviews = useMemo(() => {
     return interviews.filter(item => {
       const catOk = categoryFilter === "all" || item.category === categoryFilter;
-      const jobOk = jobFilter === "all" || String(item.jobId) === jobFilter;
-      return catOk && jobOk;
+      return catOk;
     });
-  }, [interviews, categoryFilter, jobFilter]);
+  }, [interviews, categoryFilter]);
 
   return (
     <div className="space-y-8 page-enter">
@@ -329,27 +320,6 @@ export default function JobsPage() {
                             <SelectContent>
                               <SelectItem value="">None</SelectItem>
                               {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={interviewForm.control}
-                      name="jobId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Link to Job</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {jobs.map(job => (
-                                <SelectItem key={job.id} value={String(job.id)}>
-                                  {job.title}{job.company ? ` · ${job.company}` : ""}
-                                </SelectItem>
-                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -549,26 +519,6 @@ export default function JobsPage() {
                 {cat}
               </button>
             ))}
-            {jobs.filter(j => interviews.some(i => i.jobId === j.id)).length > 0 && (
-              <>
-                <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-                <button
-                  onClick={() => setJobFilter("all")}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${jobFilter === "all" ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}
-                >
-                  All jobs
-                </button>
-                {jobs.filter(j => interviews.some(i => i.jobId === j.id)).map(job => (
-                  <button
-                    key={job.id}
-                    onClick={() => setJobFilter(jobFilter === String(job.id) ? "all" : String(job.id))}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${jobFilter === String(job.id) ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}
-                  >
-                    {job.title}
-                  </button>
-                ))}
-              </>
-            )}
           </div>
         )}
 
@@ -586,15 +536,10 @@ export default function JobsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 dark:text-slate-100 leading-snug">{item.question}</p>
-                          <div className="flex flex-wrap gap-1.5 mt-2">
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                             {item.category && (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${catColor}`}>
                                 {item.category}
-                              </span>
-                            )}
-                            {item.jobTitle && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                {item.jobTitle}{item.company ? ` · ${item.company}` : ""}
                               </span>
                             )}
                           </div>
@@ -609,7 +554,7 @@ export default function JobsPage() {
                         </div>
                       </div>
 
-                      {item.answer && (
+                        {item.answer && (
                         <div>
                           <button
                             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
