@@ -9,7 +9,7 @@ import { logActivity } from "../lib/activity.js";
 const router = Router();
 
 const NoteBody = z.object({
-  title: z.string().max(200).default("") ,
+  title: z.string().max(200).default(""),
   content: z.string().default("")
 });
 

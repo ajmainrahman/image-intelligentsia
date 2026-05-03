@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, NotebookPen, Plus, Save, Trash2, Pin, Search, Hash, Sparkles, ArrowUpDown, Lightbulb } from "lucide-react";
+import { CalendarDays, NotebookPen, Plus, Save, Trash2, Search, Hash, Sparkles, ArrowUpDown, Lightbulb, Bold, Italic, Underline, Heading2, Heading3, List, ListOrdered, CheckSquare, Pilcrow } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 
@@ -19,6 +19,17 @@ const PROMPTS = [
   "What would make this week a win?",
 ];
 const QUICK_TAGS = ["planning", "research", "building", "reflection", "design", "writing", "feedback", "milestone", "problem", "win"];
+const FORMATTERS = [
+  { label: "Bold", action: "bold", icon: Bold },
+  { label: "Italic", action: "italic", icon: Italic },
+  { label: "Underline", action: "underline", icon: Underline },
+  { label: "H2", action: "h2", icon: Heading2 },
+  { label: "H3", action: "h3", icon: Heading3 },
+  { label: "Bullet list", action: "bullet", icon: List },
+  { label: "Number list", action: "number", icon: ListOrdered },
+  { label: "Check list", action: "check", icon: CheckSquare },
+  { label: "Insert list", action: "insert", icon: Pilcrow },
+] as const;
 
 type Note = {
   id: number;
@@ -58,6 +69,7 @@ export default function NotepadPage() {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const saveTimer = useRef<number | null>(null);
+  const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
   const { data: notes = [], isLoading } = useQuery<Note[]>({
     queryKey: ["notes"],
@@ -160,6 +172,41 @@ export default function NotepadPage() {
     if (!selectedNote) return;
     const base = draftContent;
     persist({ content: `${base}${base && !base.endsWith("\n") ? "\n" : ""}${snippet}` });
+  };
+
+  const formatContent = (action: (typeof FORMATTERS)[number]["action"]) => {
+    if (!selectedNote) return;
+    const el = contentRef.current;
+    const start = el?.selectionStart ?? 0;
+    const end = el?.selectionEnd ?? draftContent.length;
+    const selected = draftContent.slice(start, end);
+    const before = draftContent.slice(0, start);
+    const after = draftContent.slice(end);
+
+    let next = draftContent;
+    let caret = start;
+
+    if (action === "bold") {
+      next = `${before}**${selected || ""}**${after}`;
+      caret = start + 2;
+    } else if (action === "italic") {
+      next = `${before}*${selected || ""}*${after}`;
+      caret = start + 1;
+    } else if (action === "underline") {
+      next = `${before}<u>${selected || ""}</u>${after}`;
+      caret = start + 3;
+    } else {
+      const prefix = action === "h2" ? "## " : action === "h3" ? "### " : action === "bullet" ? "- " : action === "number" ? "1. " : "- [ ] ";
+      const lines = (selected || draftContent).split("\n").map((line) => (line ? `${prefix}${line}` : prefix));
+      next = selected ? `${before}${lines.join("\n")}${after}` : lines.join("\n");
+      caret = start + prefix.length;
+    }
+
+    persist({ content: next });
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret, caret + (selected?.length ?? 0));
+    });
   };
 
   return (
@@ -286,6 +333,14 @@ export default function NotepadPage() {
                   <Button type="button" variant="secondary" size="sm" onClick={() => quickInsert("#planning")} className="gap-2"><Hash className="h-4 w-4" />Planning</Button>
                   <Button type="button" variant="secondary" size="sm" onClick={() => quickInsert("#win")} className="gap-2"><Hash className="h-4 w-4" />Win</Button>
                 </div>
+                <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-background p-2">
+                  {FORMATTERS.map(({ label, action, icon: Icon }) => (
+                    <Button key={label} type="button" variant="outline" size="sm" onClick={() => formatContent(action)} className="gap-2">
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
                 <Input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} onBlur={() => persist({ title: draftTitle })} placeholder="Note title" className="bg-background/70" />
@@ -296,7 +351,7 @@ export default function NotepadPage() {
                 <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${draftContent}${draftContent.trim() ? "\n" : ""}#research ` })}><Hash className="h-4 w-4" />Tag research</Button>
               </div>
               <div className="rounded-2xl border border-border bg-background/70 p-4">
-                <Textarea value={draftContent} onChange={(event) => setDraftContent(event.target.value)} onBlur={() => persist({ content: draftContent })} placeholder="What progress did you make? Any thoughts..." className="min-h-[460px] resize-none border-0 bg-transparent p-0 text-base leading-7 shadow-none focus-visible:ring-0" />
+                <Textarea ref={contentRef} value={draftContent} onChange={(event) => setDraftContent(event.target.value)} onBlur={() => persist({ content: draftContent })} placeholder="What progress did you make? Any thoughts..." className="min-h-[460px] resize-none border-0 bg-transparent p-0 text-base leading-7 shadow-none focus-visible:ring-0" />
               </div>
             </CardContent>
           )}
