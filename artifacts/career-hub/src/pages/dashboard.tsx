@@ -30,7 +30,6 @@ export default function Dashboard() {
   const { data: progressEntries = [], isLoading: loadingProgress } = useQuery<ProgressEntry[]>({ queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress") });
   const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
   const { data: skillGap } = useQuery<any>({ queryKey: ["skill-gap"], queryFn: () => api<any>("/dashboard/skill-gap") });
-  const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
   const activeGoals = goals.filter(g => g.status === "active");
   const recentProgress = [...progressEntries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const pinnedJobs = jobs.filter((j) => j.pinned);
@@ -59,9 +58,9 @@ export default function Dashboard() {
       </>)}
     </div>
 
-    <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Quick access</h2><span className="text-[12px] text-slate-400">tap to open</span></div>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="rounded-[26px] border border-[#e4ddd2] bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-4"><h2 className="text-[15px] font-semibold text-slate-800">Quick access</h2><span className="text-[12px] text-slate-400">tap to open</span></div>
+      <div className="grid grid-cols-2 gap-2.5">
         {[
           { label: "Goals", sub: `${summary?.activeGoals ?? 0} active`, href: "/goals", tone: "border-l-emerald-400" },
           { label: "Learning", sub: `${summary?.progressCompleted ?? 0} done`, href: "/progress", tone: "border-l-sky-400" },
@@ -69,7 +68,7 @@ export default function Dashboard() {
           { label: "Roadmap", sub: `${summary?.roadmapCompleted ?? 0}/${summary?.roadmapTotal ?? 0} done`, href: "/roadmap", tone: "border-l-amber-400" },
           { label: "Research", sub: `${researchCount} items`, href: "/research", tone: "border-l-rose-400" },
           { label: "Reminders", sub: `${remindersCount} pending`, href: "/reminders", tone: "border-l-orange-400" },
-        ].map((item) => <Link key={item.label} href={item.href}><div className={`rounded-[26px] border ${item.tone} bg-[#fcfbf6] p-5 shadow-sm hover:border-primary/30 transition-colors min-h-[92px]`}><p className="text-[19px] font-medium text-slate-800">{item.label}</p><p className="mt-1 text-[13px] text-slate-400">{item.sub}</p></div></Link>)}
+        ].map((item) => <Link key={item.label} href={item.href}><div className={`rounded-[22px] border ${item.tone} bg-[#fcfbf6] p-4 shadow-sm hover:border-primary/30 transition-colors min-h-[82px]`}><p className="text-[16px] font-medium text-slate-800">{item.label}</p><p className="mt-0.5 text-[12px] text-slate-400">{item.sub}</p></div></Link>)}
       </div>
     </div>
 
@@ -101,29 +100,10 @@ export default function Dashboard() {
     </div>
 
     <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Dashboard highlights</h2><span className="text-[12px] text-slate-400">Goals, roadmap, reminders</span></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><Target className="h-4 w-4" />Goals</div><p className="text-2xl font-bold text-slate-800">{summary?.totalGoals ?? 0}</p><p className="text-xs text-muted-foreground">{summary?.activeGoals ?? 0} active</p></div>
-        <div className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><BookOpenCheck className="h-4 w-4" />Roadmap</div><p className="text-2xl font-bold text-slate-800">{summary?.roadmapCompleted ?? 0}/{summary?.roadmapTotal ?? 0}</p><p className="text-xs text-muted-foreground">completed steps</p></div>
-        <div className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-5"><div className="flex items-center gap-2 text-slate-800 font-semibold mb-2"><Brain className="h-4 w-4" />Reminders</div><p className="text-2xl font-bold text-slate-800">{summary?.pendingReminders ?? 0}</p><p className="text-xs text-muted-foreground">pending items</p></div>
-      </div>
-    </div>
-
-    <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Research items</h2><Link href="/research" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
       <div className="space-y-3">
         {research.slice(0, 3).map((item) => <div key={item.id} className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 flex items-start gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-800 truncate">{item.title}</p><span className="text-xs text-muted-foreground">{item.status.replace(/_/g, " ")}</span></div><p className="text-xs text-muted-foreground mt-1">{item.type} · {item.source ?? "No source"}</p></div></div>)}
         {research.length === 0 && <p className="text-sm text-muted-foreground">No research items yet.</p>}
-      </div>
-    </div>
-
-    <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Jobs summary</h2><Link href="/jobs" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Saved" value={jobs.filter((j) => j.status === "saved").length} tone="bg-slate-100 text-slate-700" />
-        <StatCard label="Applied" value={jobs.filter((j) => j.status === "applied").length} tone="bg-sky-100 text-sky-700" />
-        <StatCard label="Offered" value={jobs.filter((j) => j.status === "offered").length} tone="bg-emerald-100 text-emerald-700" />
-        <StatCard label="Rejected" value={jobs.filter((j) => j.status === "rejected").length} tone="bg-rose-100 text-rose-700" />
       </div>
     </div>
   </div>;
