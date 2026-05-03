@@ -49,4 +49,3 @@ export const db = new Proxy({} as NeonDb, {
 
 export { sql } from "drizzle-orm";
 export * from "./schema";
-export * from "./schema/notepad";

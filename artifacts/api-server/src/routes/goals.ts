@@ -154,6 +154,112 @@ router.delete(
   },
 );
 
+router.get(
+  "/goals/:id/detail",
+  requireAuth,
+  async (req: AuthRequest, res, next): Promise<void> => {
+    try {
+      const id = Number(req.params.id);
+      if (!id) {
+        res.status(400).json({ error: "Invalid id" });
+        return;
+      }
+
+      const [goal] = await db
+        .select()
+        .from(goalsTable)
+        .where(and(eq(goalsTable.id, id), eq(goalsTable.userId, req.userId!)));
+      if (!goal) {
+        res.status(404).json({ error: "Goal not found" });
+        return;
+      }
+
+      const learningEntries = await db
+        .select()
+        .from(progressTable)
+        .where(and(eq(progressTable.goalId, id), eq(progressTable.userId, req.userId!)))
+        .orderBy(progressTable.createdAt);
+
+      const milestones = await db
+        .select()
+        .from(roadmapTable)
+        .where(and(eq(roadmapTable.goalId, id), eq(roadmapTable.userId, req.userId!)))
+        .orderBy(roadmapTable.order);
+
+      res.json({
+        goal: serializeGoal(goal),
+        learningEntries: learningEntries.map(serializeProgressEntry),
+        milestones: milestones.map(serializeRoadmapItem),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.put(
+  "/goals/:id/achieve",
+  requireAuth,
+  async (req: AuthRequest, res, next): Promise<void> => {
+    try {
+      const id = Number(req.params.id);
+      if (!id) {
+        res.status(400).json({ error: "Invalid id" });
+        return;
+      }
+
+      const reflection = z.object({ reflection: z.string().nullable().optional() }).safeParse(req.body);
+      if (!reflection.success) {
+        res.status(400).json({ error: reflection.error.message });
+        return;
+      }
+
+      const [goal] = await db
+        .update(goalsTable)
+        .set({
+          status: "completed",
+          reflection: reflection.data.reflection ?? null,
+          achievedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(goalsTable.id, id), eq(goalsTable.userId, req.userId!)))
+        .returning();
+
+      if (!goal) {
+        res.status(404).json({ error: "Goal not found" });
+        return;
+      }
+
+      const learningEntries = await db
+        .select()
+        .from(progressTable)
+        .where(and(eq(progressTable.goalId, id), eq(progressTable.userId, req.userId!)));
+
+      const milestones = await db
+        .select()
+        .from(roadmapTable)
+        .where(and(eq(roadmapTable.goalId, id), eq(roadmapTable.userId, req.userId!)));
+
+      const totalHours = learningEntries.reduce((sum, entry) => sum + Number(entry.durationHours ?? 0), 0);
+      const entriesCount = learningEntries.length;
+      const milestonesTotal = milestones.length;
+      const milestonesCompleted = milestones.filter((item) => item.status === "completed").length;
+
+      res.json({
+        goal: serializeGoal(goal),
+        summary: {
+          totalHours,
+          entriesCount,
+          milestonesTotal,
+          milestonesCompleted,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // PATCH for pinning/archiving without full body
 router.patch(
   "/goals/:id",
@@ -207,6 +313,44 @@ function serializeGoal(g: typeof goalsTable.$inferSelect) {
     archived: g.archived ?? false,
     createdAt: g.createdAt.toISOString(),
     updatedAt: g.updatedAt.toISOString(),
+  };
+}
+
+function serializeProgressEntry(p: typeof progressTable.$inferSelect) {
+  return {
+    id: p.id,
+    title: p.title,
+    category: p.category,
+    description: p.description,
+    status: p.status,
+    toolOrResource: p.toolOrResource,
+    resourceUrl: p.resourceUrl,
+    durationHours: Number(p.durationHours ?? 0),
+    startDate: p.startDate ? p.startDate.toISOString() : null,
+    completedAt: p.completedAt ? p.completedAt.toISOString() : null,
+    goalId: p.goalId,
+    pinned: p.pinned ?? false,
+    archived: p.archived ?? false,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
+}
+
+function serializeRoadmapItem(r: typeof roadmapTable.$inferSelect) {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    yearTarget: r.yearTarget,
+    phase: r.phase,
+    status: r.status,
+    goalId: r.goalId,
+    order: r.order,
+    pinned: r.pinned ?? false,
+    archived: r.archived ?? false,
+    reflection: r.reflection ?? null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
   };
 }
 
