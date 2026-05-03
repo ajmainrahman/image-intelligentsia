@@ -1,6 +1,5 @@
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
 class DatabaseConfigurationError extends Error {
@@ -14,8 +13,6 @@ class DatabaseConfigurationError extends Error {
   }
 }
 
-let dbInstance: NodePgDatabase<typeof schema> | null = null;
-
 function getDatabaseUrl(): string {
   const databaseUrl =
     process.env.DATABASE_URL ??
@@ -25,33 +22,26 @@ function getDatabaseUrl(): string {
 
   if (!databaseUrl) {
     throw new DatabaseConfigurationError(
-      "Database connection string is missing. Set DATABASE_URL or connect Neon/Postgres so POSTGRES_URL is available.",
+      "Database connection string is missing. Set DATABASE_URL in your Vercel project environment variables (Settings → Environment Variables).",
     );
   }
 
   return databaseUrl;
 }
 
-function createDb(): NodePgDatabase<typeof schema> {
-  const databaseUrl = getDatabaseUrl();
-  const isLocalDatabase =
-    databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1");
+type NeonDb = ReturnType<typeof drizzle<typeof schema>>;
 
-  const pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: isLocalDatabase ? undefined : { rejectUnauthorized: false },
-    max: process.env.VERCEL ? 1 : undefined,
-  });
+let dbInstance: NeonDb | null = null;
 
-  return drizzle(pool, { schema });
-}
-
-function getDb(): NodePgDatabase<typeof schema> {
-  dbInstance ??= createDb();
+function getDb(): NeonDb {
+  if (!dbInstance) {
+    const sql = neon(getDatabaseUrl());
+    dbInstance = drizzle(sql, { schema });
+  }
   return dbInstance;
 }
 
-export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
+export const db = new Proxy({} as NeonDb, {
   get(_target, property, receiver) {
     return Reflect.get(getDb(), property, receiver);
   },
