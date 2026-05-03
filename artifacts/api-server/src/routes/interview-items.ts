@@ -28,9 +28,12 @@ router.get("/interview-items", requireAuth, async (req: AuthRequest, res, next):
       .from(jobsTable)
       .where(eq(jobsTable.userId, req.userId!));
 
-    const jobMap = new Map(jobs.map((job) => [job.id, job]));
+    const jobMap = new Map<number, { title: string; company: string | null }>(jobs.map((job) => [job.id, { title: job.title, company: job.company } ]));
 
-    res.json(items.map((item) => serializeItem({ ...item, ...jobMap.get(item.jobId ?? -1) } as InterviewItemRow)));
+    res.json(items.map((item) => {
+      const job = item.jobId ? jobMap.get(item.jobId) : undefined;
+      return serializeItem({ ...item, jobTitle: job?.title ?? null, company: job?.company ?? null });
+    }));
   } catch (err) { next(err); }
 });
 
@@ -40,7 +43,7 @@ router.post("/interview-items", requireAuth, async (req: AuthRequest, res, next)
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
     if (parsed.data.jobId) {
-      const [job] = await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
+      const [job] = await db.select().from(jobsTable)
         .where(and(eq(jobsTable.id, parsed.data.jobId), eq(jobsTable.userId, req.userId!)))
         .limit(1);
       if (!job) { res.status(400).json({ error: "Job not found or not yours" }); return; }
@@ -54,12 +57,7 @@ router.post("/interview-items", requireAuth, async (req: AuthRequest, res, next)
       userId: req.userId!,
     }).returning();
 
-    const [job] = item.jobId
-      ? await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
-        .where(and(eq(jobsTable.id, item.jobId), eq(jobsTable.userId, req.userId!)))
-        .limit(1)
-      : [];
-
+    const job = item.jobId ? await getJobForUser(item.jobId, req.userId!) : null;
     res.status(201).json(serializeItem({ ...item, jobTitle: job?.title ?? null, company: job?.company ?? null }));
   } catch (err) { next(err); }
 });
@@ -72,9 +70,7 @@ router.put("/interview-items/:id", requireAuth, async (req: AuthRequest, res, ne
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
     if (parsed.data.jobId) {
-      const [job] = await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
-        .where(and(eq(jobsTable.id, parsed.data.jobId), eq(jobsTable.userId, req.userId!)))
-        .limit(1);
+      const job = await getJobForUser(parsed.data.jobId, req.userId!);
       if (!job) { res.status(400).json({ error: "Job not found or not yours" }); return; }
     }
 
@@ -91,12 +87,7 @@ router.put("/interview-items/:id", requireAuth, async (req: AuthRequest, res, ne
 
     if (!item) { res.status(404).json({ error: "Item not found" }); return; }
 
-    const [job] = item.jobId
-      ? await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
-        .where(and(eq(jobsTable.id, item.jobId), eq(jobsTable.userId, req.userId!)))
-        .limit(1)
-      : [];
-
+    const job = item.jobId ? await getJobForUser(item.jobId, req.userId!) : null;
     res.json(serializeItem({ ...item, jobTitle: job?.title ?? null, company: job?.company ?? null }));
   } catch (err) { next(err); }
 });
@@ -112,6 +103,52 @@ router.delete("/interview-items/:id", requireAuth, async (req: AuthRequest, res,
     res.sendStatus(204);
   } catch (err) { next(err); }
 });
+
+router.post("/interview-items/migrate", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const jobs = await db.select().from(jobsTable)
+      .where(eq(jobsTable.userId, req.userId!));
+
+    const existing = await db.select({ question: interviewItemsTable.question, jobId: interviewItemsTable.jobId })
+      .from(interviewItemsTable)
+      .where(eq(interviewItemsTable.userId, req.userId!));
+
+    const seen = new Set(existing.map((item) => `${item.jobId ?? 0}::${item.question.trim()}`));
+    const rows: Array<typeof interviewItemsTable.$inferInsert> = [];
+
+    for (const job of jobs) {
+      const questions = job.interviewQuestions ?? [];
+      const answers = job.interviewAnswers ?? [];
+      for (let i = 0; i < questions.length; i += 1) {
+        const question = questions[i]?.trim();
+        if (!question) continue;
+        const key = `${job.id}::${question}`;
+        if (seen.has(key)) continue;
+        rows.push({
+          userId: req.userId!,
+          question,
+          answer: answers[i]?.trim() || null,
+          category: job.status === "interviewing" ? "Behavioral" : null,
+          jobId: job.id,
+        });
+        seen.add(key);
+      }
+    }
+
+    if (rows.length > 0) {
+      await db.insert(interviewItemsTable).values(rows);
+    }
+
+    res.json({ migrated: rows.length });
+  } catch (err) { next(err); }
+});
+
+async function getJobForUser(jobId: number, userId: number) {
+  const [job] = await db.select().from(jobsTable)
+    .where(and(eq(jobsTable.id, jobId), eq(jobsTable.userId, userId)))
+    .limit(1);
+  return job ?? null;
+}
 
 function serializeItem(item: InterviewItemRow) {
   return {
