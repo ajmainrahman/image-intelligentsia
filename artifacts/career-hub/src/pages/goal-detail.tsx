@@ -29,11 +29,13 @@ export default function GoalDetailPage() {
   const [reflection, setReflection] = useState("");
   const [showAchieveDialog, setShowAchieveDialog] = useState(false);
   const [achieveSummary, setAchieveSummary] = useState<any>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["goal-detail", id],
     queryFn: () => api<any>(`/goals/${id}/detail`),
     enabled: !!id,
+    retry: false,
   });
 
   const achieveMutation = useMutation({
@@ -56,7 +58,7 @@ export default function GoalDetailPage() {
       </div>
     );
   if (isError || !data)
-    return <div className="p-6 text-red-500">Failed to load goal details.</div>;
+    return <div className="p-6 text-red-500">Failed to load goal details{loadError ? `: ${loadError}` : "."}</div>;
 
   const { goal, learningEntries, milestones } = data;
   const completedMilestones = milestones.filter((m: any) => m.status === "completed").length;
