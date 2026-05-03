@@ -12,6 +12,7 @@ import profileRouter from "./profile.js";
 import featuresRouter from "./features.js";
 import researchRouter from "./research.js";
 import notepadRouter from "./notepad.js";
+import interviewItemsRouter from "./interview-items.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -27,5 +28,6 @@ router.use(profileRouter);
 router.use(featuresRouter);
 router.use(researchRouter);
 router.use(notepadRouter);
+router.use(interviewItemsRouter);
 
 export default router;

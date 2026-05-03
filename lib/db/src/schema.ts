@@ -179,3 +179,16 @@ export const researchTable = pgTable("research", {
 });
 
 export type Research = typeof researchTable.$inferSelect;
+
+export const interviewItemsTable = pgTable("interview_items", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  category: text("category"),
+  jobId: integer("job_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type InterviewItem = typeof interviewItemsTable.$inferSelect;
