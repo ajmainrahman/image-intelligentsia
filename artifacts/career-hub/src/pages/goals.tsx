@@ -75,7 +75,7 @@ export default function GoalsPage() {
   };
   const submit = () => {
     if (!form.title.trim() || !form.targetRole.trim()) { toast({ title: "Title and target role are required", variant: "destructive" }); return; }
-    const payload = { title: form.title.trim(), targetRole: form.targetRole.trim(), description: form.description.trim() || null, skills: form.skills, progress: form.progress, status: form.status, targetYear: form.targetYear ? Number(form.targetYear) : null };
+    const payload = { title: form.title.trim(), targetRole: form.targetRole.trim(), description: form.description.trim() || null, skills: form.skills, progress: form.progress, status: form.status, targetYear: form.targetYear ? Number(form.targetYear) : undefined };
     if (editingId) updateGoal.mutate({ id: editingId, data: payload });
     else createGoal.mutate(payload);
   };

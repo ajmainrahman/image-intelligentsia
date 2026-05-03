@@ -70,7 +70,7 @@ export default function OnboardingPage() {
         title: goal.title.trim(),
         targetRole: goal.targetRole.trim(),
         description: goal.description.trim() || null,
-        targetYear: Number(goal.targetYear) || null,
+        targetYear: goal.targetYear ? Number(goal.targetYear) : undefined,
         skills: [], progress: 0, status: "active",
       });
       setStep(3);
