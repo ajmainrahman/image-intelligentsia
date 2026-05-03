@@ -318,7 +318,7 @@ export default function JobsPage() {
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                             </SelectContent>
                           </Select>
