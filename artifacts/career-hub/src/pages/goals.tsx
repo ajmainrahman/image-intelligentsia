@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Plus, Pencil, Trash2, X, BookOpen, Map as MapIcon, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageErrorBoundary } from "@/components/page-error-boundary";
 
 type Goal = { id: number; title: string; targetRole: string; description: string | null; skills: string[]; progress: number; status: "active"|"completed"|"paused"; targetYear: number | null; createdAt: string; };
 type ProgressEntry = { id: number; goalId: number | null; status: string; };
@@ -29,7 +30,7 @@ const STATUS_META: Record<Goal["status"], StatusMeta> = {
 const emptyForm = (): GoalFormState => ({ title: "", targetRole: "", description: "", skills: [], progress: 0, status: "active", targetYear: String(new Date().getFullYear()), targetHorizon: "short_term", skillDraft: "" });
 const MAX_DESC = 1000;
 
-export default function GoalsPage() {
+function GoalsPageInner() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -257,4 +258,8 @@ export default function GoalsPage() {
       )}
     </div>
   );
+}
+
+export default function GoalsPage() {
+  return <PageErrorBoundary message="Could not load your goals — please refresh"><GoalsPageInner /></PageErrorBoundary>;
 }

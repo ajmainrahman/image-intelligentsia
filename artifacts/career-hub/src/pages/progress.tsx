@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Pencil, Trash2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageErrorBoundary } from "@/components/page-error-boundary";
 
 type ProgressEntry = {
   id: number;
@@ -134,7 +135,7 @@ function computeStats(entries: ProgressEntry[]) {
 }
 
 
-export default function ProgressPage() {
+function ProgressPageInner() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -449,4 +450,8 @@ export default function ProgressPage() {
       )}
     </div>
   );
+}
+
+export default function ProgressPage() {
+  return <PageErrorBoundary message="Could not load your progress — please refresh"><ProgressPageInner /></PageErrorBoundary>;
 }

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { BellRing, Plus, Pencil, Trash2, Calendar, CheckCircle2, Circle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageErrorBoundary } from "@/components/page-error-boundary";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +41,7 @@ const priorityColors: Record<string, string> = {
 };
 const recurrenceLabels: Record<string, string> = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
 
-export default function RemindersPage() {
+function RemindersPageInner() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function RemindersPage() {
   });
   const updateReminder = useMutation({
     mutationFn: ({ id, data }: { id: number; data: object }) => api(`/reminders/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["reminders"] }); setEditingReminderId(null); form.reset(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["reminders"] }); setEditingReminderId(null); form.reset(); toast({ title: "Reminder updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
   const deleteReminder = useMutation({
@@ -219,4 +220,8 @@ export default function RemindersPage() {
       )}
     </div>
   );
+}
+
+export default function RemindersPage() {
+  return <PageErrorBoundary message="Could not load your reminders — please refresh"><RemindersPageInner /></PageErrorBoundary>;
 }

@@ -13,13 +13,15 @@ const app = express();
 app.use(pinoHttp({ logger }));
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
   : [];
+const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.length === 0) return callback(null, true);
+      if (vercelOrigin && origin === vercelOrigin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },

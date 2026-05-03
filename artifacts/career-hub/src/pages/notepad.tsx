@@ -16,6 +16,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import LinkExt from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { useToast } from "@/hooks/use-toast";
 
 const PROMPTS = ["What progress did you make today?", "What did you learn from your latest reading?", "What should you focus on next?", "What felt difficult and why?", "What would make this week a win?"];
 const QUICK_TAGS = ["planning", "research", "building", "reflection", "design", "writing", "feedback", "milestone", "problem", "win"];
@@ -50,6 +51,7 @@ function NoteEditor({ content, onChange, placeholder }: { content: string; onCha
 export default function NotepadPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -71,17 +73,19 @@ export default function NotepadPage() {
   useEffect(() => { if (!selectedNote) return; setDraftTitle(selectedNote.title); setDraftContent(selectedNote.content); }, [selectedNote?.id]);
   useEffect(() => { if (selectedNoteId == null && notes[0]?.id) setSelectedNoteId(notes[0].id); }, [notes, selectedNoteId]);
 
-  const createNote = useMutation({ mutationFn: (data: { title: string; content: string }) => api<Note>("/notes", { method: "POST", body: JSON.stringify(data) }), onSuccess: (note) => { setSelectedNoteId(note.id); setLastSaved("Saved"); queryClient.invalidateQueries({ queryKey: ["notes"] }); } });
-  const updateNote = useMutation({ mutationFn: ({ id, data }: { id: number; data: { title: string; content: string } }) => api<Note>(`/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }), onSuccess: () => { setLastSaved("Saved"); queryClient.invalidateQueries({ queryKey: ["notes"] }); } });
-  const deleteNote = useMutation({ mutationFn: (id: number) => api(`/notes/${id}`, { method: "DELETE" }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notes"] }) });
+  const createNote = useMutation({ mutationFn: (data: { title: string; content: string }) => api<Note>("/notes", { method: "POST", body: JSON.stringify(data) }), onSuccess: (note) => { setSelectedNoteId(note.id); setLastSaved("Saved"); queryClient.invalidateQueries({ queryKey: ["notes"] }); toast({ title: "Note saved" }); }, onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }) });
+  const updateNote = useMutation({ mutationFn: ({ id, data }: { id: number; data: { title: string; content: string } }) => api<Note>(`/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }), onSuccess: () => { setLastSaved("Saved"); queryClient.invalidateQueries({ queryKey: ["notes"] }); toast({ title: "Note updated" }); }, onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }) });
+  const deleteNote = useMutation({ mutationFn: (id: number) => api(`/notes/${id}`, { method: "DELETE" }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["notes"] }); toast({ title: "Note deleted" }); }, onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }) });
   const createInterviewQuestion = useMutation({
     mutationFn: (data: { question: string; answer: string | null; category: string | null }) =>
       api<InterviewQuestion>("/interview-questions", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["interview-questions", user?.id] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-questions", user?.id] }); toast({ title: "Interview question saved" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
   const deleteInterviewQuestion = useMutation({
     mutationFn: (id: number) => api(`/interview-questions/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["interview-questions", user?.id] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["interview-questions", user?.id] }); toast({ title: "Interview question deleted" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const persist = useCallback((updates: { title?: string; content?: string }) => { setLastSaved("Saving..."); const nextTitle = updates.title ?? draftTitle; const nextContent = updates.content ?? draftContent; if (updates.title !== undefined) setDraftTitle(nextTitle); if (updates.content !== undefined) setDraftContent(nextContent); if (!selectedNote) return; if (saveTimer.current) window.clearTimeout(saveTimer.current); saveTimer.current = window.setTimeout(() => updateNote.mutate({ id: selectedNote.id, data: { title: nextTitle, content: nextContent } }), 600); }, [draftTitle, draftContent, selectedNote]);
@@ -93,6 +97,7 @@ export default function NotepadPage() {
   const insertTag = (tag: string) => persist({ content: `${draftContent}${draftContent.trim() ? "<br>" : ""}<p>#${tag}</p>` });
   const prompt = selectedNote ? PROMPTS[selectedNote.id % PROMPTS.length] : "";
   const questionCount = interviewQuestions.length;
+  const handleCreateQuestion = () => createInterviewQuestion.mutate({ question: "Example question", answer: null, category: null });
 
   return (
     <div className="space-y-8 page-enter max-w-6xl mx-auto">
@@ -106,6 +111,10 @@ export default function NotepadPage() {
         <Button onClick={addNote} className="gap-2">
           <Plus className="h-4 w-4" />New Note
         </Button>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={handleCreateQuestion}>Add interview question</Button>
+        <Button variant="outline" onClick={() => interviewQuestions[0] && deleteInterviewQuestion.mutate(interviewQuestions[0].id)}>Delete first question</Button>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
         <Card className="border-primary/15 bg-card/95 shadow-sm h-fit">

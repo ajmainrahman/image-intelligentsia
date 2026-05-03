@@ -439,7 +439,10 @@ export default function JobsPage() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[job.status] ?? ""}`}>{job.status}</span>
                         <CardTitle className="text-xl line-clamp-1">{job.title}</CardTitle>
                         {job.company && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><Building2 className="h-4 w-4" />{job.company}</div>}
-                        {job.applyDate && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><CalendarDays className="h-4 w-4" />Applied {new Date(job.applyDate).toLocaleDateString()}</div>}
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+                          <CalendarDays className="h-4 w-4" />
+                          {job.applyDate ? `Applied ${new Date(job.applyDate).toLocaleDateString()}` : "No date set"}
+                        </div>
                       </div>
                       <div className="flex -mr-2 shrink-0">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => togglePin.mutate(job.id)}>
