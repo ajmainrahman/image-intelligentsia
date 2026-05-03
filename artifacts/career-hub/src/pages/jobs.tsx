@@ -184,6 +184,7 @@ export default function JobsPage() {
     };
     const payloadWithUser = { ...apiPayload, userId: user?.id };
     console.log("job save payload", payloadWithUser);
+    console.log("job save mode", editingJobId ? "update" : "create");
     editingJobId ? updateJob.mutate({ id: editingJobId, data: apiPayload }) : createJob.mutate(payloadWithUser as JobApiPayload);
   };
 
