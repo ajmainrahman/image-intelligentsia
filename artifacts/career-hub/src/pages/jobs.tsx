@@ -76,6 +76,7 @@ export default function JobsPage() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
+  const [quickQuestion, setQuickQuestion] = useState("");
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
@@ -101,6 +102,37 @@ export default function JobsPage() {
   const togglePin = useMutation({
     mutationFn: (id: number) => api(`/jobs/${id}/pin`, { method: "POST" }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["jobs"] }); queryClient.invalidateQueries({ queryKey: ["jobs-analytics"] }); },
+  });
+
+  const quickAddQuestion = useMutation({
+    mutationFn: async () => {
+      const job = jobs.find((item) => item.status === "interviewing") ?? jobs[0];
+      if (!job) throw new Error("Save a job first");
+      const questions = [...job.interviewQuestions, quickQuestion.trim()].filter(Boolean);
+      return api(`/jobs/${job.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          keywords: job.keywords,
+          skills: job.skills,
+          notes: job.notes,
+          status: job.status,
+          url: job.url,
+          applyDate: job.applyDate,
+          interviewQuestions: questions,
+          interviewAnswers: job.interviewAnswers,
+          pinned: job.pinned,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      setQuickQuestion("");
+      toast({ title: "Question added" });
+    },
+    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const form = useForm<JobFormValues>({
@@ -203,7 +235,7 @@ export default function JobsPage() {
 
       <div className="rounded-3xl border-[#e4ddd2] bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4"><div><h2 className="text-[16px] font-semibold text-slate-800">Interview prep tracker</h2><p className="text-[12px] text-slate-400">Add questions and answer notes to jobs.</p></div></div>
-        <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardHeader><CardTitle className="flex items-center gap-2"><HelpCircle className="h-4 w-4" />Interview prep tracker</CardTitle></CardHeader><CardContent className="space-y-4">{interviewJobs.length === 0 ? <div className="rounded-2xl border border-dashed border-[#d9d1c3] bg-[#fdfcf8] p-4 text-sm text-muted-foreground">Open any job with interview questions from the Save Job form above, or edit an existing job and fill in the “Interview Questions” box.</div> : interviewJobs.slice(0, 4).map((job) => <div key={job.id} className="rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-3 space-y-2"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-800">{job.title}</p><p className="text-xs text-muted-foreground">{job.interviewQuestions.length} questions</p></div><div className="space-y-1">{job.interviewQuestions.slice(0, 3).map((question, index) => <div key={`${job.id}-${index}`} className="rounded-xl bg-white border border-[#ebe5d8] px-3 py-2 text-sm text-slate-700">{question}</div>)}</div><p className="text-xs text-muted-foreground">{job.interviewAnswers.length} answers saved</p></div>)}</CardContent></Card>
+        <Card className="rounded-3xl border-[#e4ddd2] bg-white"><CardHeader><CardTitle className="flex items-center gap-2"><HelpCircle className="h-4 w-4" />Interview prep tracker</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex flex-col gap-3 rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-4"><p className="text-sm font-medium text-slate-800">Add an interview question</p><div className="flex flex-col gap-3 md:flex-row"><Input value={quickQuestion} onChange={(e) => setQuickQuestion(e.target.value)} placeholder="Tell me about a time you solved a hard problem..." className="bg-white" /><Button onClick={() => quickAddQuestion.mutate()} disabled={!quickQuestion.trim() || quickAddQuestion.isPending}>{quickAddQuestion.isPending ? "Adding..." : "Add question"}</Button></div><p className="text-xs text-muted-foreground">This adds the question to your most recent interviewing job, or the first saved job if none are interviewing.</p></div>{interviewJobs.length === 0 ? <div className="rounded-2xl border border-dashed border-[#d9d1c3] bg-[#fdfcf8] p-4 text-sm text-muted-foreground">No interview questions yet. Use the box above, or open Save Job and fill in “Interview Questions”.</div> : interviewJobs.slice(0, 4).map((job) => <div key={job.id} className="rounded-2xl border border-[#ebe5d8] bg-[#fdfcf8] p-3 space-y-2"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-800">{job.title}</p><p className="text-xs text-muted-foreground">{job.interviewQuestions.length} questions</p></div><div className="space-y-1">{job.interviewQuestions.slice(0, 3).map((question, index) => <div key={`${job.id}-${index}`} className="rounded-xl bg-white border border-[#ebe5d8] px-3 py-2 text-sm text-slate-700">{question}</div>)}</div><p className="text-xs text-muted-foreground">{job.interviewAnswers.length} answers saved</p></div>)}</CardContent></Card>
       </div>
 
       {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[1,2,3,4].map(i => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}</div> : jobs && jobs.length > 0 ? <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{jobs.map((job) => (<Card key={job.id} className="flex flex-col hover-elevate"><CardHeader className="pb-3"><div className="flex items-start justify-between"><div className="space-y-1.5"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[job.status] ?? ""}`}>{job.status}</span><CardTitle className="text-xl line-clamp-1">{job.title}</CardTitle>{job.company && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><Building2 className="h-4 w-4" />{job.company}</div>}{job.applyDate && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><CalendarDays className="h-4 w-4" />Applied {new Date(job.applyDate).toLocaleDateString()}</div>}</div><div className="flex -mr-2 shrink-0"><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => togglePin.mutate(job.id)}><Pin className={`h-4 w-4 ${job.pinned ? "text-primary" : ""}`} /></Button>{job.url && <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" asChild><a href={job.url} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>}<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { if (confirm("Delete this job?")) deleteJob.mutate(job.id); }}><Trash2 className="h-4 w-4" /></Button></div></div></CardHeader><CardContent className="flex-1 pb-4 space-y-4"><p className="text-sm text-foreground/80 line-clamp-3">{job.description}</p>{job.skills.length > 0 && (<div className="space-y-2 pt-2 border-t"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Required Skills</p><div className="flex flex-wrap gap-1.5">{job.skills.map((skill, i) => <Badge key={i} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 font-medium">{skill}</Badge>)}</div></div>)}{job.keywords.length > 0 && (<div className="space-y-2 pt-2 border-t"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Keywords</p><div className="flex flex-wrap gap-1.5">{job.keywords.map((kw, i) => <Badge key={i} variant="outline" className="text-xs font-normal">{kw}</Badge>)}</div></div>)}{job.interviewQuestions.length > 0 && (<div className="space-y-2 pt-2 border-t"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Interview questions</p><div className="space-y-2">{job.interviewQuestions.map((q, i) => (<div key={i} className="rounded-xl border border-[#ebe5d8] bg-[#fdfcf8] p-2 text-sm text-slate-700"><span className="font-medium">Q:</span> {q}<div className="mt-1 text-xs text-muted-foreground">A: {job.interviewAnswers[i] ?? ""}</div></div>))}</div></div>)}</CardContent></Card>))}</div> : <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed rounded-xl bg-muted/10"><div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4"><Briefcase className="h-8 w-8" /></div><h3 className="text-xl font-semibold mb-2">No jobs tracked</h3><p className="text-muted-foreground max-w-md mb-6">Start saving job descriptions to identify the most demanded skills.</p><Button onClick={() => setIsCreateOpen(true)} className="gap-2"><Plus className="h-4 w-4" />Track a Job</Button></div>}
