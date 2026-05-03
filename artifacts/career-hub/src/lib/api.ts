@@ -37,7 +37,7 @@ export async function api<T = unknown>(
     const message =
       typeof data === "string"
         ? data.trim()
-        : (data as { error?: string }).error;
+        : (data as { error?: string; message?: string }).error ?? (data as { error?: string; message?: string }).message;
     throw new Error(message || `Request failed (${res.status})`);
   }
   return data as T;
