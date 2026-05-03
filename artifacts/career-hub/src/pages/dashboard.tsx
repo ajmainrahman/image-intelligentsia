@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, BookOpenCheck, Target, Brain, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, Target, Brain, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
@@ -43,8 +43,17 @@ export default function Dashboard() {
 
   return <div className="space-y-6 page-enter pb-8">
     <div className="flex items-center justify-between rounded-[28px] border border-[#e4ddd2] bg-[#fdfcf8] px-6 py-5 shadow-sm">
-      <div><h1 className="text-[24px] md:text-[27px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName}</h1><p className="text-[13px] text-slate-400 mt-0.5">{dateLabel}{activeGoals.length > 0 && ` · ${activeGoals.length} active goal${activeGoals.length !== 1 ? "s" : ""}`}</p></div>
-      <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[13px] flex items-center justify-center shrink-0">{initials}</div>
+      <div>
+        <h1 className="text-[24px] md:text-[27px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName}</h1>
+        <p className="text-[13px] text-slate-400 mt-0.5">{dateLabel}{activeGoals.length > 0 && ` · ${activeGoals.length} active goal${activeGoals.length !== 1 ? "s" : ""}`}</p>
+      </div>
+      <div className="flex flex-col items-end gap-2 text-right">
+        <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[13px] flex items-center justify-center shrink-0">{initials}</div>
+        <div className="text-[12px] text-slate-400">
+          <p>{summary?.pendingReminders ?? 0} due</p>
+          <p>{summary?.roadmapCompleted ?? 0}/{summary?.roadmapTotal ?? 0} roadmap</p>
+        </div>
+      </div>
     </div>
 
     <DueWarningBanner />
@@ -55,7 +64,7 @@ export default function Dashboard() {
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-amber-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Active goals</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{summary?.activeGoals ?? 0}</div><p className="mt-2 text-[12px] text-amber-600">of {summary?.totalGoals ?? 0} total</p></div>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-sky-500"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Learning done</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{learningCount}</div><p className="mt-2 text-[12px] text-sky-600">{summary?.progressInProgress ?? 0} in progress</p></div>
         <div className="rounded-[28px] border border-[#e4ddd2] bg-white p-5 shadow-sm min-h-[132px] border-l-4 border-l-orange-400"><p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">Skills tracked</p><div className="mt-2 text-[34px] font-bold text-slate-800 leading-none">{skillsSet.size}</div><p className="mt-2 text-[12px] text-orange-500">from {goals.length} goal{goals.length !== 1 ? "s" : ""}</p></div>
-      </>) }
+      </>)}
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -74,7 +83,7 @@ export default function Dashboard() {
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Learning streak</h2><span className="text-[12px] text-slate-400">14 days</span></div>
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Recent learning</h2><span className="text-[12px] text-slate-400">14 days</span></div>
         <div className="space-y-3"><div className="flex items-center gap-2 pb-2"><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">M</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">W</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">F</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">S</span><span className="text-xs text-white bg-emerald-600 px-2.5 py-1 rounded-full">S</span></div>{recentProgress.map((entry) => <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0"><span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span><span className="text-[12px] text-emerald-600 shrink-0 ml-2">{entry.durationHours > 0 ? `${entry.durationHours} hr` : entry.status.replace("_", " ")}</span></div>)}</div>
       </div>
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
@@ -94,8 +103,11 @@ export default function Dashboard() {
         {pinnedJobs.length > 0 ? <div className="space-y-2.5">{pinnedJobs.slice(0, 4).map((job) => <div key={job.id} className="rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] p-4"><p className="font-medium text-slate-800">{job.title}</p><p className="text-xs text-muted-foreground">{job.company ?? "No company"}</p></div>)}</div> : <p className="text-sm text-muted-foreground">Pin jobs to keep them here.</p>}
       </div>
       <div className="rounded-[32px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Recent learning</h2><Link href="/progress" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
-        {loadingProgress ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-9 w-full rounded-2xl" />)}</div> : <div className="space-y-3"><div className="flex items-center gap-2 pb-2"><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">M</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">W</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">T</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">F</span><span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">S</span><span className="text-xs text-white bg-emerald-600 px-2.5 py-1 rounded-full">S</span></div>{recentProgress.map((entry) => <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0"><span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span><span className="text-[12px] text-emerald-600 shrink-0 ml-2">{entry.durationHours > 0 ? `${entry.durationHours} hr` : entry.status.replace("_", " ")}</span></div>)}</div>}
+        <div className="flex items-center justify-between mb-5"><h2 className="text-[16px] font-semibold text-slate-800">Interview prep tracking</h2><Link href="/jobs" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link></div>
+        <div className="space-y-3">
+          {(analytics?.topSkills ?? []).slice(0, 4).map((item) => <div key={item.skill} className="flex items-center justify-between rounded-[22px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3"><span className="text-sm text-slate-700">{item.skill}</span><span className="text-sm font-semibold text-emerald-700">{item.count}</span></div>)}
+          {!analytics?.topSkills?.length && <p className="text-sm text-muted-foreground">No interview prep data yet.</p>}
+        </div>
       </div>
     </div>
   </div>;
