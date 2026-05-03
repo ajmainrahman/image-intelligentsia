@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList, TrendingUp, Microscope, Briefcase } from "lucide-react";
+import { CalendarDays, Pencil, X, Check, Plus, AlertTriangle, Clock, Zap, ClipboardList, TrendingUp, Microscope, Briefcase, MoreHorizontal } from "lucide-react";
 import { format, formatDistanceToNow, subWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -468,154 +468,117 @@ export default function Dashboard() {
   const roadmapPct = summary && summary.roadmapTotal > 0 ? Math.round((summary.roadmapCompleted / summary.roadmapTotal) * 100) : 0;
 
   return (
-    <div className="space-y-8 page-enter">
-      <div>
-        <h1 className="text-[28px] font-bold text-foreground leading-tight">Your overview</h1>
-        <p className="text-[14px] text-muted-foreground mt-1.5">Here's where things stand today.</p>
+    <div className="space-y-6 page-enter">
+      <div className="flex items-center justify-between rounded-3xl border border-[#e7e1d6] bg-[#fcfbf7] px-5 py-4 shadow-sm">
+        <div>
+          <h1 className="text-[24px] md:text-[28px] font-bold text-slate-800 leading-tight">Good morning, Ajmain</h1>
+          <p className="text-[13px] text-slate-500 mt-1">Saturday, 3 May 2026 · Dhaka · 4 active goals</p>
+        </div>
+        <button className="h-9 w-9 rounded-full bg-emerald-50 text-emerald-700 font-semibold">AJ</button>
       </div>
-
       <DueWarningBanner />
-
-      <div className="flex justify-end">
-        <Link href="/weekly-review">
-          <Button variant="outline" size="sm" className="gap-2 text-[13px]"><ClipboardList className="h-3.5 w-3.5" /> Weekly Review</Button>
-        </Link>
-      </div>
-
-      {/* Profile card — now receives live data */}
-      <ProfileSection summary={summary} progressEntries={progressEntries} />
-
-      {/* Summary stats */}
-      {isLoadingSummary ? (
-        <div className="grid grid-cols-2 gap-4">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}</div>
-      ) : summary ? (
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: "Active goals",       value: summary.activeGoals,       hint: `of ${summary.totalGoals} total` },
-            { label: "Learning completed", value: summary.progressCompleted, hint: `${summary.progressInProgress} in progress` },
-            { label: "Jobs applied",       value: summary.appliedJobs,       hint: `of ${summary.totalJobs} saved` },
-            { label: "Pending reminders",  value: summary.pendingReminders,  hint: "awaiting action" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
-              <p className="text-[28px] text-foreground leading-none">{stat.value}</p>
-              <p className="text-[12px] text-muted-foreground mt-1.5">{stat.hint}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {/* Charts */}
-      <LearningCharts entries={progressEntries} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Activity timeline */}
-        <div className="lg:col-span-2">
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-[17px] text-foreground">Recent activity</h2>
-                <p className="text-[12px] text-muted-foreground mt-0.5">Last 20 events across the app</p>
-              </div>
-              <Link href="/activity" className="text-[12px] text-primary hover:underline underline-offset-2">View all</Link>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              {FILTERS.map((f) => (
-                <button key={f.id} onClick={() => setFilter(f.id)}
-                  className={`px-3 py-1 text-[12px] font-medium rounded-full transition-colors ${filter === f.id ? "bg-accent text-primary" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            {isLoadingActivity ? (
-              <div className="space-y-4">{[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : filteredActivity.length > 0 ? (
-              <ol className="relative border-l border-border pl-6 space-y-5">
-                <AnimatePresence initial={false}>
-                  {filteredActivity.map((item, index) => {
-                    const meta = ACTIVITY_META[item.type] ?? ACTIVITY_META.note;
-                    return (
-                      <motion.li key={`${item.type}-${item.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.35) }} className="relative">
-                        <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full bg-primary/40 ring-2 ring-background" />
-                        <div className="flex items-baseline gap-2.5">
-                          <span className="text-[11px] font-medium text-primary uppercase tracking-wide">{meta.label}</span>
-                          <span className="text-[11px] text-muted-foreground">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
-                        </div>
-                        <p className="mt-0.5 text-[13px] text-foreground line-clamp-1">{item.title}</p>
-                      </motion.li>
-                    );
-                  })}
-                </AnimatePresence>
-              </ol>
-            ) : (
-              <div className="flex items-center justify-center py-12 text-center">
-                <p className="text-[13px] text-muted-foreground">No activity in this filter yet.</p>
-              </div>
-            )}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          { title: "Papers published", value: "8", hint: "+1 this quarter", accent: "border-l-4 border-emerald-500" },
+          { title: "IELTS target", value: "7.0", hint: "72 days to exam", accent: "border-l-4 border-amber-400" },
+          { title: "Projects live", value: "5", hint: "2 in progress", accent: "border-l-4 border-sky-500" },
+          { title: "Skills tracked", value: "12", hint: "3 leveling up", accent: "border-l-4 border-orange-500" },
+        ].map((stat) => (
+          <div key={stat.title} className={`rounded-2xl border border-[#e6dfd2] bg-white p-4 shadow-sm ${stat.accent}`}>
+            <p className="text-[12px] uppercase tracking-wide text-slate-400">{stat.title}</p>
+            <div className="mt-2 text-[28px] font-bold text-slate-800 leading-none">{stat.value}</div>
+            <p className="mt-1 text-[12px] text-emerald-600">{stat.hint}</p>
           </div>
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-5">
-          <SkillsGapCard />
-
-          {/* Working Research card */}
-          <WorkingResearchCard />
-
-          {/* Reminder */}
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <h2 className="text-[15px] text-foreground mb-4">Don't forget</h2>
-            {isLoadingReminders ? <Skeleton className="h-20 w-full rounded-xl" /> : recentReminder ? (
-              <div className="space-y-3">
-                <p className="text-[13px] font-medium text-foreground">{recentReminder.title}</p>
-                {recentReminder.description && <p className="text-[12px] text-muted-foreground line-clamp-2">{recentReminder.description}</p>}
-                <div className="flex flex-wrap gap-1.5 text-[11px]">
-                  <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">{recentReminder.category}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-accent text-primary capitalize">{recentReminder.priority} priority</span>
-                  {recentReminder.dueDate && <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-muted-foreground"><CalendarDays className="h-3 w-3" />{format(new Date(recentReminder.dueDate), "MMM d")}</span>}
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-3xl border border-[#e7e1d6] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[16px] font-semibold text-slate-800">Goals progress</h2>
+            <span className="text-[12px] text-slate-400">4 active</span>
+          </div>
+          <div className="space-y-4">
+            {[
+              { label: "IELTS band 7.0", value: 68, color: "bg-emerald-500" },
+              { label: "Masters Denmark prep", value: 45, color: "bg-sky-500" },
+              { label: "Publish 2 new papers", value: 50, color: "bg-amber-500" },
+              { label: "PM portfolio refresh", value: 82, color: "bg-orange-500" },
+            ].map((goal) => (
+              <div key={goal.label}>
+                <div className="flex items-center justify-between text-[13px] text-slate-600">
+                  <span>{goal.label}</span>
+                  <span>{goal.value}%</span>
                 </div>
-                <Button variant="outline" size="sm" asChild className="w-full text-[12px] mt-1"><Link href="/reminders">View reminders</Link></Button>
+                <div className="mt-2 h-1.5 rounded-full bg-[#f0ebe1] overflow-hidden">
+                  <div className={`h-full rounded-full ${goal.color}`} style={{ width: `${goal.value}%` }} />
+                </div>
               </div>
-            ) : <p className="text-[12px] text-muted-foreground">No pending reminders right now.</p>}
+            ))}
           </div>
-
-          {/* Top skills */}
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <h2 className="text-[15px] text-foreground mb-4">Skills in demand</h2>
-            {isLoadingSkills ? (
-              <div className="space-y-2.5">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
-            ) : skills && skills.length > 0 ? (
-              <div className="space-y-2">
-                {skills.slice(0, 6).map((skill, index) => (
-                  <div key={skill.skill} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[11px] text-muted-foreground w-4 text-right">{index + 1}</span>
-                      <span className="text-[13px] text-foreground capitalize">{skill.skill}</span>
-                    </div>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">{skill.count}</span>
+        </div>
+        <div className="rounded-3xl border border-[#e7e1d6] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[16px] font-semibold text-slate-800">Research items</h2>
+            <Link href="/research" className="text-[12px] text-slate-400">see all</Link>
+          </div>
+          <div className="space-y-3">
+            {[
+              "Lung cancer detection via CNNs — revision submitted",
+              "Bangla sentiment analysis — BLP-2023 EMNLP workshop",
+              "MRI brain tumor classification — new dataset ready",
+              "CartUp first-mile route optimization — applied research",
+              "Demand forecasting for last-mile delivery hubs",
+            ].map((item, index) => (
+              <div key={item} className="rounded-2xl border border-[#ebe4d8] bg-[#fcfbf7] p-3">
+                <div className="flex items-start gap-3">
+                  <span className={`mt-1 h-2.5 w-2.5 rounded-full ${["bg-emerald-500", "bg-amber-500", "bg-sky-500", "bg-orange-500", "bg-zinc-400"][index]}`} />
+                  <div>
+                    <p className="text-[13px] text-slate-700">{item}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Status · Active</p>
                   </div>
-                ))}
+                </div>
               </div>
-            ) : <p className="text-[12px] text-muted-foreground">Save jobs to see required skills here.</p>}
+            ))}
           </div>
-
-          {/* Roadmap progress */}
-          {summary && (
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <h2 className="text-[15px] font-semibold text-foreground mb-1">Roadmap progress</h2>
-              <p className="text-[12px] text-muted-foreground mb-4">{summary.roadmapCompleted} of {summary.roadmapTotal} milestones complete</p>
-              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${roadmapPct}%` }} />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-2 text-right">{roadmapPct}%</p>
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Job Pipeline Kanban */}
-      <JobKanban />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-3xl border border-[#e7e1d6] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[16px] font-semibold text-slate-800">Learning streak</h2>
+            <span className="text-[12px] text-slate-400">14 days</span>
+          </div>
+          <div className="flex gap-2 mb-5">
+            {["M","T","W","T","F","S","S"].map((d, i) => (
+              <span key={`${d}-${i}`} className={`h-8 w-8 rounded-md flex items-center justify-center text-[12px] font-semibold ${i < 6 ? "bg-emerald-50 text-emerald-700" : "bg-emerald-700 text-white"}`}>{d}</span>
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[
+              ["IELTS reading practice", "45 min"],
+              ["ML paper review", "30 min"],
+              ["Product strategy", "20 min"],
+            ].map(([label, time]) => (
+              <div key={label} className="flex items-center justify-between border-b border-[#f0ebe1] pb-2 last:border-0">
+                <span className="text-[13px] text-slate-600">{label}</span>
+                <span className="text-[13px] text-emerald-600">{time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-3xl border border-[#e7e1d6] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[16px] font-semibold text-slate-800">More</h2>
+            <MoreHorizontal className="h-4 w-4 text-slate-400" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-[13px] text-slate-600">
+            <Link href="/goals" className="rounded-2xl bg-[#fcfbf7] border border-[#ebe4d8] p-4">Goals</Link>
+            <Link href="/progress" className="rounded-2xl bg-[#fcfbf7] border border-[#ebe4d8] p-4">Learning</Link>
+            <Link href="/jobs" className="rounded-2xl bg-[#fcfbf7] border border-[#ebe4d8] p-4">Pipeline</Link>
+            <Link href="/roadmap" className="rounded-2xl bg-[#fcfbf7] border border-[#ebe4d8] p-4">Roadmap</Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

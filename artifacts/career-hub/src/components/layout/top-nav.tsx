@@ -46,13 +46,13 @@ export function TopNav() {
   return (
     <>
       <header className="sticky top-0 z-40 h-14 bg-white/90 dark:bg-card/95 backdrop-blur-md border-b border-slate-200/70 dark:border-border shadow-sm">
-        <div className="max-w-screen-xl mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
+        <div className="max-w-[1180px] mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
 
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <BrandLogo className="h-8 w-8" iconClassName="h-4.5 w-4.5" />
             <span className="hidden sm:block text-[15px] font-bold text-slate-700 dark:text-slate-200 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-              Image Intelligentsia
+              image.intelligentsia
             </span>
           </Link>
 
