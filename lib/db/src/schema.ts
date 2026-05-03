@@ -137,6 +137,15 @@ export const jobsTable = pgTable("jobs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const interviewQuestionsTable = pgTable("interview_questions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  category: text("category"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const profileTable = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().unique(),

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -95,6 +96,7 @@ const CATEGORIES = ["Behavioral", "Technical", "System Design", "Company Culture
 
 export default function JobsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
@@ -114,7 +116,7 @@ export default function JobsPage() {
   // — Job mutations —
   const createJob = useMutation({
     mutationFn: (data: JobApiPayload) => api("/jobs", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["jobs"] }); queryClient.invalidateQueries({ queryKey: ["jobs-analytics"] }); setIsCreateOpen(false); jobForm.reset(); toast({ title: "Job saved" }); },
+    onSuccess: (data) => { console.log("job save response", data); queryClient.invalidateQueries({ queryKey: ["jobs"] }); queryClient.invalidateQueries({ queryKey: ["jobs-analytics"] }); setIsCreateOpen(false); jobForm.reset(); toast({ title: "Job saved" }); },
     onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -180,7 +182,9 @@ export default function JobsPage() {
       interviewAnswers: data.interviewAnswers.split("\n").map(s => s.trim()).filter(Boolean),
       pinned: Boolean(data.pinned),
     };
-    editingJobId ? updateJob.mutate({ id: editingJobId, data: apiPayload }) : createJob.mutate(apiPayload);
+    const payloadWithUser = { ...apiPayload, userId: user?.id };
+    console.log("job save payload", payloadWithUser);
+    editingJobId ? updateJob.mutate({ id: editingJobId, data: apiPayload }) : createJob.mutate(payloadWithUser as JobApiPayload);
   };
 
   const onInterviewSubmit = (data: InterviewFormValues) => {
