@@ -12,6 +12,9 @@ export const jobsTable = pgTable("jobs", {
   status: text("status").notNull().default("saved"),
   url: text("url"),
   applyDate: timestamp("apply_date", { withTimezone: true }),
+  interviewQuestions: text("interview_questions").array().notNull().default([]),
+  interviewAnswers: text("interview_answers").array().notNull().default([]),
+  pinned: integer("pinned").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

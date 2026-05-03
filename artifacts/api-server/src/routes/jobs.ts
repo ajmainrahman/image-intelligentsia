@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { db, jobsTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/auth.js";
@@ -17,13 +17,16 @@ const JobBody = z.object({
   status: z.enum(["saved", "applied", "interviewing", "rejected", "offered"]).default("saved"),
   url: z.string().url().nullable().optional(),
   applyDate: z.string().nullable().optional(),
+  interviewQuestions: z.array(z.string()).default([]),
+  interviewAnswers: z.array(z.string()).default([]),
+  pinned: z.boolean().default(false),
 });
 
 router.get("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
     const jobs = await db.select().from(jobsTable)
       .where(eq(jobsTable.userId, req.userId!))
-      .orderBy(jobsTable.createdAt);
+      .orderBy(desc(jobsTable.updatedAt), desc(jobsTable.createdAt));
     res.json(jobs.map(serializeJob));
   } catch (err) { next(err); }
 });
@@ -32,10 +35,10 @@ router.post("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<v
   try {
     const parsed = JobBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const { applyDate, ...rest } = parsed.data;
     const [job] = await db.insert(jobsTable).values({
-      ...rest,
-      applyDate: applyDate ? new Date(applyDate) : null,
+      ...parsed.data,
+      applyDate: parsed.data.applyDate ? new Date(parsed.data.applyDate) : null,
+      pinned: parsed.data.pinned ? 1 : 0,
       userId: req.userId!,
     }).returning();
     await logActivity(req.userId!, "job", job.title, job.id, "added");
@@ -49,12 +52,29 @@ router.put("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Promis
     if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
     const parsed = JobBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const { applyDate, ...rest } = parsed.data;
     const [job] = await db.update(jobsTable)
-      .set({ ...rest, applyDate: applyDate ? new Date(applyDate) : null, updatedAt: new Date() })
+      .set({
+        ...parsed.data,
+        applyDate: parsed.data.applyDate ? new Date(parsed.data.applyDate) : null,
+        pinned: parsed.data.pinned ? 1 : 0,
+        updatedAt: new Date(),
+      })
       .where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!)))
       .returning();
     if (!job) { res.status(404).json({ error: "Job not found" }); return; }
+    res.json(serializeJob(job));
+  } catch (err) { next(err); }
+});
+
+router.post("/jobs/:id/pin", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const current = await db.select({ pinned: jobsTable.pinned }).from(jobsTable).where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!))).limit(1);
+    if (!current[0]) { res.status(404).json({ error: "Job not found" }); return; }
+    const [job] = await db.update(jobsTable)
+      .set({ pinned: current[0].pinned > 0 ? 0 : 1, updatedAt: new Date() })
+      .where(and(eq(jobsTable.id, id), eq(jobsTable.userId, req.userId!)))
+      .returning();
     res.json(serializeJob(job));
   } catch (err) { next(err); }
 });
@@ -71,18 +91,34 @@ router.delete("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Pro
   } catch (err) { next(err); }
 });
 
+router.get("/jobs/analytics", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
+  try {
+    const jobs = await db.select().from(jobsTable).where(eq(jobsTable.userId, req.userId!));
+    const skills = new Map<string, number>();
+    for (const job of jobs) for (const skill of job.skills ?? []) skills.set(skill, (skills.get(skill) ?? 0) + 1);
+    const topSkills = [...skills.entries()].map(([skill, count]) => ({ skill, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+    const pinned = jobs.filter((j) => (j.pinned ?? 0) > 0).length;
+    const interviewCount = jobs.filter((j) => j.status === "interviewing").length;
+    const questionsCount = jobs.reduce((sum, job) => sum + (job.interviewQuestions?.length ?? 0), 0);
+    res.json({ totalJobs: jobs.length, pinned, interviewCount, topSkills, questionsCount });
+  } catch (err) { next(err); }
+});
+
 function serializeJob(j: typeof jobsTable.$inferSelect) {
   return {
     id: j.id,
     title: j.title,
     company: j.company,
     description: j.description,
-    keywords: j.keywords,
-    skills: j.skills,
+    keywords: j.keywords ?? [],
+    skills: j.skills ?? [],
     notes: j.notes,
     status: j.status,
     url: j.url,
     applyDate: j.applyDate ? j.applyDate.toISOString() : null,
+    interviewQuestions: j.interviewQuestions ?? [],
+    interviewAnswers: j.interviewAnswers ?? [],
+    pinned: (j.pinned ?? 0) > 0,
     createdAt: j.createdAt.toISOString(),
     updatedAt: j.updatedAt.toISOString(),
   };
