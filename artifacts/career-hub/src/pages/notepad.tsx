@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, NotebookPen, Plus, Save, Trash2 } from "lucide-react";
+import { CalendarDays, NotebookPen, Plus, Save, Trash2, Pin, Search, Hash, Sparkles, ArrowUpDown } from "lucide-react";
 
 const NOTES_KEY = "image_intelligentsia_notes";
 const LEGACY_NOTE_KEY = "image_intelligentsia_notepad";
@@ -17,6 +17,9 @@ type Note = {
   date: string;
   content: string;
   updatedAt: string;
+  tags?: string[];
+  pinned?: boolean;
+  color?: string;
 };
 
 function createNote(content = ""): Note {
@@ -27,6 +30,9 @@ function createNote(content = ""): Note {
     date: now.toISOString().slice(0, 10),
     content,
     updatedAt: now.toISOString(),
+    tags: [],
+    pinned: false,
+    color: "bg-emerald-50",
   };
 }
 
@@ -50,16 +56,60 @@ function countWords(content: string): number {
   return content.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function extractTags(note: Note): string[] {
+  const fromTitle = note.title.trim().match(/#[\w-]+/g) ?? [];
+  const fromContent = note.content.match(/#[\w-]+/g) ?? [];
+  return [...new Set([...fromTitle, ...fromContent].map((tag) => tag.slice(1).toLowerCase()))];
+}
+
+function notePreview(note: Note): string {
+  return note.content.trim().slice(0, 120) || "No content yet.";
+}
+
+function sortNotes(notes: Note[]) {
+  return [...notes].sort((a, b) => {
+    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+}
+
 export default function NotepadPage() {
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState<Note[]>(loadNotes);
   const [selectedNoteId, setSelectedNoteId] = useState(() => notes[0]?.id ?? "");
   const [lastSaved, setLastSaved] = useState("Ready");
+  const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<"recent" | "alpha">("recent");
 
   const selectedNote = useMemo(
     () => notes.find((note) => note.id === selectedNoteId) ?? notes[0],
     [notes, selectedNoteId],
   );
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    notes.forEach((note) => extractTags(note).forEach((tag) => tags.add(tag)));
+    return [...tags].sort();
+  }, [notes]);
+
+  const filteredNotes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const base = notes.filter((note) => {
+      const tags = extractTags(note);
+      const matchesQuery =
+        !q ||
+        note.title.toLowerCase().includes(q) ||
+        note.content.toLowerCase().includes(q) ||
+        tags.some((tag) => tag.includes(q));
+      const matchesTag = tagFilter === "all" || tags.includes(tagFilter);
+      return matchesQuery && matchesTag;
+    });
+    if (sortMode === "alpha") {
+      return [...base].sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return sortNotes(base);
+  }, [notes, search, tagFilter, sortMode]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -80,6 +130,28 @@ export default function NotepadPage() {
       ),
     );
   };
+
+  const togglePinned = (noteId: string) => {
+    setNotes((currentNotes) =>
+      currentNotes.map((note) =>
+        note.id === noteId ? { ...note, pinned: !note.pinned, updatedAt: new Date().toISOString() } : note,
+      ),
+    );
+    setLastSaved("Saving...");
+  };
+
+  const insertTag = (tag: string) => {
+    if (!selectedNote) return;
+    const clean = tag.replace(/^#/, "").trim();
+    if (!clean) return;
+    const tags = extractTags(selectedNote);
+    if (tags.includes(clean.toLowerCase())) return;
+    updateSelectedNote({
+      content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#${clean} `,
+    });
+  };
+
+  const applyColor = (color: string) => updateSelectedNote({ color });
 
   const addNote = () => {
     const note = createNote();
@@ -120,17 +192,52 @@ export default function NotepadPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
         <Card className="border-primary/15 bg-card/95 shadow-sm h-fit">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <NotebookPen className="h-4 w-4 text-primary" />
-              Notes
-            </CardTitle>
+            <div className="space-y-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <NotebookPen className="h-4 w-4 text-primary" />
+                Notes
+              </CardTitle>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes" className="pl-9" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant={tagFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setTagFilter("all")}>
+                    All
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setSortMode((m) => (m === "recent" ? "alpha" : "recent"))}>
+                    <ArrowUpDown className="h-4 w-4" />
+                    {sortMode === "recent" ? "Recent" : "A-Z"}
+                  </Button>
+                </div>
+                {allTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {allTags.slice(0, 8).map((tag) => (
+                      <Button
+                        key={tag}
+                        type="button"
+                        variant={tagFilter === tag ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTagFilter(tagFilter === tag ? "all" : tag)}
+                        className="gap-1"
+                      >
+                        <Hash className="h-3.5 w-3.5" />
+                        {tag}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {notes.map((note) => {
+            {filteredNotes.map((note) => {
               const isSelected = note.id === selectedNote?.id;
+              const tags = extractTags(note);
               return (
                 <button
                   key={note.id}
@@ -147,6 +254,17 @@ export default function NotepadPage() {
                   <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>{new Date(note.date).toLocaleDateString()}</span>
                     <span>{countWords(note.content)} words</span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{notePreview(note)}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-1">
+                      {tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                    {note.pinned && <Pin className="h-3.5 w-3.5 text-amber-600" />}
                   </div>
                 </button>
               );
@@ -166,6 +284,7 @@ export default function NotepadPage() {
                 {selectedNote ? new Date(selectedNote.date).toLocaleDateString() : ""}
               </Badge>
               <Badge variant="outline">{selectedNote ? countWords(selectedNote.content) : 0} words</Badge>
+              {selectedNote?.pinned && <Badge variant="outline" className="gap-1"><Pin className="h-3.5 w-3.5" />Pinned</Badge>}
               <span className="flex items-center gap-1.5">
                 <Save className="h-3.5 w-3.5" />
                 {lastSaved}
@@ -191,12 +310,40 @@ export default function NotepadPage() {
                   type="button"
                   variant="outline"
                   size="icon"
+                  onClick={() => selectedNote && togglePinned(selectedNote.id)}
+                >
+                  <Pin className={`h-4 w-4 ${selectedNote?.pinned ? "text-amber-600" : ""}`} />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={() => {
                     if (confirm("Delete this note?")) deleteNote(selectedNote.id);
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => insertTag("idea")}>
+                  <Sparkles className="h-4 w-4" />
+                  Tag idea
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => insertTag("research")}>
+                  <Hash className="h-4 w-4" />
+                  Tag research
+                </Button>
+                <div className="flex items-center gap-2">
+                  {["bg-emerald-50", "bg-amber-50", "bg-sky-50", "bg-rose-50"].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => applyColor(color)}
+                      className={`h-7 w-7 rounded-full border ${color} ${selectedNote?.color === color ? "ring-2 ring-primary ring-offset-2" : ""}`}
+                    />
+                  ))}
+                </div>
               </div>
               <Textarea
                 value={selectedNote.content}
