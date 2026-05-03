@@ -36,12 +36,21 @@ router.post("/jobs", requireAuth, async (req: AuthRequest, res, next): Promise<v
     const parsed = JobBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
     const [job] = await db.insert(jobsTable).values({
-      ...parsed.data,
-      applyDate: parsed.data.applyDate ? new Date(parsed.data.applyDate) : null,
-      pinned: parsed.data.pinned ? 1 : 0,
       userId: req.userId!,
+      title: parsed.data.title,
+      company: parsed.data.company ?? null,
+      description: parsed.data.description,
+      keywords: parsed.data.keywords ?? [],
+      skills: parsed.data.skills ?? [],
+      notes: parsed.data.notes ?? null,
+      status: parsed.data.status,
+      url: parsed.data.url ?? null,
+      applyDate: parsed.data.applyDate ? new Date(parsed.data.applyDate) : null,
+      interviewQuestions: parsed.data.interviewQuestions ?? [],
+      interviewAnswers: parsed.data.interviewAnswers ?? [],
+      pinned: parsed.data.pinned ? 1 : 0,
     }).returning();
-    await logActivity(req.userId!, "job", job.title, job.id, "added");
+    void logActivity(req.userId!, "job", job.title, job.id, "added");
     res.status(201).json(serializeJob(job));
   } catch (err) { next(err); }
 });
@@ -54,8 +63,17 @@ router.put("/jobs/:id", requireAuth, async (req: AuthRequest, res, next): Promis
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
     const [job] = await db.update(jobsTable)
       .set({
-        ...parsed.data,
+        title: parsed.data.title,
+        company: parsed.data.company ?? null,
+        description: parsed.data.description,
+        keywords: parsed.data.keywords ?? [],
+        skills: parsed.data.skills ?? [],
+        notes: parsed.data.notes ?? null,
+        status: parsed.data.status,
+        url: parsed.data.url ?? null,
         applyDate: parsed.data.applyDate ? new Date(parsed.data.applyDate) : null,
+        interviewQuestions: parsed.data.interviewQuestions ?? [],
+        interviewAnswers: parsed.data.interviewAnswers ?? [],
         pinned: parsed.data.pinned ? 1 : 0,
         updatedAt: new Date(),
       })
