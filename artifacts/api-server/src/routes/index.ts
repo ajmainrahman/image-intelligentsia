@@ -11,6 +11,7 @@ import activityRouter from "./activity.js";
 import profileRouter from "./profile.js";
 import featuresRouter from "./features.js";
 import researchRouter from "./research.js";
+import notepadRouter from "./notepad.js";
 
 const router = Router();
 router.use(healthRouter);
@@ -25,5 +26,6 @@ router.use(activityRouter);
 router.use(profileRouter);
 router.use(featuresRouter);
 router.use(researchRouter);
+router.use(notepadRouter);
 
 export default router;

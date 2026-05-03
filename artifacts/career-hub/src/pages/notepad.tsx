@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,49 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, NotebookPen, Plus, Save, Trash2, Pin, Search, Hash, Sparkles, ArrowUpDown } from "lucide-react";
 
-const NOTES_KEY = "image_intelligentsia_notes";
 const LEGACY_NOTE_KEY = "image_intelligentsia_notepad";
 
 type Note = {
-  id: string;
+  id: number;
   title: string;
-  date: string;
   content: string;
+  createdAt: string;
   updatedAt: string;
-  tags?: string[];
-  pinned?: boolean;
-  color?: string;
 };
-
-function createNote(content = ""): Note {
-  const now = new Date();
-  return {
-    id: crypto.randomUUID(),
-    title: "",
-    date: now.toISOString().slice(0, 10),
-    content,
-    updatedAt: now.toISOString(),
-    tags: [],
-    pinned: false,
-    color: "bg-emerald-50",
-  };
-}
-
-function loadNotes(): Note[] {
-  const savedNotes = localStorage.getItem(NOTES_KEY);
-  if (savedNotes) {
-    try {
-      const parsed = JSON.parse(savedNotes);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch {
-      localStorage.removeItem(NOTES_KEY);
-    }
-  }
-
-  const legacyNote = localStorage.getItem(LEGACY_NOTE_KEY);
-  if (legacyNote) return [createNote(legacyNote)];
-  return [createNote()];
-}
 
 function countWords(content: string): number {
   return content.trim().split(/\s+/).filter(Boolean).length;
@@ -67,25 +33,69 @@ function notePreview(note: Note): string {
 }
 
 function sortNotes(notes: Note[]) {
-  return [...notes].sort((a, b) => {
-    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-  });
+  return [...notes].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 }
 
 export default function NotepadPage() {
   const queryClient = useQueryClient();
-  const [notes, setNotes] = useState<Note[]>(loadNotes);
-  const [selectedNoteId, setSelectedNoteId] = useState(() => notes[0]?.id ?? "");
-  const [lastSaved, setLastSaved] = useState("Ready");
+  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [sortMode, setSortMode] = useState<"recent" | "alpha">("recent");
+  const [lastSaved, setLastSaved] = useState("Ready");
+  const [legacySeeded, setLegacySeeded] = useState(false);
+
+  const { data: notes = [], isLoading } = useQuery<Note[]>({
+    queryKey: ["notes"],
+    queryFn: () => api<Note[]>("/notes"),
+  });
 
   const selectedNote = useMemo(
     () => notes.find((note) => note.id === selectedNoteId) ?? notes[0],
     [notes, selectedNoteId],
   );
+
+  useEffect(() => {
+    if (selectedNoteId == null && notes[0]?.id) setSelectedNoteId(notes[0].id);
+  }, [notes, selectedNoteId]);
+
+  useEffect(() => {
+    if (legacySeeded) return;
+    const legacyNote = localStorage.getItem(LEGACY_NOTE_KEY);
+    if (!legacyNote) return;
+    setLegacySeeded(true);
+    createNote.mutate({ title: "Untitled note", content: legacyNote });
+    localStorage.removeItem(LEGACY_NOTE_KEY);
+  }, [legacySeeded]);
+
+  const createNote = useMutation({
+    mutationFn: (data: { title: string; content: string }) => api<Note>("/notes", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: (note) => {
+      setSelectedNoteId(note.id);
+      setLastSaved("Saved");
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["activity"] });
+    },
+  });
+
+  const updateNote = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { title: string; content: string } }) =>
+      api<Note>(`/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: (note) => {
+      setSelectedNoteId(note.id);
+      setLastSaved("Saved");
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["activity"] });
+    },
+  });
+
+  const deleteNote = useMutation({
+    mutationFn: (id: number) => api(`/notes/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      setLastSaved("Saved");
+    },
+  });
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -97,86 +107,30 @@ export default function NotepadPage() {
     const q = search.trim().toLowerCase();
     const base = notes.filter((note) => {
       const tags = extractTags(note);
-      const matchesQuery =
-        !q ||
-        note.title.toLowerCase().includes(q) ||
-        note.content.toLowerCase().includes(q) ||
-        tags.some((tag) => tag.includes(q));
+      const matchesQuery = !q || note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q) || tags.some((tag) => tag.includes(q));
       const matchesTag = tagFilter === "all" || tags.includes(tagFilter);
       return matchesQuery && matchesTag;
     });
-    if (sortMode === "alpha") {
-      return [...base].sort((a, b) => a.title.localeCompare(b.title));
-    }
-    return sortNotes(base);
+    return sortMode === "alpha" ? [...base].sort((a, b) => a.title.localeCompare(b.title)) : sortNotes(base);
   }, [notes, search, tagFilter, sortMode]);
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
-      setLastSaved("Saved");
-    }, 350);
-    return () => window.clearTimeout(timeout);
-  }, [notes]);
-
-  const updateSelectedNote = (updates: Partial<Note>) => {
+  const persist = (updates: Partial<Pick<Note, "title" | "content">>) => {
     if (!selectedNote) return;
     setLastSaved("Saving...");
-    setNotes((currentNotes) =>
-      currentNotes.map((note) =>
-        note.id === selectedNote.id
-          ? { ...note, ...updates, updatedAt: new Date().toISOString() }
-          : note,
-      ),
-    );
+    const payload = {
+      title: updates.title ?? selectedNote.title,
+      content: updates.content ?? selectedNote.content,
+    };
+    updateNote.mutate({ id: selectedNote.id, data: payload });
   };
-
-  const togglePinned = (noteId: string) => {
-    setNotes((currentNotes) =>
-      currentNotes.map((note) =>
-        note.id === noteId ? { ...note, pinned: !note.pinned, updatedAt: new Date().toISOString() } : note,
-      ),
-    );
-    setLastSaved("Saving...");
-  };
-
-  const insertTag = (tag: string) => {
-    if (!selectedNote) return;
-    const clean = tag.replace(/^#/, "").trim();
-    if (!clean) return;
-    const tags = extractTags(selectedNote);
-    if (tags.includes(clean.toLowerCase())) return;
-    updateSelectedNote({
-      content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#${clean} `,
-    });
-  };
-
-  const applyColor = (color: string) => updateSelectedNote({ color });
 
   const addNote = () => {
-    const note = createNote();
-    setNotes((currentNotes) => [note, ...currentNotes]);
-    setSelectedNoteId(note.id);
-    setLastSaved("Saving...");
-    api("/activity/note", {
-      method: "POST",
-      body: JSON.stringify({ title: "Untitled note", action: "created" }),
-    })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["activity"] }))
-      .catch(() => {});
+    createNote.mutate({ title: "", content: "" });
   };
 
-  const deleteNote = (id: string) => {
-    if (notes.length === 1) {
-      setNotes([createNote()]);
-      setLastSaved("Saving...");
-      return;
-    }
-
-    const nextNotes = notes.filter((note) => note.id !== id);
-    setNotes(nextNotes);
-    if (selectedNoteId === id) setSelectedNoteId(nextNotes[0]?.id ?? "");
-    setLastSaved("Saving...");
+  const toggleDelete = () => {
+    if (!selectedNote) return;
+    if (confirm("Delete this note?")) deleteNote.mutate(selectedNote.id);
   };
 
   return (
@@ -206,9 +160,7 @@ export default function NotepadPage() {
                   <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes" className="pl-9" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant={tagFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setTagFilter("all")}>
-                    All
-                  </Button>
+                  <Button type="button" variant={tagFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setTagFilter("all")}>All</Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => setSortMode((m) => (m === "recent" ? "alpha" : "recent"))}>
                     <ArrowUpDown className="h-4 w-4" />
                     {sortMode === "recent" ? "Recent" : "A-Z"}
@@ -217,14 +169,7 @@ export default function NotepadPage() {
                 {allTags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {allTags.slice(0, 8).map((tag) => (
-                      <Button
-                        key={tag}
-                        type="button"
-                        variant={tagFilter === tag ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setTagFilter(tagFilter === tag ? "all" : tag)}
-                        className="gap-1"
-                      >
+                      <Button key={tag} type="button" variant={tagFilter === tag ? "default" : "outline"} size="sm" onClick={() => setTagFilter(tagFilter === tag ? "all" : tag)} className="gap-1">
                         <Hash className="h-3.5 w-3.5" />
                         {tag}
                       </Button>
@@ -235,36 +180,21 @@ export default function NotepadPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {filteredNotes.map((note) => {
+            {isLoading ? <p className="text-sm text-muted-foreground">Loading notes…</p> : filteredNotes.map((note) => {
               const isSelected = note.id === selectedNote?.id;
               const tags = extractTags(note);
               return (
-                <button
-                  key={note.id}
-                  onClick={() => setSelectedNoteId(note.id)}
-                  className={`w-full rounded-xl border p-3 text-left transition-colors ${
-                    isSelected
-                      ? "border-primary/40 bg-primary/10"
-                      : "border-border bg-background/50 hover:border-primary/20"
-                  }`}
-                >
-                  <div className="font-medium line-clamp-1">
-                    {note.title.trim() || "Untitled note"}
-                  </div>
+                <button key={note.id} onClick={() => setSelectedNoteId(note.id)} className={`w-full rounded-xl border p-3 text-left transition-colors ${isSelected ? "border-primary/40 bg-primary/10" : "border-border bg-background/50 hover:border-primary/20"}`}>
+                  <div className="font-medium line-clamp-1">{note.title.trim() || "Untitled note"}</div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>{new Date(note.date).toLocaleDateString()}</span>
+                    <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
                     <span>{countWords(note.content)} words</span>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{notePreview(note)}</p>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="flex flex-wrap gap-1">
-                      {tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          #{tag}
-                        </span>
-                      ))}
+                      {tags.slice(0, 3).map((tag) => <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">#{tag}</span>)}
                     </div>
-                    {note.pinned && <Pin className="h-3.5 w-3.5 text-amber-600" />}
                   </div>
                 </button>
               );
@@ -279,78 +209,22 @@ export default function NotepadPage() {
               <CardTitle>{selectedNote?.title.trim() || "Untitled note"}</CardTitle>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <Badge variant="secondary" className="gap-1">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {selectedNote ? new Date(selectedNote.date).toLocaleDateString() : ""}
-              </Badge>
+              <Badge variant="secondary" className="gap-1"><CalendarDays className="h-3.5 w-3.5" />{selectedNote ? new Date(selectedNote.updatedAt).toLocaleDateString() : ""}</Badge>
               <Badge variant="outline">{selectedNote ? countWords(selectedNote.content) : 0} words</Badge>
-              {selectedNote?.pinned && <Badge variant="outline" className="gap-1"><Pin className="h-3.5 w-3.5" />Pinned</Badge>}
-              <span className="flex items-center gap-1.5">
-                <Save className="h-3.5 w-3.5" />
-                {lastSaved}
-              </span>
+              <span className="flex items-center gap-1.5"><Save className="h-3.5 w-3.5" />{lastSaved}</span>
             </div>
           </CardHeader>
           {selectedNote && (
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3">
-                <Input
-                  value={selectedNote.title}
-                  onChange={(event) => updateSelectedNote({ title: event.target.value })}
-                  placeholder="Note title"
-                  className="bg-background/70"
-                />
-                <Input
-                  type="date"
-                  value={selectedNote.date}
-                  onChange={(event) => updateSelectedNote({ date: event.target.value })}
-                  className="bg-background/70"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => selectedNote && togglePinned(selectedNote.id)}
-                >
-                  <Pin className={`h-4 w-4 ${selectedNote?.pinned ? "text-amber-600" : ""}`} />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    if (confirm("Delete this note?")) deleteNote(selectedNote.id);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+                <Input value={selectedNote.title} onChange={(event) => persist({ title: event.target.value })} placeholder="Note title" className="bg-background/70" />
+                <Button type="button" variant="outline" onClick={toggleDelete}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => insertTag("idea")}>
-                  <Sparkles className="h-4 w-4" />
-                  Tag idea
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => insertTag("research")}>
-                  <Hash className="h-4 w-4" />
-                  Tag research
-                </Button>
-                <div className="flex items-center gap-2">
-                  {["bg-emerald-50", "bg-amber-50", "bg-sky-50", "bg-rose-50"].map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => applyColor(color)}
-                      className={`h-7 w-7 rounded-full border ${color} ${selectedNote?.color === color ? "ring-2 ring-primary ring-offset-2" : ""}`}
-                    />
-                  ))}
-                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#idea ` })}><Sparkles className="h-4 w-4" />Tag idea</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => persist({ content: `${selectedNote.content}${selectedNote.content.trim() ? "\n" : ""}#research ` })}><Hash className="h-4 w-4" />Tag research</Button>
               </div>
-              <Textarea
-                value={selectedNote.content}
-                onChange={(event) => updateSelectedNote({ content: event.target.value })}
-                placeholder="Write anything you want to remember..."
-                className="min-h-[520px] resize-none border-primary/10 bg-background/70 text-base leading-7"
-              />
+              <Textarea value={selectedNote.content} onChange={(event) => persist({ content: event.target.value })} placeholder="Write anything you want to remember..." className="min-h-[520px] resize-none border-primary/10 bg-background/70 text-base leading-7" />
             </CardContent>
           )}
         </Card>
