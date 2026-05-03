@@ -190,10 +190,10 @@ export default function ProgressPage() {
       title: form.title.trim(), category: form.category,
       description: form.description.trim() || null, status: form.status,
       toolOrResource: form.toolOrResource.trim() || null,
-      resourceUrl: form.resourceUrl.trim() || null,
-      durationHours: Number(form.durationHours) || 0,
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
-      completedAt: form.completedAt ? new Date(form.completedAt).toISOString() : null,
+      resourceUrl: form.resourceUrl.trim() || "",
+      durationHours: form.durationHours,
+      startDate: form.startDate || null,
+      completedAt: form.completedAt || null,
       goalId: form.goalId ? Number(form.goalId) : null,
     };
     if (editingId) updateEntry.mutate({ id: editingId, data: payload });

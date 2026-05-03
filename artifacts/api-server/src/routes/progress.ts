@@ -14,7 +14,10 @@ const ProgressBody = z.object({
   status: z.enum(["not_started", "in_progress", "completed"]).default("not_started"),
   toolOrResource: z.string().nullable().optional(),
   resourceUrl: z.string().url().nullable().optional().or(z.literal("")),
-  durationHours: z.number().min(0).max(10000).default(0),
+  durationHours: z.union([z.number(), z.string()]).default(0).transform((value) => {
+    const n = typeof value === "string" ? Number(value) : value;
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }),
   startDate: z.string().nullable().optional(),
   completedAt: z.string().nullable().optional(),
   goalId: z.number().int().nullable().optional(),
