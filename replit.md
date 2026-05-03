@@ -11,7 +11,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Database**: PostgreSQL (Replit built-in) + Drizzle ORM
+- **DB driver**: `pg` (node-postgres) via `drizzle-orm/node-postgres`
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
@@ -36,16 +37,21 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Environment Variables (Secrets)
 
-All secrets are configured in Replit Secrets:
-- `DATABASE_URL` — Replit built-in PostgreSQL connection string
+All secrets are managed in Replit Secrets:
+- `DATABASE_URL` — Replit built-in PostgreSQL connection string (host: helium)
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` — Individual DB connection parts
-- `PORT` — Set by the workflow for each service (`20829` frontend, `8080` API)
+- `JWT_SECRET` — Secret for signing JWT tokens (auto-generated during migration)
+- `SESSION_SECRET` — Also accepted as fallback for JWT signing
 
-For Vercel deployment, additionally set:
-- `DATABASE_URL` — production PostgreSQL connection string (e.g. Neon)
-- `ALLOWED_ORIGINS` — comma-separated list of allowed frontend origins (e.g. `https://your-app.vercel.app`)
-- `JWT_SECRET` or `AUTH_SECRET` — required for account creation and sign-in token signing
-- Vercel builds the API server into `artifacts/api-server/dist/app.mjs`; `api/index.ts` imports this bundle for serverless execution.
+## Database (Replit)
+
+In the Replit dev environment the app uses Replit's built-in PostgreSQL via `DATABASE_URL`.
+- DB client: `lib/db/src/index.ts` uses `pg` (node-postgres) via `drizzle-orm/node-postgres`
+- Schema source of truth: `lib/db/src/schema.ts` (used by compiled API server)
+- The `lib/db/src/schema/` subdirectory mirrors the schema for module exports
+- Drizzle config: `lib/db/drizzle.config.ts` points to `schema.ts`
+
+To push schema changes: `pnpm --filter @workspace/db run push`
 
 ## Artifacts
 
@@ -60,9 +66,9 @@ For Vercel deployment, additionally set:
 - **Goals**: Track career goals with target roles, status, and target year
 - **Learning**: Log learning activities — courses, AI tools, projects, certifications
 - **Roadmap**: 5–10 year visual timeline split into short/mid/long term phases
-- **Research** *(new)*: Personal research library — papers, articles, books, datasets, theses, topics, and notes. Tagged, status-tracked (to_explore / reading / completed), with source URL, summary and personal notes; can be linked to a goal.
+- **Research**: Personal research library — papers, articles, books, datasets, theses, topics, and notes. Tagged, status-tracked (to_explore / reading / completed), with source URL, summary and personal notes; can be linked to a goal.
 - **Opportunities (Jobs)**: Save job descriptions, extract keywords and required skills, track application status; optional apply date per job
-- **Reminders**: Task reminders with priority, due dates, and categories
+- **Reminders**: Task reminders with priority, due dates, categories, and recurrence
 - **Notepad**: Local browser-saved notes for quick writing and interview/application notes
 - **Mobile**: Top app bar + 5-tab bottom nav (Home / Goals / Research / Learning / Jobs) with safe-area insets, slide-down full-nav drawer, larger touch targets
 - **Dashboard Kanban**: Job pipeline board (Wishlist → Applied → Interviewing → Offered / Rejected columns) displayed on the dashboard below the summary grid
@@ -80,38 +86,26 @@ For Vercel deployment, additionally set:
 - **Purpose**: Backend API for Atlas
 
 #### Database Tables
-- `goals` — career goals
-- `progress_entries` — learning progress entries
-- `roadmap_items` — long-term roadmap milestones
-- `jobs` — saved job descriptions with keywords/skills arrays
-- `jobs.apply_date` — optional timestamp for when an application was submitted
-- `progress_entries.start_date` — optional timestamp for when a learning activity began
-- `reminders` — task reminders with due dates
-- `users` — registered users (id, name, email)
-- `research` *(new)* — research library items (title, type, authors, source, summary, tags[], status, notes, optional `goal_id` link)
-- `activity_log_v2` — activity feed events (type now includes `research`)
+- `users` — registered users (id, name, email, password_hash)
+- `goals` — career goals (pinned, archived, reflection, achieved_at, target_date)
+- `progress_entries` — learning progress entries (start_date, pinned, archived)
+- `roadmap_items` — long-term roadmap milestones (pinned, archived, reflection)
+- `jobs` — saved job descriptions with keywords/skills arrays (apply_date, pinned, interview_questions, interview_answers)
+- `reminders` — task reminders with due dates (recurrence, recurrence_count, parent_reminder_id)
+- `profiles` — user profile (tagline, about, expertise, skills, interests)
+- `research` — research library items (title, type, authors, source, summary, tags[], status, notes, optional goal_id link)
+- `activity_log` — activity feed events (type, title, related_id, action)
+- `weekly_reviews` — weekly review summaries
+- `notes` — notepad notes (title, content)
 
-#### Schema Note
-The legacy `lib/db/src/schema.ts` (single-file) is the active schema source resolved by Node module resolution; the newer `lib/db/src/schema/` directory mirrors it. When adding tables, define them in **both** places to keep types and runtime in sync.
+#### Auth
+Simple email/password auth with JWT tokens.
+- `POST /api/auth/signup` — creates user, returns JWT token + user
+- `POST /api/auth/signin` — authenticates user, returns JWT token + user
+- `POST /api/auth/signout` — client-side only (clears localStorage)
+- JWT signing uses `JWT_SECRET` (or `SESSION_SECRET` as fallback)
+- Frontend stores JWT in localStorage
 
 #### Utility
 - `artifacts/api-server/src/lib/serialize.ts` — converts Date objects to ISO strings before Zod validation
-
-## Auth
-
-Simple name + email sign-in. No passwords or hashing dependency. Session stored in localStorage.
-- `POST /api/auth/signin` — finds or creates user by email, returns user object
-- `POST /api/auth/signup` — creates or updates a user by name + email, returns user object
-- `POST /api/auth/signout` — client-side only (clears localStorage)
-- Frontend context: `artifacts/career-hub/src/contexts/auth-context.tsx`
-- Sign-in page: `artifacts/career-hub/src/pages/signin.tsx`
-- JWT signing accepts `JWT_SECRET`, `AUTH_SECRET`, or `NEXTAUTH_SECRET`; production requires one of them to be configured.
-- Database connections accept Replit `DATABASE_URL` and common Vercel/Neon variables including `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, and `POSTGRES_PRISMA_URL`.
-
-## Vercel / Neon DB Fix
-
-`vercel.json` buildCommand runs `pnpm --filter @workspace/db push-force` before building the frontend. This ensures all DB tables are created/updated in Neon on every deploy.
-
-## Database (Replit)
-
-In the Replit dev environment the app uses Replit's built-in PostgreSQL via `DATABASE_URL` (host `helium`). To use an external Neon database instead, set `DATABASE_URL` in Secrets to your Neon connection string and re-run `pnpm --filter @workspace/db run push`.
+- `artifacts/api-server/src/lib/auth.ts` — JWT sign/verify helpers + requireAuth middleware

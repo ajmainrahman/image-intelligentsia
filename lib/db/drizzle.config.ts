@@ -8,11 +8,11 @@ const databaseUrl =
   process.env.POSTGRES_PRISMA_URL;
 
 if (!databaseUrl) {
-  throw new Error("Database connection string is missing. Set DATABASE_URL or connect Neon/Postgres so POSTGRES_URL is available.");
+  throw new Error("Database connection string is missing. Set DATABASE_URL in environment variables.");
 }
 
 export default defineConfig({
-  schema: path.join(__dirname, "./src/schema/index.ts"),
+  schema: path.join(__dirname, "./src/schema.ts"),
   dialect: "postgresql",
   dbCredentials: {
     url: databaseUrl,

@@ -66,6 +66,7 @@ timeoutMs = 20000
 
 [userenv.shared]
 PORT = "20829"
+JWT_SECRET = "53b8847ce83c04b5daf854fe2169097e23da89e0fce13eb3665d0764f1efc69e"
 
 [nix]
 channel = "stable-25_05"
