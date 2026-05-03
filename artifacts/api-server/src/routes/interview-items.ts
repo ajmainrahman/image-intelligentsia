@@ -13,26 +13,24 @@ const InterviewItemBody = z.object({
   jobId: z.number().int().nullable().optional(),
 });
 
+type InterviewItemRow = typeof interviewItemsTable.$inferSelect & {
+  jobTitle?: string | null;
+  company?: string | null;
+};
+
 router.get("/interview-items", requireAuth, async (req: AuthRequest, res, next): Promise<void> => {
   try {
-    const items = await db.select({
-      id: interviewItemsTable.id,
-      userId: interviewItemsTable.userId,
-      question: interviewItemsTable.question,
-      answer: interviewItemsTable.answer,
-      category: interviewItemsTable.category,
-      jobId: interviewItemsTable.jobId,
-      createdAt: interviewItemsTable.createdAt,
-      updatedAt: interviewItemsTable.updatedAt,
-      jobTitle: jobsTable.title,
-      company: jobsTable.company,
-    })
-      .from(interviewItemsTable)
-      .leftJoin(jobsTable, eq(interviewItemsTable.jobId, jobsTable.id))
+    const items = await db.select().from(interviewItemsTable)
       .where(eq(interviewItemsTable.userId, req.userId!))
       .orderBy(desc(interviewItemsTable.updatedAt), desc(interviewItemsTable.createdAt));
 
-    res.json(items.map(serializeItem));
+    const jobs = await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company })
+      .from(jobsTable)
+      .where(eq(jobsTable.userId, req.userId!));
+
+    const jobMap = new Map(jobs.map((job) => [job.id, job]));
+
+    res.json(items.map((item) => serializeItem({ ...item, ...jobMap.get(item.jobId ?? -1) } as InterviewItemRow)));
   } catch (err) { next(err); }
 });
 
@@ -42,7 +40,7 @@ router.post("/interview-items", requireAuth, async (req: AuthRequest, res, next)
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
     if (parsed.data.jobId) {
-      const [job] = await db.select({ id: jobsTable.id }).from(jobsTable)
+      const [job] = await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
         .where(and(eq(jobsTable.id, parsed.data.jobId), eq(jobsTable.userId, req.userId!)))
         .limit(1);
       if (!job) { res.status(400).json({ error: "Job not found or not yours" }); return; }
@@ -56,8 +54,13 @@ router.post("/interview-items", requireAuth, async (req: AuthRequest, res, next)
       userId: req.userId!,
     }).returning();
 
-    const withJob = await getItemWithJob(item.id, req.userId!);
-    res.status(201).json(serializeItem(withJob));
+    const [job] = item.jobId
+      ? await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
+        .where(and(eq(jobsTable.id, item.jobId), eq(jobsTable.userId, req.userId!)))
+        .limit(1)
+      : [];
+
+    res.status(201).json(serializeItem({ ...item, jobTitle: job?.title ?? null, company: job?.company ?? null }));
   } catch (err) { next(err); }
 });
 
@@ -69,7 +72,7 @@ router.put("/interview-items/:id", requireAuth, async (req: AuthRequest, res, ne
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
     if (parsed.data.jobId) {
-      const [job] = await db.select({ id: jobsTable.id }).from(jobsTable)
+      const [job] = await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
         .where(and(eq(jobsTable.id, parsed.data.jobId), eq(jobsTable.userId, req.userId!)))
         .limit(1);
       if (!job) { res.status(400).json({ error: "Job not found or not yours" }); return; }
@@ -88,8 +91,13 @@ router.put("/interview-items/:id", requireAuth, async (req: AuthRequest, res, ne
 
     if (!item) { res.status(404).json({ error: "Item not found" }); return; }
 
-    const withJob = await getItemWithJob(item.id, req.userId!);
-    res.json(serializeItem(withJob));
+    const [job] = item.jobId
+      ? await db.select({ id: jobsTable.id, title: jobsTable.title, company: jobsTable.company }).from(jobsTable)
+        .where(and(eq(jobsTable.id, item.jobId), eq(jobsTable.userId, req.userId!)))
+        .limit(1)
+      : [];
+
+    res.json(serializeItem({ ...item, jobTitle: job?.title ?? null, company: job?.company ?? null }));
   } catch (err) { next(err); }
 });
 
@@ -105,38 +113,7 @@ router.delete("/interview-items/:id", requireAuth, async (req: AuthRequest, res,
   } catch (err) { next(err); }
 });
 
-async function getItemWithJob(itemId: number, userId: number) {
-  const [row] = await db.select({
-    id: interviewItemsTable.id,
-    userId: interviewItemsTable.userId,
-    question: interviewItemsTable.question,
-    answer: interviewItemsTable.answer,
-    category: interviewItemsTable.category,
-    jobId: interviewItemsTable.jobId,
-    createdAt: interviewItemsTable.createdAt,
-    updatedAt: interviewItemsTable.updatedAt,
-    jobTitle: jobsTable.title,
-    company: jobsTable.company,
-  })
-    .from(interviewItemsTable)
-    .leftJoin(jobsTable, eq(interviewItemsTable.jobId, jobsTable.id))
-    .where(and(eq(interviewItemsTable.id, itemId), eq(interviewItemsTable.userId, userId)))
-    .limit(1);
-  return row;
-}
-
-function serializeItem(item: {
-  id: number;
-  userId: number;
-  question: string;
-  answer: string | null;
-  category: string | null;
-  jobId: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-  jobTitle?: string | null;
-  company?: string | null;
-}) {
+function serializeItem(item: InterviewItemRow) {
   return {
     id: item.id,
     question: item.question,
