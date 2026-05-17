@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format, startOfWeek, endOfWeek, addDays } from "date-fns";
@@ -55,15 +55,18 @@ export default function WeeklyReviewPage() {
   const [notes, setNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<ReviewData>({
     queryKey: ["weekly-review", offset],
     queryFn: () => api<ReviewData>(`/weekly-review?offset=${offset}`),
     enabled: !!user,
-    onSuccess: (next) => setNotes(next.review?.notes ?? ""),
-  } as any);
+  });
+
+  useEffect(() => {
+    if (data?.review?.notes != null) setNotes(data.review.notes ?? "");
+  }, [data?.review?.notes]);
 
   const saveNotes = useMutation({
-    mutationFn: () => api(`/weekly-review/${data!.review.id}/notes`, {
+    mutationFn: () => api(`/weekly-review/${data?.review?.id}/notes`, {
       method: "PUT",
       body: JSON.stringify({ notes }),
     }),
