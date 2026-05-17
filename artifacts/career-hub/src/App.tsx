@@ -22,6 +22,7 @@ const WeeklyReviewPage = lazy(() => import("@/pages/weekly-review"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
 const SignInPage = lazy(() => import("@/pages/signin"));
 const ResearchPage = lazy(() => import("@/pages/research"));
+const SkillMapPage = lazy(() => import("@/pages/skill-map"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ function AppRoutes() {
           <Route path="/notepad" component={() => <PageErrorBoundary message="Could not load your notepad — please refresh"><NotepadPage /></PageErrorBoundary>} />
           <Route path="/reminders" component={() => <PageErrorBoundary message="Could not load your reminders — please refresh"><RemindersPage /></PageErrorBoundary>} />
           <Route path="/research" component={() => <PageErrorBoundary message="Could not load your research — please refresh"><ResearchPage /></PageErrorBoundary>} />
+          <Route path="/skill-map" component={() => <PageErrorBoundary message="Could not load Skill Map — please refresh"><SkillMapPage /></PageErrorBoundary>} />
           <Route path="/weekly-review" component={() => <PageErrorBoundary message="Could not load your weekly review — please refresh"><WeeklyReviewPage /></PageErrorBoundary>} />
           <Route path="/onboarding" component={() => <PageErrorBoundary message="Could not load onboarding — please refresh"><OnboardingPage /></PageErrorBoundary>} />
           <Route component={() => <PageErrorBoundary message="Could not load this page — please refresh"><NotFound /></PageErrorBoundary>} />

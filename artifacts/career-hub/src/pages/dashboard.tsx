@@ -12,7 +12,7 @@ type Summary = { totalGoals: number; activeGoals: number; progressCompleted: num
 type Goal = { id: number; title: string; progress: number; status: string; skills: string[] };
 type ResearchItem = { id: number; title: string; type: string; status: string; tags: string[]; authors: string | null; source: string | null; };
 type ProgressEntry = { id: number; title: string; category: string; durationHours: number; status: string; createdAt: string; goalId: number | null; };
-type Job = { id: number; title: string; company: string | null; status: string; pinned: boolean; interviewQuestions: string[]; };
+type Job = { id: number; title: string; company: string | null; status: string; pinned: boolean; interviewQuestions: string[]; applyDate: string | null; };
 type RoadmapItem = { id: number; title: string; description: string | null; yearTarget: number; phase: string; status: string; goalId: number | null; order: number; pinned: boolean; archived: boolean; reflection: string | null; createdAt: string; updatedAt: string; };
 type Analytics = { totalJobs: number; pinned: number; interviewCount: number; questionsCount: number; topSkills: { skill: string; count: number }[]; };
 type InterviewQuestion = { id: number; question: string; answer: string | null; category: string | null; createdAt: string; };
@@ -101,6 +101,20 @@ export default function Dashboard() {
     });
   }, [goals, progressEntries, roadmap]);
 
+  // Upcoming job deadlines (top 3 soonest)
+  const upcomingDeadlines = useMemo(() => {
+    const now = new Date(); now.setHours(0,0,0,0);
+    return jobs
+      .filter(j => j.applyDate)
+      .map(j => {
+        const d = new Date(j.applyDate!); d.setHours(0,0,0,0);
+        return { ...j, daysLeft: Math.ceil((d.getTime() - now.getTime()) / 86400000) };
+      })
+      .filter(j => j.daysLeft >= 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .slice(0, 3);
+  }, [jobs]);
+
   // Interview prep stats
   const answeredCount = interviewQuestions.filter((q) => q.answer).length;
   const unansweredCount = interviewQuestions.length - answeredCount;
@@ -137,6 +151,30 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Upcoming job deadlines */}
+      {upcomingDeadlines.length > 0 && (
+        <Link href="/jobs">
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 dark:bg-amber-900/10 dark:border-amber-800/40 px-5 py-4 cursor-pointer hover:border-amber-300 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-600" />
+                <h2 className="text-[14px] font-semibold text-amber-800 dark:text-amber-300">Upcoming Deadlines</h2>
+              </div>
+              <span className="text-[12px] text-amber-600 dark:text-amber-400">see all →</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {upcomingDeadlines.map(j => (
+                <div key={j.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium ${j.daysLeft <= 7 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : j.daysLeft <= 30 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
+                  <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                  <span className="line-clamp-1 max-w-[140px]">{j.title}</span>
+                  <span className="shrink-0 font-bold">{j.daysLeft === 0 ? "Today!" : `${j.daysLeft}d`}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Goals progress + Research */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">

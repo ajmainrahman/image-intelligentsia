@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { BrandLogo } from "@/components/brand-logo";
 import {
   LayoutDashboard, Target, BookOpen, Map as MapIcon, Briefcase,
-  BellRing, NotebookPen, CalendarCheck,
-  Microscope, Sun, Moon, LogOut, ChevronDown, Menu, X,
+  BellRing, NotebookPen, CalendarCheck, Microscope, Sparkles,
+  Sun, Moon, LogOut, ChevronDown, Menu, X, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -23,12 +23,17 @@ const PRIMARY_LINKS = [
 ];
 
 const MORE_LINKS = [
-  { href: "/weekly-review", label: "Weekly Review", icon: CalendarCheck },
-  { href: "/reminders",     label: "Reminders",     icon: BellRing },
-  { href: "/notepad",       label: "Notepad",       icon: NotebookPen },
+  { href: "/skill-map",     label: "Skill Map",      icon: Sparkles },
+  { href: "/weekly-review", label: "Weekly Review",  icon: CalendarCheck },
+  { href: "/reminders",     label: "Reminders",      icon: BellRing },
+  { href: "/notepad",       label: "Notepad",         icon: NotebookPen },
 ];
 
 const ALL_LINKS = [...PRIMARY_LINKS, ...MORE_LINKS];
+
+function openSearch() {
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
+}
 
 export function TopNav() {
   const [location] = useLocation();
@@ -91,7 +96,7 @@ export function TopNav() {
                   More <ChevronDown className="h-3 w-3 mt-0.5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuContent align="start" className="w-48">
                 {MORE_LINKS.map((link) => (
                   <DropdownMenuItem key={link.href} asChild>
                     <Link
@@ -109,6 +114,17 @@ export function TopNav() {
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>
+
+          {/* Search trigger (desktop) */}
+          <button
+            onClick={openSearch}
+            aria-label="Search (Ctrl+K)"
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-secondary text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-emerald-300 transition-colors text-[12px] shrink-0"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline">Search…</span>
+            <kbd className="hidden xl:inline text-[10px] font-mono bg-white dark:bg-background border border-slate-200 dark:border-border rounded px-1">⌘K</kbd>
+          </button>
 
           {/* Right actions */}
           <div className="flex items-center gap-1 shrink-0">
@@ -146,6 +162,15 @@ export function TopNav() {
               </DropdownMenu>
             )}
 
+            {/* Mobile search */}
+            <button
+              onClick={openSearch}
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen((v) => !v)}
@@ -175,7 +200,7 @@ export function TopNav() {
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-3 rounded-xl text-[13px] transition-colors",
+                      "flex items-center gap-2.5 px-3 py-3 rounded-xl text-[13px] transition-colors min-h-[44px]",
                       active
                         ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium"
                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"

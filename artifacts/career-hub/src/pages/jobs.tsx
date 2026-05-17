@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink, CalendarDays, CircleCheckBig, Clock3, XCircle, Sparkles, Pin, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Building2, ExternalLink, CalendarDays, CircleCheckBig, Clock3, XCircle, Sparkles, Pin, MessageSquare, ChevronDown, ChevronUp, AlertTriangle, Clock, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -98,6 +98,7 @@ export default function JobsPage() {
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
   const [editingInterviewId, setEditingInterviewId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortByDeadline, setSortByDeadline] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
@@ -260,6 +261,30 @@ export default function JobsPage() {
     });
   }, [interviews, categoryFilter]);
 
+  const sortedJobs = useMemo(() => {
+    if (!sortByDeadline) return jobs;
+    return [...jobs].sort((a, b) => {
+      if (!a.applyDate && !b.applyDate) return 0;
+      if (!a.applyDate) return 1;
+      if (!b.applyDate) return -1;
+      return new Date(a.applyDate).getTime() - new Date(b.applyDate).getTime();
+    });
+  }, [jobs, sortByDeadline]);
+
+  function getDeadlineInfo(applyDate: string | null) {
+    if (!applyDate) return null;
+    const deadline = new Date(applyDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    deadline.setHours(0, 0, 0, 0);
+    const days = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (days < 0) return { label: `${Math.abs(days)}d overdue`, cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" };
+    if (days === 0) return { label: "Due today!", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+    if (days <= 7) return { label: `${days}d left`, cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+    if (days <= 30) return { label: `${days}d left`, cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+    return { label: `${days}d left`, cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" };
+  }
+
   return (
     <div className="space-y-8 page-enter">
       {/* Header */}
@@ -268,7 +293,17 @@ export default function JobsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Pipeline</h1>
           <p className="text-muted-foreground mt-1">Track opportunities, interview prep, and pipeline analytics.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortByDeadline(v => !v)}
+            className={`gap-2 text-[13px] ${sortByDeadline ? "border-emerald-400 text-emerald-700 bg-emerald-50" : ""}`}
+            title="Sort by application deadline"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            {sortByDeadline ? "Sorted by deadline" : "Sort by deadline"}
+          </Button>
           {/* Add Q&A button */}
           <Dialog
             open={isInterviewDialogOpen}
@@ -402,7 +437,7 @@ export default function JobsPage() {
         : jobs.length > 0
           ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {jobs.map((job) => (
+              {sortedJobs.map((job) => (
                 <Card key={job.id} className="flex flex-col hover-elevate">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -410,10 +445,15 @@ export default function JobsPage() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[job.status] ?? ""}`}>{job.status}</span>
                         <CardTitle className="text-xl line-clamp-1">{job.title}</CardTitle>
                         {job.company && <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium"><Building2 className="h-4 w-4" />{job.company}</div>}
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+                                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
                           <CalendarDays className="h-4 w-4" />
-                          {job.applyDate ? `Applied ${new Date(job.applyDate).toLocaleDateString()}` : "No date set"}
+                          {job.applyDate ? `Deadline: ${new Date(job.applyDate).toLocaleDateString()}` : "No deadline set"}
                         </div>
+                        {(() => { const di = getDeadlineInfo(job.applyDate); return di ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${di.cls}`}>
+                            <Clock className="h-3 w-3" />{di.label}
+                          </span>
+                        ) : null; })()}
                       </div>
                       <div className="flex -mr-2 shrink-0">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => togglePin.mutate(job.id)}>

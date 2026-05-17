@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, GripVertical, LayoutGrid, AlignLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Phase = "short_term" | "mid_term" | "long_term";
@@ -96,6 +96,7 @@ export default function RoadmapPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -195,11 +196,28 @@ export default function RoadmapPage() {
 
   return (
     <div className="space-y-10 page-enter">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[28px] font-bold text-foreground leading-tight">The bigger picture</h1>
-          <p className="text-[14px] text-muted-foreground mt-1.5">Your 1–10 year trajectory, broken into phases. Drag to reorder.</p>
+          <p className="text-[14px] text-muted-foreground mt-1.5">Your 1–10 year trajectory, broken into phases.</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("list")}
+              title="List view"
+              className={`px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />List
+            </button>
+            <button
+              onClick={() => setViewMode("timeline")}
+              title="Timeline view"
+              className={`px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors ${viewMode === "timeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+            >
+              <AlignLeft className="h-3.5 w-3.5" />Timeline
+            </button>
+          </div>
         <Dialog open={open} onOpenChange={(v) => (v ? (editingId ? null : openCreate()) : closeDialog())}>
           <DialogTrigger asChild>
             <Button onClick={() => openCreate()} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Add Milestone</Button>
@@ -298,10 +316,11 @@ export default function RoadmapPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* 3-column phase layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {viewMode === "list" && <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {PHASES.map((phase) => {
           const list = itemsByPhase[phase.id];
           return (
@@ -346,7 +365,82 @@ export default function RoadmapPage() {
             </div>
           );
         })}
-      </div>
+      </div>}
+
+      {/* Timeline view */}
+      {viewMode === "timeline" && (() => {
+        if (isLoading) return <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}</div>;
+        if (!items.length) return (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border rounded-2xl text-center">
+            <p className="text-[13px] text-muted-foreground mb-2">No milestones yet</p>
+            <button onClick={() => openCreate()} className="text-[13px] text-primary hover:underline">Add the first one</button>
+          </div>
+        );
+        const now = new Date().getFullYear();
+        const minYear = Math.min(now, ...items.map(i => i.yearTarget));
+        const maxYear = Math.max(now + 1, ...items.map(i => i.yearTarget));
+        const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+        const byYear: Record<number, RoadmapItem[]> = {};
+        for (const item of items) { (byYear[item.yearTarget] ??= []).push(item); }
+        const STATUS_STYLES: Record<Status, { bg: string; border: string; text: string; dot: string }> = {
+          completed: { bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-700", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
+          in_progress: { bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-700", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
+          planned: { bg: "bg-slate-50 dark:bg-slate-800/40", border: "border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400", dot: "bg-slate-400" },
+        };
+        return (
+          <div>
+            <div className="flex items-center gap-4 mb-4 text-[11px] text-muted-foreground">
+              {(["completed", "in_progress", "planned"] as Status[]).map(s => (
+                <span key={s} className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${STATUS_STYLES[s].dot}`} />
+                  {s.replace("_", " ")}
+                </span>
+              ))}
+            </div>
+            <div className="overflow-x-auto pb-4 -mx-1 px-1">
+              <div className="flex gap-0 min-w-max">
+                {years.map(year => {
+                  const isNow = year === now;
+                  return (
+                    <div key={year} className="flex flex-col min-w-[160px] max-w-[200px] flex-1">
+                      <div className={`text-center text-[12px] font-medium py-2 mb-2 border-b-2 transition-colors ${isNow ? "text-primary border-primary" : "text-muted-foreground border-border"}`}>
+                        {year}{isNow && <span className="ml-1 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">now</span>}
+                      </div>
+                      <div className="px-1.5 space-y-2 flex-1">
+                        {(byYear[year] ?? []).map(item => {
+                          const s = STATUS_STYLES[item.status];
+                          const linkedGoal = item.goalId ? goals.find(g => g.id === item.goalId) : null;
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => openEdit(item)}
+                              className={`w-full text-left rounded-xl border p-3 transition-all hover:shadow-md hover:scale-[1.01] group ${s.bg} ${s.border}`}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <span className={`h-2 w-2 rounded-full shrink-0 ${s.dot}`} />
+                                <span className={`text-[10px] font-medium uppercase tracking-wider ${s.text}`}>{item.status.replace("_", " ")}</span>
+                              </div>
+                              <p className={`text-[12px] font-medium leading-snug line-clamp-2 ${s.text}`}>{item.title}</p>
+                              {linkedGoal && (
+                                <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">↗ {linkedGoal.targetRole}</p>
+                              )}
+                              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                                  item.phase === "short_term" ? "bg-rose-100 text-rose-700" : item.phase === "mid_term" ? "bg-amber-100 text-amber-700" : "bg-accent text-primary"
+                                }`}>{item.phase.replace("_", " ")}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

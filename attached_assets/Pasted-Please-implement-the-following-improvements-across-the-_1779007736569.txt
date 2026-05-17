@@ -1,0 +1,88 @@
+Please implement the following improvements across the entire codebase. Work through them in order — the items marked [CRITICAL] first, then [HIGH], then [MEDIUM].
+---
+[CRITICAL] 1. GLOBAL SEARCH
+- Add a persistent search bar at the top of the app (header or sidebar), accessible with the keyboard shortcut Ctrl+K / Cmd+K.
+- Search should query across ALL modules simultaneously: Goals, Roadmap milestones, Learning items, Opportunities, and Research Library entries.
+- Display results in a dropdown/modal grouped by module (e.g. "Goals (2)", "Resources (5)").
+- Clicking a result navigates directly to that item.
+- Highlight matched keywords in the results.
+---
+[HIGH] 3. PROGRESS DASHBOARD (HOME/OVERVIEW PAGE)
+- Create or upgrade a Home/Dashboard page that shows at a glance:
+  • Total active goals and % complete
+  • Roadmap: number of milestones done vs total
+  • Learning: hours or items completed this week
+  • Resources saved (total count, and how many marked "read")
+  • Upcoming opportunity deadlines (next 3, with days remaining)
+- Use simple progress bars or doughnut charts for visual clarity.
+- Add a "Recent activity" feed below the stats: last 5 actions (e.g. "You added a milestone: Apply for internship — 2 hours ago").
+---
+[HIGH] 3. SKILL GAP ANALYZER (NEW FEATURE)
+- Add a new section or tab called "Skill Map" or "Skill Gap".
+- User flow:
+  1. User types or selects a target role (e.g. "UX Researcher", "Data Analyst", "Software Engineer").
+  2. System shows a list of commonly required skills for that role (hardcode a JSON map of 10–15 roles → skills to start).
+  3. User checks off which skills they already have.
+  4. The system highlights the gap skills in red/amber and links each one to a suggested resource or learning path.
+  5. A "% job-ready" score is calculated and displayed.
+- The results should be saveable and visible on the dashboard.
+---
+[HIGH] 4. OPPORTUNITY DEADLINE TRACKER
+- In the Opportunities module, add a "Deadline" date field to every opportunity entry.
+- Add a visual indicator on each opportunity card:
+  • Red badge if deadline is within 7 days ("3 days left")
+  • Amber badge if within 30 days ("18 days left")
+  • Green badge if more than 30 days away
+- Sort opportunities by deadline (soonest first) by default.
+- Show the 3 nearest deadlines on the Dashboard (from item 4 above).
+---
+[HIGH] 5. RESOURCE LIBRARY UPGRADES
+- Add the following fields to each saved resource: Tags (multi-select), Format (Article / Video / Course / Book / Podcast), Status (To Read / In Progress / Done), Personal Notes (text area), Estimated read/watch time.
+- Add filter controls above the library list: filter by Tag, Format, and Status.
+- Add a "Reading list" view that shows only Status = "To Read" items.
+- Show a small progress bar at the top: "X of Y resources completed."
+---
+[MEDIUM] 6. ROADMAP TIMELINE VIEW
+- Add a toggle on the Roadmap page to switch between "List view" (current) and "Timeline view".
+- Timeline view: render milestones on a horizontal timeline (like a Gantt strip). Each milestone is a labeled bar spanning its start and target dates.
+- Color code by status: Done = green, In Progress = teal, Not Started = gray, Overdue = red.
+- Clicking a milestone in timeline view opens its detail/edit panel.
+
+---
+
+[MEDIUM] 9. WEEKLY REVIEW PROMPT
+- Once per week (check the last review date in localStorage), show a gentle in-app prompt: "Time for your weekly review!" with three questions:
+  1. What did you complete this week? (checklist of milestones/learning items)
+  2. What's blocked or behind?
+  3. What's your top priority for next week?
+- Save the responses as a log entry (date-stamped) in a "Review Log" section.
+- Show past review logs in a simple list, newest first.
+---
+[MEDIUM] 12. MOBILE RESPONSIVENESS AUDIT
+- Audit and fix every page for mobile screens (375px–768px width).
+- Sidebar/navigation: collapse into a bottom tab bar or a hamburger menu on mobile.
+- All buttons, inputs, and interactive elements must have a minimum tap target of 44×44px.
+- Tables and multi-column layouts must reflow to single column on small screens.
+- Test all modals and drawers: they must be scrollable and not overflow the viewport on mobile.
+
+---
+
+GENERAL CODE QUALITY NOTES (apply throughout):
+- Use semantic HTML elements (
+, 
+, 
+, 
+, 
+, 
+).
+- Every interactive element must be keyboard-accessible (focusable, Enter/Space activates it).
+- Add aria-label attributes to icon-only buttons.
+- Empty states: every list/module with no data should show a helpful empty state (an icon + short message + a CTA button, e.g. "No resources yet — Add your first one").
+- Loading states: show skeleton loaders (not just spinners) when fetching or processing data.
+- Consistent color system: the site uses teal (#0d9488) as the primary brand color — ensure all primary buttons, active states, and highlights use this color consistently.
+- Toast notifications: use a lightweight toast system (top-right corner) for confirmations like "Goal saved", "Resource deleted", "Milestone marked complete".
+
+---
+
+Please implement all of the above. Start with the [CRITICAL] items (1, 2, 3) first and confirm when those are done before moving to [HIGH] and [MEDIUM] items. Ask me if you need clarification on any feature before implementing it.
+
