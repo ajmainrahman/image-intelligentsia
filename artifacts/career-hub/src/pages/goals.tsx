@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Plus, Pencil, Trash2, X, BookOpen, Map as MapIcon, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, Map as MapIcon, ChevronDown, ChevronUp, ExternalLink, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageErrorBoundary } from "@/components/page-error-boundary";
 
@@ -74,6 +74,41 @@ function GoalsPageInner() {
     if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkill(form.skillDraft); }
     else if (e.key === "Backspace" && !form.skillDraft && form.skills.length) setForm((f) => ({ ...f, skills: f.skills.slice(0, -1) }));
   };
+
+  const getGoalStats = (goalId: number) => {
+    const lp = progressEntries.filter((e) => e.goalId === goalId);
+    const lr = roadmapItems.filter((r) => r.goalId === goalId);
+    return { progressTotal: lp.length, progressDone: lp.filter((e) => e.status === "completed").length, roadmapTotal: lr.length, roadmapDone: lr.filter((r) => r.status === "completed").length };
+  };
+
+  // Compute effective progress: if linked items exist, derive from them; otherwise use stored value
+  const getEffectiveProgress = (goal: Goal) => {
+    const stats = getGoalStats(goal.id);
+    const totalItems = stats.progressTotal + stats.roadmapTotal;
+    if (totalItems > 0) {
+      const totalDone = stats.progressDone + stats.roadmapDone;
+      return Math.round((totalDone / totalItems) * 100);
+    }
+    return goal.progress ?? 0;
+  };
+
+  // For the edit form: check if the goal being edited has linked items
+  const editingGoalHasLinkedItems = useMemo(() => {
+    if (!editingId) return false;
+    const stats = getGoalStats(editingId);
+    return (stats.progressTotal + stats.roadmapTotal) > 0;
+  }, [editingId, progressEntries, roadmapItems]);
+
+  const editingComputedProgress = useMemo(() => {
+    if (!editingId) return 0;
+    const stats = getGoalStats(editingId);
+    const totalItems = stats.progressTotal + stats.roadmapTotal;
+    if (totalItems > 0) {
+      return Math.round(((stats.progressDone + stats.roadmapDone) / totalItems) * 100);
+    }
+    return form.progress;
+  }, [editingId, progressEntries, roadmapItems, form.progress]);
+
   const submit = () => {
     if (!form.title.trim() || !form.targetRole.trim()) { toast({ title: "Title and target role are required", variant: "destructive" }); return; }
     const targetYear = form.targetYear.trim() ? Number(form.targetYear) : undefined;
@@ -81,12 +116,14 @@ function GoalsPageInner() {
       toast({ title: "Target year must be a number", variant: "destructive" });
       return;
     }
+    // If linked items exist, use the computed progress
+    const progressToSave = editingGoalHasLinkedItems ? editingComputedProgress : form.progress;
     const payload = {
       title: form.title.trim(),
       targetRole: form.targetRole.trim(),
       description: form.description.trim() || null,
       skills: form.skills,
-      progress: form.progress,
+      progress: progressToSave,
       status: form.status,
       ...(targetYear !== undefined ? { targetYear } : {}),
     };
@@ -94,11 +131,6 @@ function GoalsPageInner() {
     else createGoal.mutate(payload);
   };
   const toggleDesc = (id: number) => setExpandedDesc((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  const getGoalStats = (goalId: number) => {
-    const lp = progressEntries.filter((e) => e.goalId === goalId);
-    const lr = roadmapItems.filter((r) => r.goalId === goalId);
-    return { progressTotal: lp.length, progressDone: lp.filter((e) => e.status === "completed").length, roadmapTotal: lr.length, roadmapDone: lr.filter((r) => r.status === "completed").length };
-  };
   const sortedGoals = useMemo(() => [...(goals ?? [])].sort((a, b) => { const rank = STATUS_META[a.status].rank - STATUS_META[b.status].rank; return rank !== 0 ? rank : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); }), [goals]);
 
   return (
@@ -120,7 +152,7 @@ function GoalsPageInner() {
               <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Title</label>
                 <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Transition to Machine Learning" className="bg-secondary border-border text-[13px]" />
               </div>
-      <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Target Role</label>
                   <Input value={form.targetRole} onChange={(e) => setForm((f) => ({ ...f, targetRole: e.target.value }))} placeholder="e.g. ML Engineer" className="bg-secondary border-border text-[13px]" />
                 </div>
@@ -128,18 +160,18 @@ function GoalsPageInner() {
                   <Input type="number" value={form.targetYear} onChange={(e) => setForm((f) => ({ ...f, targetYear: e.target.value }))} placeholder="2026" className="bg-secondary border-border text-[13px]" />
                 </div>
               </div>
-      <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Horizon</label>
-        <Select value={form.targetHorizon} onValueChange={(v) => setForm((f) => ({ ...f, targetHorizon: v }))}>
-          <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="short_term">Short term goals</SelectItem>
-            <SelectItem value="long_term">Long term goals</SelectItem>
-            <SelectItem value="1_2_years">1-2 years</SelectItem>
-            <SelectItem value="3_5_years">3-5 years</SelectItem>
-            <SelectItem value="10_15_years">10-15 years</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+              <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Goal Horizon</label>
+                <Select value={form.targetHorizon} onValueChange={(v) => setForm((f) => ({ ...f, targetHorizon: v }))}>
+                  <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short_term">Short term goals</SelectItem>
+                    <SelectItem value="long_term">Long term goals</SelectItem>
+                    <SelectItem value="1_2_years">1-2 years</SelectItem>
+                    <SelectItem value="3_5_years">3-5 years</SelectItem>
+                    <SelectItem value="10_15_years">10-15 years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5"><label className="text-[12px] font-medium text-muted-foreground">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as Goal["status"] }))}>
                   <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
@@ -168,9 +200,20 @@ function GoalsPageInner() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[12px] font-medium text-muted-foreground">Progress</label>
-                  <span className="text-[12px] font-medium text-primary">{form.progress}%</span>
+                  <span className="text-[12px] font-medium text-primary">
+                    {editingGoalHasLinkedItems ? editingComputedProgress : form.progress}%
+                  </span>
                 </div>
-                <Slider value={[form.progress]} onValueChange={([v]) => setForm((f) => ({ ...f, progress: v }))} min={0} max={100} step={5} />
+                {editingGoalHasLinkedItems ? (
+                  <div className="flex items-start gap-2 rounded-lg bg-accent/50 border border-primary/20 px-3 py-2.5">
+                    <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <p className="text-[12px] text-primary/80 leading-relaxed">
+                      Progress is automatically calculated from your linked learning entries and milestones ({editingComputedProgress}% complete). Add more learning entries to this goal to increase it.
+                    </p>
+                  </div>
+                ) : (
+                  <Slider value={[form.progress]} onValueChange={([v]) => setForm((f) => ({ ...f, progress: v }))} min={0} max={100} step={5} />
+                )}
               </div>
             </div>
             <DialogFooter className="pt-4">
@@ -190,15 +233,16 @@ function GoalsPageInner() {
           {sortedGoals.map((goal, index) => {
             const meta = STATUS_META[goal.status];
             const stats = getGoalStats(goal.id);
+            const effectiveProgress = getEffectiveProgress(goal);
             const isExpanded = expandedDesc.has(goal.id);
             const descLong = (goal.description?.length ?? 0) > 120;
+            const hasLinkedItems = (stats.progressTotal + stats.roadmapTotal) > 0;
             return (
               <motion.div key={goal.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}>
                 <div className="group bg-card border border-border rounded-2xl p-5 flex flex-col h-full hover:border-muted-foreground/30 transition-colors duration-150">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="space-y-1.5 min-w-0">
                       <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${meta.pillBg} ${meta.pillText}`}>{meta.label}</span>
-                      {/* Clickable title → goal detail page */}
                       <Link href={`/goals/${goal.id}`}>
                         <h3 className="text-[15px] font-medium text-foreground leading-snug line-clamp-2 hover:text-primary transition-colors cursor-pointer flex items-center gap-1">
                           {goal.targetRole} <ExternalLink className="h-3 w-3 opacity-40" />
@@ -235,8 +279,15 @@ function GoalsPageInner() {
                     <div className="flex flex-wrap gap-1.5 mb-4">{goal.skills.map((skill) => <span key={skill} className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">{skill}</span>)}</div>
                   )}
                   <div className="space-y-1.5 mb-4">
-                    <div className="flex justify-between text-[11px]"><span className="text-muted-foreground">Progress</span><span className="font-medium text-foreground">{goal.progress ?? 0}%</span></div>
-                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden"><div className={`h-full rounded-full ${meta.barColor} transition-all duration-500`} style={{ width: `${Math.min(100, goal.progress ?? 0)}%` }} /></div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">
+                        Progress {hasLinkedItems && <span className="text-primary/60">(from learning)</span>}
+                      </span>
+                      <span className="font-medium text-foreground">{effectiveProgress}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${meta.barColor} transition-all duration-500`} style={{ width: `${Math.min(100, effectiveProgress)}%` }} />
+                    </div>
                   </div>
                   <div className="pt-3 border-t border-border flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground">Created {formatDistanceToNow(new Date(goal.createdAt), { addSuffix: true })}</p>

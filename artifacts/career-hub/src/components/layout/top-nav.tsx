@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { BrandLogo } from "@/components/brand-logo";
 import {
   LayoutDashboard, Target, BookOpen, Map as MapIcon, Briefcase,
-  BellRing, NotebookPen, Activity as ActivityIcon, CalendarCheck,
+  BellRing, NotebookPen, CalendarCheck,
   Microscope, Sun, Moon, LogOut, ChevronDown, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,6 @@ const PRIMARY_LINKS = [
 ];
 
 const MORE_LINKS = [
-  { href: "/activity",      label: "Activity",      icon: ActivityIcon },
   { href: "/weekly-review", label: "Weekly Review", icon: CalendarCheck },
   { href: "/reminders",     label: "Reminders",     icon: BellRing },
   { href: "/notepad",       label: "Notepad",       icon: NotebookPen },

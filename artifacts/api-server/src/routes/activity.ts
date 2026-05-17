@@ -17,8 +17,8 @@ router.get("/activity", requireAuth, async (req: AuthRequest, res, next): Promis
     res.json(events.map((e) => ({
       id: e.id,
       type: e.type,
-      relatedId: e.relatedId,
-      title: e.title,
+      refId: e.refId,
+      label: e.label,
       action: e.action,
       createdAt: e.createdAt.toISOString(),
     })));

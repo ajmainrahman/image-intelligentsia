@@ -74,8 +74,8 @@ router.put(
         return;
       }
 
-      // Auto-achieve: if all linked progress + roadmap items are completed, mark goal achieved
-      let { status, progress } = parsed.data;
+      // Only auto-achieve status when all linked items are complete; never override manual progress
+      let { status } = parsed.data;
       const linkedProgress = await db
         .select()
         .from(progressTable)
@@ -97,25 +97,18 @@ router.put(
 
       const allItems = [...linkedProgress, ...linkedRoadmap];
       if (allItems.length > 0) {
-        const completedProgress = linkedProgress.filter(
-          (p) => p.status === "completed",
-        ).length;
-        const completedRoadmap = linkedRoadmap.filter(
-          (r) => r.status === "completed",
-        ).length;
+        const completedProgress = linkedProgress.filter((p) => p.status === "completed").length;
+        const completedRoadmap = linkedRoadmap.filter((r) => r.status === "completed").length;
         const totalCompleted = completedProgress + completedRoadmap;
-        const totalItems = allItems.length;
-        // Auto-calculate progress from linked children
-        progress = Math.round((totalCompleted / totalItems) * 100);
-        // Auto-achieve when all done
-        if (totalCompleted === totalItems && totalItems > 0) {
+        // Auto-achieve status only when everything is done — but respect manual progress value
+        if (totalCompleted === allItems.length && allItems.length > 0) {
           status = "completed";
         }
       }
 
       const [goal] = await db
         .update(goalsTable)
-        .set({ ...parsed.data, progress, status, updatedAt: new Date() })
+        .set({ ...parsed.data, status, updatedAt: new Date() })
         .where(and(eq(goalsTable.id, id), eq(goalsTable.userId, req.userId!)))
         .returning();
       if (!goal) {
@@ -247,12 +240,7 @@ router.put(
 
       res.json({
         goal: serializeGoal(goal),
-        summary: {
-          totalHours,
-          entriesCount,
-          milestonesTotal,
-          milestonesCompleted,
-        },
+        summary: { totalHours, entriesCount, milestonesTotal, milestonesCompleted },
       });
     } catch (err) {
       next(err);
@@ -260,7 +248,6 @@ router.put(
   },
 );
 
-// PATCH for pinning/archiving without full body
 router.patch(
   "/goals/:id",
   requireAuth,

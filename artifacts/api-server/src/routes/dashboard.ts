@@ -45,7 +45,7 @@ router.get("/dashboard/skill-gap", requireAuth, async (req: AuthRequest, res, ne
     const learnedSkills = new Set<string>();
     for (const p of progress) {
       learnedSkills.add(p.title.trim().toLowerCase());
-      learnedSkills.add(p.category.trim().toLowerCase());
+      if (p.category) learnedSkills.add(p.category.trim().toLowerCase());
       p.title.split(/\s+/).forEach((word) => learnedSkills.add(word.trim().toLowerCase()));
     }
     for (const j of jobs) for (const s of j.skills ?? []) learnedSkills.add(s.trim().toLowerCase());

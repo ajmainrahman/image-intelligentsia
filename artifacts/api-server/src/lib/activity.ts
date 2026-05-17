@@ -5,16 +5,16 @@ export type ActivityType = "job" | "goal" | "progress" | "reminder" | "note" | "
 export async function logActivity(
   userId: number,
   type: ActivityType,
-  title: string,
-  relatedId?: number | null,
+  label: string,
+  refId?: number | null,
   action: string = "created",
 ): Promise<void> {
   try {
     await db.insert(activityLogTable).values({
       userId,
       type,
-      relatedId: relatedId ?? null,
-      title: title.slice(0, 200),
+      refId: refId ?? null,
+      label: label.slice(0, 200),
       action,
     });
   } catch {
