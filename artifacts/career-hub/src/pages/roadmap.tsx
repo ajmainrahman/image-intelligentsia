@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, GripVertical, LayoutGrid, AlignLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, GripVertical, LayoutGrid, AlignLeft, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Phase = "short_term" | "mid_term" | "long_term";
@@ -31,13 +31,13 @@ type Goal = { id: number; title: string; targetRole: string };
 
 type StructuredDescription = {
   v: 2; focusOn: string; responsibilities: string[];
-  skills: string[]; level: number; progress: number;
+  skills: string[]; level: number; progress: number; quarter?: string | null;
 };
 
 type FormState = {
   title: string; yearTarget: string; phase: Phase; status: Status; goalId: string;
   focusOn: string; responsibilities: string[]; skills: string[];
-  skillDraft: string; level: number; progress: number;
+  skillDraft: string; level: number; progress: number; quarter: string;
 };
 
 const PHASES = [
@@ -52,7 +52,7 @@ const MAX_FOCUS = 1000;
 const emptyForm = (phase: Phase = "short_term"): FormState => ({
   title: "", yearTarget: String(new Date().getFullYear() + 1),
   phase, status: "planned", goalId: "",
-  focusOn: "", responsibilities: [], skills: [], skillDraft: "", level: 1, progress: 0,
+  focusOn: "", responsibilities: [], skills: [], skillDraft: "", level: 1, progress: 0, quarter: "",
 });
 
 function parseDescription(raw: string | null): StructuredDescription | { legacy: string } | null {
@@ -67,6 +67,7 @@ function parseDescription(raw: string | null): StructuredDescription | { legacy:
         skills: Array.isArray(parsed.skills) ? parsed.skills.filter((s: unknown): s is string => typeof s === "string") : [],
         level: typeof parsed.level === "number" ? Math.min(5, Math.max(1, parsed.level)) : 1,
         progress: typeof parsed.progress === "number" ? Math.min(100, Math.max(0, parsed.progress)) : 0,
+        quarter: typeof parsed.quarter === "string" ? parsed.quarter : null,
       };
     }
   } catch {}
@@ -96,7 +97,7 @@ export default function RoadmapPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
-  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
+  const [viewMode, setViewMode] = useState<"list" | "timeline" | "quarter">("list");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -133,9 +134,9 @@ export default function RoadmapPage() {
   const openEdit = (item: RoadmapItem) => {
     const parsed = parseDescription(item.description);
     if (parsed && isStructured(parsed)) {
-      setForm({ title: item.title, yearTarget: String(item.yearTarget), phase: item.phase, status: item.status, goalId: item.goalId ? String(item.goalId) : "", focusOn: parsed.focusOn, responsibilities: parsed.responsibilities, skills: parsed.skills, skillDraft: "", level: parsed.level, progress: parsed.progress });
+      setForm({ title: item.title, yearTarget: String(item.yearTarget), phase: item.phase, status: item.status, goalId: item.goalId ? String(item.goalId) : "", focusOn: parsed.focusOn, responsibilities: parsed.responsibilities, skills: parsed.skills, skillDraft: "", level: parsed.level, progress: parsed.progress, quarter: parsed.quarter ?? "" });
     } else {
-      setForm({ title: item.title, yearTarget: String(item.yearTarget), phase: item.phase, status: item.status, goalId: item.goalId ? String(item.goalId) : "", focusOn: parsed && "legacy" in parsed ? parsed.legacy : "", responsibilities: [], skills: [], skillDraft: "", level: 1, progress: item.status === "completed" ? 100 : item.status === "in_progress" ? 50 : 0 });
+      setForm({ title: item.title, yearTarget: String(item.yearTarget), phase: item.phase, status: item.status, goalId: item.goalId ? String(item.goalId) : "", focusOn: parsed && "legacy" in parsed ? parsed.legacy : "", responsibilities: [], skills: [], skillDraft: "", level: 1, progress: item.status === "completed" ? 100 : item.status === "in_progress" ? 50 : 0, quarter: "" });
     }
     setEditingId(item.id); setOpen(true);
   };
@@ -159,7 +160,7 @@ export default function RoadmapPage() {
 
   const submit = () => {
     if (!form.title.trim()) { toast({ title: "Target role is required", variant: "destructive" }); return; }
-    const description: StructuredDescription = { v: 2, focusOn: form.focusOn.trim(), responsibilities: form.responsibilities.map((r) => r.trim()).filter(Boolean), skills: form.skills, level: form.level, progress: form.progress };
+    const description: StructuredDescription = { v: 2, focusOn: form.focusOn.trim(), responsibilities: form.responsibilities.map((r) => r.trim()).filter(Boolean), skills: form.skills, level: form.level, progress: form.progress, quarter: form.quarter || null };
     const payload = { title: form.title.trim(), yearTarget: Number(form.yearTarget) || new Date().getFullYear(), phase: form.phase, status: form.status, goalId: form.goalId ? Number(form.goalId) : null, description, order: 0 };
     if (editingId) updateItem.mutate({ id: editingId, data: payload });
     else createItem.mutate(payload);
@@ -212,10 +213,17 @@ export default function RoadmapPage() {
             </button>
             <button
               onClick={() => setViewMode("timeline")}
-              title="Timeline view"
+              title="Year timeline"
               className={`px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors ${viewMode === "timeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
             >
-              <AlignLeft className="h-3.5 w-3.5" />Timeline
+              <AlignLeft className="h-3.5 w-3.5" />Year
+            </button>
+            <button
+              onClick={() => setViewMode("quarter")}
+              title="Quarter timeline"
+              className={`px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors ${viewMode === "quarter" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+            >
+              <Calendar className="h-3.5 w-3.5" />Quarter
             </button>
           </div>
         <Dialog open={open} onOpenChange={(v) => (v ? (editingId ? null : openCreate()) : closeDialog())}>
@@ -254,6 +262,18 @@ export default function RoadmapPage() {
                     <button key={p.id} type="button" onClick={() => setForm((f) => ({ ...f, phase: p.id }))}
                       className={`py-2 rounded-lg text-[12px] font-medium border transition-colors ${form.phase === p.id ? `${p.pillBg} ${p.pillText} border-transparent` : "border-border hover:bg-secondary text-muted-foreground"}`}>
                       {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-medium text-muted-foreground">Quarter <span className="font-normal text-muted-foreground/60">(optional)</span></label>
+                <div className="grid grid-cols-5 gap-2">
+                  {["", "Q1", "Q2", "Q3", "Q4"].map(q => (
+                    <button key={q || "any"} type="button"
+                      onClick={() => setForm(f => ({ ...f, quarter: q }))}
+                      className={`py-2 rounded-lg text-[12px] font-medium border transition-colors ${form.quarter === q ? "bg-primary text-primary-foreground border-transparent" : "border-border hover:bg-secondary text-muted-foreground"}`}>
+                      {q || "Any"}
                     </button>
                   ))}
                 </div>
@@ -436,6 +456,88 @@ export default function RoadmapPage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Quarter view */}
+      {viewMode === "quarter" && (() => {
+        if (isLoading) return <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}</div>;
+        if (!items.length) return (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border rounded-2xl text-center">
+            <p className="text-[13px] text-muted-foreground mb-2">No milestones yet</p>
+            <button onClick={() => openCreate()} className="text-[13px] text-primary hover:underline">Add the first one</button>
+          </div>
+        );
+        const QUARTER_ORDER: Record<string, number> = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
+        const colMap = new Map<string, { year: number; quarter: string; label: string; key: string; items: RoadmapItem[] }>();
+        for (const item of items) {
+          const parsed = parseDescription(item.description);
+          const quarter = isStructured(parsed) && parsed.quarter ? parsed.quarter : "";
+          const key = `${item.yearTarget}|${quarter}`;
+          if (!colMap.has(key)) {
+            colMap.set(key, { year: item.yearTarget, quarter, label: quarter ? `${item.yearTarget} · ${quarter}` : String(item.yearTarget), key, items: [] });
+          }
+          colMap.get(key)!.items.push(item);
+        }
+        const columns = [...colMap.values()].sort((a, b) =>
+          a.year !== b.year ? a.year - b.year : (QUARTER_ORDER[a.quarter] ?? 9) - (QUARTER_ORDER[b.quarter] ?? 9)
+        );
+        const now = new Date().getFullYear();
+        const STATUS_STYLES: Record<Status, { bg: string; border: string; text: string; dot: string }> = {
+          completed: { bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-700", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
+          in_progress: { bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-700", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
+          planned: { bg: "bg-slate-50 dark:bg-slate-800/40", border: "border-slate-200 dark:border-slate-700", text: "text-slate-600 dark:text-slate-400", dot: "bg-slate-400" },
+        };
+        return (
+          <div>
+            <div className="flex items-center gap-4 mb-4 flex-wrap">
+              <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
+                {(["completed", "in_progress", "planned"] as Status[]).map(s => (
+                  <span key={s} className="flex items-center gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${STATUS_STYLES[s].dot}`} />
+                    {s.replace("_", " ")}
+                  </span>
+                ))}
+              </div>
+              <span className="ml-auto text-[11px] text-muted-foreground italic">Set a quarter per milestone in the edit dialog</span>
+            </div>
+            <div className="overflow-x-auto pb-4 -mx-1 px-1">
+              <div className="flex gap-3 min-w-max">
+                {columns.map((col) => (
+                  <div key={col.key} className="flex flex-col min-w-[175px] max-w-[215px] flex-1">
+                    <div className={`text-center text-[12px] font-semibold py-2 mb-3 border-b-2 transition-colors ${col.year === now ? "text-primary border-primary" : "text-muted-foreground border-border"}`}>
+                      {col.label}
+                      {col.year === now && !col.quarter && (
+                        <span className="ml-1.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">now</span>
+                      )}
+                    </div>
+                    <div className="px-0.5 space-y-2 flex-1">
+                      {col.items.map(item => {
+                        const s = STATUS_STYLES[item.status];
+                        const linkedGoal = item.goalId ? goals.find(g => g.id === item.goalId) : null;
+                        return (
+                          <button key={item.id} onClick={() => openEdit(item)}
+                            className={`w-full text-left rounded-xl border p-3 transition-all hover:shadow-md hover:scale-[1.01] ${s.bg} ${s.border}`}>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span className={`h-2 w-2 rounded-full shrink-0 ${s.dot}`} />
+                              <span className={`text-[10px] font-medium uppercase tracking-wider ${s.text}`}>{item.status.replace("_", " ")}</span>
+                            </div>
+                            <p className={`text-[12px] font-medium leading-snug line-clamp-2 ${s.text}`}>{item.title}</p>
+                            {linkedGoal && <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">↗ {linkedGoal.targetRole}</p>}
+                            <div className="mt-2">
+                              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                                item.phase === "short_term" ? "bg-rose-100 text-rose-700" : item.phase === "mid_term" ? "bg-amber-100 text-amber-700" : "bg-accent text-primary"
+                              }`}>{item.phase.replace("_", " ")}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

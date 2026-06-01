@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, CheckCircle2, UserRound, Route, BookOpen, MessageSquare, CheckCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, CheckCircle2, UserRound, Route, BookOpen, MessageSquare, CheckCheck, Bell, ChevronRight, X, Save } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +19,8 @@ type Job = { id: number; title: string; company: string | null; status: string; 
 type RoadmapItem = { id: number; title: string; description: string | null; yearTarget: number; phase: string; status: string; goalId: number | null; order: number; pinned: boolean; archived: boolean; reflection: string | null; createdAt: string; updatedAt: string; };
 type Analytics = { totalJobs: number; pinned: number; interviewCount: number; questionsCount: number; topSkills: { skill: string; count: number }[]; };
 type InterviewQuestion = { id: number; question: string; answer: string | null; category: string | null; createdAt: string; };
+type Reminder = { id: number; title: string; dueDate: string | null; priority: string; completed: boolean; category: string; };
+type Profile = { tagline: string; about: string; expertise: string[]; skills: string[]; interests: string[]; };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   not_started: { bg: "bg-slate-100", text: "text-slate-600", dot: "bg-slate-400" },
@@ -30,13 +35,52 @@ function DueWarningBanner() {
   const { data } = useQuery({ queryKey: ["due-warnings"], queryFn: () => api<any>("/due-warnings"), refetchInterval: 5 * 60 * 1000, enabled: !!user });
   if (!data) return null;
   const { overdueReminders = [], soonReminders = [], overdueGoals = [], soonGoals = [] } = data;
-  const overdueCount = overdueReminders.length + overdueGoals.length;
-  const soonCount = soonReminders.length + soonGoals.length;
-  if (overdueCount === 0 && soonCount === 0) return null;
+  const overdueItems = [
+    ...overdueReminders.map((r: any) => ({ title: r.title, type: "reminder" as const })),
+    ...overdueGoals.map((g: any) => ({ title: g.title, type: "goal" as const })),
+  ];
+  const soonItems = [
+    ...soonReminders.map((r: any) => ({ title: r.title, type: "reminder" as const, due: r.dueDate })),
+    ...soonGoals.map((g: any) => ({ title: g.title, type: "goal" as const, due: g.targetDate })),
+  ].sort((a, b) => (a.due ? new Date(a.due).getTime() : Infinity) - (b.due ? new Date(b.due).getTime() : Infinity));
+  if (!overdueItems.length && !soonItems.length) return null;
   return (
     <div className="space-y-2">
-      {overdueCount > 0 && <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-3xl px-5 py-4"><AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" /><p className="text-sm font-semibold text-red-700">{overdueCount} item{overdueCount > 1 ? "s" : ""} overdue</p></div>}
-      {soonCount > 0 && <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-3xl px-5 py-4"><Clock className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" /><p className="text-sm font-semibold text-amber-700">{soonCount} item{soonCount > 1 ? "s" : ""} due in the next 7 days</p></div>}
+      {overdueItems.length > 0 && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-3xl px-5 py-4">
+          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-red-700 mb-1.5">{overdueItems.length} item{overdueItems.length > 1 ? "s" : ""} overdue</p>
+            <div className="flex flex-wrap gap-1.5">
+              {overdueItems.slice(0, 5).map((item, i) => (
+                <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                  {item.type === "reminder" ? "🔔" : "🎯"} {item.title}
+                </span>
+              ))}
+              {overdueItems.length > 5 && <span className="text-[11px] text-red-500 self-center">+{overdueItems.length - 5} more</span>}
+            </div>
+          </div>
+        </div>
+      )}
+      {soonItems.length > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-3xl px-5 py-4">
+          <Clock className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-amber-700 mb-1.5">{soonItems.length} item{soonItems.length > 1 ? "s" : ""} due in the next 7 days</p>
+            <div className="flex flex-wrap gap-1.5">
+              {soonItems.slice(0, 5).map((item, i) => {
+                const daysLeft = item.due ? Math.ceil((new Date(item.due).getTime() - Date.now()) / 86400000) : null;
+                return (
+                  <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                    {item.type === "reminder" ? "🔔" : "🎯"} {item.title}{daysLeft !== null ? ` · ${daysLeft === 0 ? "today" : `${daysLeft}d`}` : ""}
+                  </span>
+                );
+              })}
+              {soonItems.length > 5 && <span className="text-[11px] text-amber-600 self-center">+{soonItems.length - 5} more</span>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -65,6 +109,8 @@ export default function Dashboard() {
   const { data: skillGap } = useQuery<any>({ queryKey: ["skill-gap"], queryFn: () => api<any>("/dashboard/skill-gap") });
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
   const { data: interviewQuestions = [] } = useQuery<InterviewQuestion[]>({ queryKey: ["interview-questions"], queryFn: () => api<InterviewQuestion[]>("/interview-questions") });
+  const { data: reminders = [] } = useQuery<Reminder[]>({ queryKey: ["reminders"], queryFn: () => api<Reminder[]>("/reminders") });
+  const { data: profile } = useQuery<Profile>({ queryKey: ["profile"], queryFn: () => api<Profile>("/profile") });
 
   const activeGoals = goals.filter(g => g.status === "active");
   const completedRoadmap = roadmap.filter((item) => item.status === "completed");
@@ -114,6 +160,19 @@ export default function Dashboard() {
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 3);
   }, [jobs]);
+
+  const upcomingReminders = useMemo(() =>
+    reminders
+      .filter(r => !r.completed)
+      .sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      })
+      .slice(0, 4),
+    [reminders]
+  );
 
   // Interview prep stats
   const answeredCount = interviewQuestions.filter((q) => q.answer).length;
@@ -286,13 +345,22 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link href="/progress" className="h-full block">
+        <Link href="/skill-map" className="h-full block">
           <div className="h-full min-h-[230px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[16px] font-semibold text-slate-800">Skill gap analyzer</h2>
               <span className="text-[12px] text-slate-400">Goals vs learning vs jobs</span>
             </div>
-            {skillGap ? (
+            {!skillGap ? (
+              <Skeleton className="h-36 w-full rounded-[24px]" />
+            ) : skillGap.goalSkills.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Sparkles className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                <p className="text-[13px] font-medium text-slate-700">No skills to analyze yet</p>
+                <p className="text-[12px] text-muted-foreground mt-1 max-w-[200px]">Add skills to your goals to unlock gap analysis.</p>
+                <span className="mt-3 text-[12px] text-primary font-medium">Go to Skill Map →</span>
+              </div>
+            ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="rounded-[20px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Coverage</p><p className="text-2xl font-bold text-slate-800">{skillGap.coveragePercent}%</p></div>
@@ -301,46 +369,113 @@ export default function Dashboard() {
                 </div>
                 <div className="flex flex-wrap gap-2">{skillGap.gaps.slice(0, 8).map((gap: string) => <Badge key={gap} variant="outline" className="text-xs">{gap}</Badge>)}</div>
               </div>
-            ) : <Skeleton className="h-36 w-full rounded-[24px]" />}
+            )}
           </div>
         </Link>
       </div>
 
-      {/* Profile + Roadmap */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        <Link href="/goals" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4"><h2 className="text-[16px] font-semibold text-slate-800">Profile</h2><UserRound className="h-4 w-4 text-slate-400" /></div>
-            <p className="text-sm text-slate-600">View your goals, skills, and career focus in one place.</p>
-            <div className="mt-4 space-y-2">
-              {goals.slice(0, 2).map((goal) => (
-                <div key={goal.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3">
-                  <p className="text-sm font-medium text-slate-800">{goal.title}</p>
-                  <p className="text-xs text-muted-foreground">{goal.skills.length} skills · {goal.progress}% complete</p>
+      {/* Profile + Reminders + Roadmap */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+        {/* Profile */}
+        <Link href="/profile" className="h-full block">
+          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[16px] font-semibold text-slate-800">Profile</h2>
+              <UserRound className="h-4 w-4 text-slate-400" />
+            </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[14px] flex items-center justify-center shrink-0">{initials}</div>
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-slate-800 truncate">{user?.name}</p>
+                {profile?.tagline
+                  ? <p className="text-[12px] text-muted-foreground truncate">{profile.tagline}</p>
+                  : <p className="text-[12px] text-muted-foreground italic">No tagline yet</p>
+                }
+              </div>
+            </div>
+            {(profile?.skills?.length ?? 0) > 0 ? (
+              <div className="flex-1">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Skills</p>
+                <div className="flex flex-wrap gap-1">
+                  {profile!.skills.slice(0, 5).map(s => <span key={s} className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">{s}</span>)}
+                  {profile!.skills.length > 5 && <span className="text-[11px] text-muted-foreground self-center">+{profile!.skills.length - 5}</span>}
                 </div>
-              ))}
-              {goals.length === 0 && <p className="text-sm text-muted-foreground">Add a goal to build your profile.</p>}
+              </div>
+            ) : (
+              <p className="text-[12px] text-muted-foreground flex-1">Complete your profile to showcase your skills and expertise.</p>
+            )}
+            <div className="mt-3 pt-3 border-t border-[#f0ebe0]">
+              <span className="text-[12px] text-primary font-medium">Edit profile →</span>
             </div>
           </div>
         </Link>
 
-        <Link href="/roadmap" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4"><h2 className="text-[16px] font-semibold text-slate-800">Roadmap</h2><Route className="h-4 w-4 text-slate-400" /></div>
-            <p className="text-sm text-slate-600">Plan what to learn and what to do next.</p>
-            <div className="mt-4 space-y-2">
-              {roadmap.length ? (
-                <>
-                  {completedRoadmap.length > 0 && <p className="text-sm text-slate-700">{completedRoadmap.length}/{roadmap.length} roadmap items completed</p>}
-                  {roadmap.slice(0, 2).map((item) => (
-                    <div key={item.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3">
-                      <p className="text-sm font-medium text-slate-800">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.phase.replace("_", " ")} · {item.yearTarget}</p>
-                    </div>
-                  ))}
-                </>
-              ) : <p className="text-sm text-muted-foreground">No roadmap items yet.</p>}
+        {/* Reminders & Tasks */}
+        <Link href="/reminders" className="h-full block">
+          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[16px] font-semibold text-slate-800">Reminders & Tasks</h2>
+                {upcomingReminders.length > 0 && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-100">{upcomingReminders.length}</span>
+                )}
+              </div>
+              <Bell className="h-4 w-4 text-slate-400" />
             </div>
+            {upcomingReminders.length > 0 ? (
+              <div className="space-y-2 flex-1">
+                {upcomingReminders.map(r => {
+                  const daysLeft = r.dueDate ? Math.ceil((new Date(r.dueDate).getTime() - Date.now()) / 86400000) : null;
+                  const isOverdue = daysLeft !== null && daysLeft < 0;
+                  const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 2;
+                  return (
+                    <div key={r.id} className="flex items-center gap-2.5 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2.5">
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority === "high" ? "bg-red-400" : r.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
+                      <span className="text-[13px] font-medium text-slate-800 line-clamp-1 flex-1 min-w-0">{r.title}</span>
+                      {r.dueDate && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${isOverdue ? "bg-red-100 text-red-600" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                          {isOverdue ? `${Math.abs(daysLeft!)}d ago` : daysLeft === 0 ? "Today" : `${daysLeft}d`}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 text-center py-4">
+                <CheckCircle2 className="h-8 w-8 text-emerald-400 mb-2" />
+                <p className="text-[13px] text-slate-600 font-medium">All caught up!</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">No pending reminders.</p>
+              </div>
+            )}
+          </div>
+        </Link>
+
+        {/* Roadmap */}
+        <Link href="/roadmap" className="h-full block">
+          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[16px] font-semibold text-slate-800">Roadmap</h2>
+              <Route className="h-4 w-4 text-slate-400" />
+            </div>
+            {roadmap.length ? (
+              <div className="space-y-2 flex-1">
+                {completedRoadmap.length > 0 && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.round((completedRoadmap.length / roadmap.length) * 100)}%` }} />
+                    </div>
+                    <span className="text-[11px] text-muted-foreground shrink-0">{completedRoadmap.length}/{roadmap.length} done</span>
+                  </div>
+                )}
+                {roadmap.slice(0, 3).map((item) => (
+                  <div key={item.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3">
+                    <p className="text-[13px] font-medium text-slate-800 line-clamp-1">{item.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.phase.replace("_", " ")} · {item.yearTarget}</p>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-sm text-muted-foreground flex-1">No roadmap items yet. Plan your trajectory.</p>}
           </div>
         </Link>
       </div>

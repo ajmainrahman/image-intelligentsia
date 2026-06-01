@@ -201,7 +201,11 @@ function ProgressPageInner() {
     else createEntry.mutate(payload);
   };
 
-  const filtered = useMemo(() => activeFilter === "all" ? entries : entries.filter((e) => e.category === activeFilter), [entries, activeFilter]);
+  const STATUS_SORT: Record<string, number> = { in_progress: 0, completed: 1, not_started: 2 };
+  const filtered = useMemo(() => {
+    const base = activeFilter === "all" ? entries : entries.filter((e) => e.category === activeFilter);
+    return [...base].sort((a, b) => (STATUS_SORT[a.status] ?? 1) - (STATUS_SORT[b.status] ?? 1));
+  }, [entries, activeFilter]);
   const stats = useMemo(() => computeStats(entries), [entries]);
   const heatmap = useMemo(() => buildHeatmap(entries), [entries]);
 
