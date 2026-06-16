@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Pencil, Trash2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, ChevronDown, ChevronUp, Search, Flame, Clock, TrendingUp, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PageErrorBoundary } from "@/components/page-error-boundary";
 
@@ -39,26 +39,32 @@ type FormState = {
 };
 
 const CATEGORIES = [
-  { id: "course",        label: "Course",        bg: "bg-accent",      text: "text-primary" },
-  { id: "project",       label: "Project",       bg: "bg-secondary",   text: "text-foreground" },
-  { id: "certification", label: "Certification", bg: "bg-amber-50",    text: "text-amber-700" },
-  { id: "ai_tool",       label: "AI Tool",       bg: "bg-secondary",   text: "text-foreground" },
-  { id: "book",          label: "Book",          bg: "bg-emerald-50",  text: "text-emerald-700" },
-  { id: "practice",      label: "Practice",      bg: "bg-secondary",   text: "text-foreground" },
-  { id: "tool",          label: "Tool",          bg: "bg-accent",      text: "text-primary" },
-  { id: "reading",       label: "Reading",       bg: "bg-accent",      text: "text-primary" },
-  { id: "other",         label: "Other",         bg: "bg-secondary",   text: "text-muted-foreground" },
+  { id: "course",        label: "Course",        bg: "bg-sky-100",      text: "text-sky-700" },
+  { id: "project",       label: "Project",       bg: "bg-violet-100",   text: "text-violet-700" },
+  { id: "certification", label: "Certification", bg: "bg-amber-100",    text: "text-amber-700" },
+  { id: "ai_tool",       label: "AI Tool",       bg: "bg-rose-100",     text: "text-rose-700" },
+  { id: "book",          label: "Book",          bg: "bg-emerald-100",  text: "text-emerald-700" },
+  { id: "practice",      label: "Practice",      bg: "bg-orange-100",   text: "text-orange-700" },
+  { id: "tool",          label: "Tool",          bg: "bg-teal-100",     text: "text-teal-700" },
+  { id: "reading",       label: "Reading",       bg: "bg-indigo-100",   text: "text-indigo-700" },
+  { id: "other",         label: "Other",         bg: "bg-slate-100",    text: "text-slate-600" },
 ] as const;
 
-const STATUS_META: Record<ProgressEntry["status"], { label: string; bg: string; text: string }> = {
-  not_started: { label: "Not Started", bg: "bg-secondary",   text: "text-muted-foreground" },
-  in_progress:  { label: "In Progress", bg: "bg-amber-50",    text: "text-amber-700" },
-  completed:    { label: "Completed",   bg: "bg-emerald-50",  text: "text-emerald-700" },
+const STATUS_META: Record<ProgressEntry["status"], { label: string; bg: string; text: string; dot: string }> = {
+  not_started: { label: "Not Started", bg: "bg-slate-100",   text: "text-slate-600",   dot: "bg-slate-400" },
+  in_progress:  { label: "In Progress", bg: "bg-amber-100",  text: "text-amber-700",   dot: "bg-amber-400" },
+  completed:    { label: "Completed",   bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500" },
 };
 
 const FILTER_TABS = [
-  { id: "all" }, { id: "course" }, { id: "project" }, { id: "certification" },
-  { id: "ai_tool", label: "AI Tool" }, { id: "book" }, { id: "practice" },
+  { id: "all", label: "All" },
+  { id: "in_progress", label: "In Progress" },
+  { id: "completed", label: "Completed" },
+  { id: "course", label: "Course" },
+  { id: "project", label: "Project" },
+  { id: "certification", label: "Cert" },
+  { id: "ai_tool", label: "AI Tool" },
+  { id: "book", label: "Book" },
 ];
 
 const MAX_NOTES = 1000;
@@ -103,10 +109,10 @@ function buildHeatmap(entries: ProgressEntry[]) {
 
 function heatmapColor(hours: number, isFuture: boolean) {
   if (isFuture) return "bg-transparent border border-dashed border-border/30";
-  if (hours <= 0) return "bg-secondary";
-  if (hours < 3) return "bg-primary/20";
-  if (hours < 6) return "bg-primary/50";
-  return "bg-primary";
+  if (hours <= 0) return "bg-slate-100";
+  if (hours < 2) return "bg-emerald-200";
+  if (hours < 5) return "bg-emerald-400";
+  return "bg-emerald-600";
 }
 
 function computeStats(entries: ProgressEntry[]) {
@@ -115,6 +121,9 @@ function computeStats(entries: ProgressEntry[]) {
   startOfWeek.setDate(startOfWeek.getDate() - now.getDay());
   const totalHours = entries.reduce((sum, e) => sum + (e.durationHours || 0), 0);
   const entriesThisWeek = entries.filter((e) => new Date(e.createdAt) >= startOfWeek).length;
+  const hoursThisWeek = entries
+    .filter((e) => new Date(e.createdAt) >= startOfWeek)
+    .reduce((s, e) => s + (e.durationHours || 0), 0);
   const days = new Set<string>();
   for (const e of entries) days.add(startOfDay(new Date(e.createdAt)).toISOString());
   let streak = 0;
@@ -129,11 +138,15 @@ function computeStats(entries: ProgressEntry[]) {
   let topCategory = "—"; let topCount = 0;
   for (const [cat, count] of categoryCounts) { if (count > topCount) { topCategory = cat; topCount = count; } }
   return {
-    totalHours: Math.round(totalHours * 10) / 10, entriesThisWeek, streak,
+    totalHours: Math.round(totalHours * 10) / 10,
+    hoursThisWeek: Math.round(hoursThisWeek * 10) / 10,
+    entriesThisWeek,
+    streak,
     topCategoryLabel: topCategory === "—" ? "—" : categoryMeta(topCategory).label,
+    completed: entries.filter(e => e.status === "completed").length,
+    inProgress: entries.filter(e => e.status === "in_progress").length,
   };
 }
-
 
 function ProgressPageInner() {
   const queryClient = useQueryClient();
@@ -143,6 +156,7 @@ function ProgressPageInner() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [search, setSearch] = useState("");
 
   const { data: entries = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress"),
@@ -153,12 +167,12 @@ function ProgressPageInner() {
 
   const createEntry = useMutation({
     mutationFn: (data: object) => api("/progress", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["progress"] }); queryClient.invalidateQueries({ queryKey: ["activity"] }); closeDialog(); toast({ title: "Progress logged" }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["progress"] }); queryClient.invalidateQueries({ queryKey: ["activity"] }); closeDialog(); toast({ title: "Progress logged ✓" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
   const updateEntry = useMutation({
     mutationFn: ({ id, data }: { id: number; data: object }) => api(`/progress/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["progress"] }); closeDialog(); toast({ title: "Progress updated" }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["progress"] }); closeDialog(); toast({ title: "Progress updated ✓" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
   const deleteEntry = useMutation({
@@ -201,24 +215,43 @@ function ProgressPageInner() {
     else createEntry.mutate(payload);
   };
 
-  const STATUS_SORT: Record<string, number> = { in_progress: 0, completed: 1, not_started: 2 };
+  const STATUS_SORT: Record<string, number> = { in_progress: 0, not_started: 1, completed: 2 };
+
   const filtered = useMemo(() => {
-    const base = activeFilter === "all" ? entries : entries.filter((e) => e.category === activeFilter);
+    const q = search.trim().toLowerCase();
+    let base = entries;
+    if (activeFilter === "all") {
+      // no filter
+    } else if (activeFilter === "in_progress" || activeFilter === "completed" || activeFilter === "not_started") {
+      base = entries.filter((e) => e.status === activeFilter);
+    } else {
+      base = entries.filter((e) => e.category === activeFilter);
+    }
+    if (q) {
+      base = base.filter((e) =>
+        e.title.toLowerCase().includes(q) ||
+        (e.description ?? "").toLowerCase().includes(q) ||
+        (e.toolOrResource ?? "").toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q)
+      );
+    }
     return [...base].sort((a, b) => (STATUS_SORT[a.status] ?? 1) - (STATUS_SORT[b.status] ?? 1));
-  }, [entries, activeFilter]);
+  }, [entries, activeFilter, search]);
+
   const stats = useMemo(() => computeStats(entries), [entries]);
   const heatmap = useMemo(() => buildHeatmap(entries), [entries]);
 
   return (
-    <div className="space-y-10 page-enter">
-      <div className="flex items-start justify-between">
+    <div className="space-y-8 page-enter pb-8">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-foreground leading-tight">How you're growing</h1>
-          <p className="text-[14px] text-muted-foreground mt-1.5">Every hour logged compounds over time.</p>
+          <h1 className="text-[30px] font-bold text-foreground leading-tight">Learning</h1>
+          <p className="text-[15px] text-muted-foreground mt-1.5">Every hour you log compounds over time.</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => (v ? openCreate() : closeDialog())}>
           <DialogTrigger asChild>
-            <Button className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Log Progress</Button>
+            <Button className="gap-2 text-[14px] h-11 px-5 shrink-0"><Plus className="h-4 w-4" />Log Progress</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl p-8">
             <DialogHeader className="mb-1">
@@ -226,21 +259,21 @@ function ProgressPageInner() {
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Title</label>
-                <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Advanced SQL for Data Science" className="bg-secondary border-border text-[13px]" />
+                <label className="text-[13px] font-semibold text-muted-foreground">Title *</label>
+                <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Advanced SQL for Data Science" className="bg-secondary border-border text-[14px] h-11" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-muted-foreground">Category</label>
+                  <label className="text-[13px] font-semibold text-muted-foreground">Category</label>
                   <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
-                    <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-secondary border-border text-[13px] h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-muted-foreground">Status</label>
+                  <label className="text-[13px] font-semibold text-muted-foreground">Status</label>
                   <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as ProgressEntry["status"] }))}>
-                    <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-secondary border-border text-[13px] h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="not_started">Not Started</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
@@ -250,9 +283,9 @@ function ProgressPageInner() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Link to Goal (optional)</label>
+                <label className="text-[13px] font-semibold text-muted-foreground">Link to Goal (optional)</label>
                 <Select value={form.goalId} onValueChange={(v) => setForm((f) => ({ ...f, goalId: v === "none" ? "" : v }))}>
-                  <SelectTrigger className="bg-secondary border-border text-[13px]"><SelectValue placeholder="Select a parent goal…" /></SelectTrigger>
+                  <SelectTrigger className="bg-secondary border-border text-[13px] h-11"><SelectValue placeholder="Select a parent goal…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No goal</SelectItem>
                     {goals.map((g) => <SelectItem key={g.id} value={String(g.id)}>{g.targetRole} — {g.title}</SelectItem>)}
@@ -261,32 +294,32 @@ function ProgressPageInner() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-muted-foreground">Duration (hrs)</label>
-                  <Input type="number" min={0} step="0.25" value={form.durationHours} onChange={(e) => setForm((f) => ({ ...f, durationHours: e.target.value }))} className="bg-secondary border-border text-[13px]" />
+                  <label className="text-[13px] font-semibold text-muted-foreground">Hours</label>
+                  <Input type="number" min={0} step="0.25" value={form.durationHours} onChange={(e) => setForm((f) => ({ ...f, durationHours: e.target.value }))} className="bg-secondary border-border text-[13px] h-11" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-muted-foreground">Start date</label>
-                  <Input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} className="bg-secondary border-border text-[13px]" />
+                  <label className="text-[13px] font-semibold text-muted-foreground">Start date</label>
+                  <Input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} className="bg-secondary border-border text-[13px] h-11" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-muted-foreground">Completed on</label>
-                  <Input type="date" value={form.completedAt} onChange={(e) => setForm((f) => ({ ...f, completedAt: e.target.value }))} className="bg-secondary border-border text-[13px]" />
+                  <label className="text-[13px] font-semibold text-muted-foreground">Completed on</label>
+                  <Input type="date" value={form.completedAt} onChange={(e) => setForm((f) => ({ ...f, completedAt: e.target.value }))} className="bg-secondary border-border text-[13px] h-11" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Resource URL</label>
-                <Input value={form.resourceUrl} onChange={(e) => setForm((f) => ({ ...f, resourceUrl: e.target.value }))} placeholder="https://..." className="bg-secondary border-border text-[13px]" />
+                <label className="text-[13px] font-semibold text-muted-foreground">Resource URL</label>
+                <Input value={form.resourceUrl} onChange={(e) => setForm((f) => ({ ...f, resourceUrl: e.target.value }))} placeholder="https://..." className="bg-secondary border-border text-[13px] h-11" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground">Resource name (optional)</label>
-                <Input value={form.toolOrResource} onChange={(e) => setForm((f) => ({ ...f, toolOrResource: e.target.value }))} placeholder="e.g. Coursera, TensorFlow" className="bg-secondary border-border text-[13px]" />
+                <label className="text-[13px] font-semibold text-muted-foreground">Resource name (optional)</label>
+                <Input value={form.toolOrResource} onChange={(e) => setForm((f) => ({ ...f, toolOrResource: e.target.value }))} placeholder="e.g. Coursera, TensorFlow" className="bg-secondary border-border text-[13px] h-11" />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[12px] font-medium text-muted-foreground">Notes</label>
+                  <label className="text-[13px] font-semibold text-muted-foreground">Notes</label>
                   <span className={`text-[11px] ${form.description.length > MAX_NOTES * 0.9 ? "text-amber-500" : "text-muted-foreground"}`}>{form.description.length}/{MAX_NOTES}</span>
                 </div>
-                <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value.slice(0, MAX_NOTES) }))} placeholder="What did you learn? Key takeaways, blockers, next steps…" className="resize-y bg-secondary border-border text-[13px] min-h-[120px]" rows={5} />
+                <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value.slice(0, MAX_NOTES) }))} placeholder="What did you learn? Key takeaways, blockers, next steps…" className="resize-y bg-secondary border-border text-[13px] min-h-[110px]" rows={4} />
               </div>
             </div>
             <DialogFooter className="pt-4">
@@ -300,30 +333,38 @@ function ProgressPageInner() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total hours logged", value: `${stats.totalHours} hr` },
-          { label: "Entries this week",  value: stats.entriesThisWeek },
-          { label: "Current streak",     value: `${stats.streak} day${stats.streak === 1 ? "" : "s"}` },
-          { label: "Most active",        value: stats.topCategoryLabel },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-secondary rounded-xl px-5 py-4">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">{stat.label}</p>
-            <p className="text-[28px] text-foreground leading-none">{stat.value}</p>
-          </div>
-        ))}
+          { label: "Total hours logged", value: `${stats.totalHours} hr`, icon: Clock, color: "bg-sky-50 text-sky-600", border: "border-sky-100" },
+          { label: "This week",          value: `${stats.hoursThisWeek} hr`, icon: TrendingUp, color: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" },
+          { label: "Day streak",         value: `${stats.streak} day${stats.streak === 1 ? "" : "s"}`, icon: Flame, color: "bg-orange-50 text-orange-600", border: "border-orange-100" },
+          { label: "Completed",          value: stats.completed, icon: Star, color: "bg-amber-50 text-amber-600", border: "border-amber-100" },
+        ].map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className={`rounded-2xl border ${stat.border} bg-white px-5 py-4 shadow-sm`}>
+              <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${stat.color} mb-3`}>
+                <Icon className="h-4.5 w-4.5" />
+              </div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+              <p className="text-[28px] font-bold text-foreground leading-none mt-1">{stat.value}</p>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Heatmap */}
-      <div className="bg-card border border-border rounded-2xl p-5">
+      {/* Activity heatmap */}
+      <div className="bg-white border border-border rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[15px] text-foreground">Last 12 weeks</h2>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Daily learning activity</p>
+            <h2 className="text-[16px] font-semibold text-foreground">Daily Learning Activity</h2>
+            <p className="text-[13px] text-muted-foreground mt-0.5">Last 12 weeks of logged hours</p>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <span>Less</span>
-            {["bg-secondary", "bg-primary/20", "bg-primary/50", "bg-primary"].map((c, i) => <span key={i} className={`h-3 w-3 rounded-sm ${c}`} />)}
+            {["bg-slate-100", "bg-emerald-200", "bg-emerald-400", "bg-emerald-600"].map((c, i) => (
+              <span key={i} className={`h-3.5 w-3.5 rounded-sm ${c}`} />
+            ))}
             <span>More</span>
           </div>
         </div>
@@ -335,12 +376,12 @@ function ProgressPageInner() {
                   {week.map((day) => (
                     <Tooltip key={day.iso}>
                       <TooltipTrigger asChild>
-                        <div className={`h-3 w-3 rounded-sm cursor-default ${heatmapColor(day.hours, day.isFuture)}`} />
+                        <div className={`h-3.5 w-3.5 rounded-sm cursor-default ${heatmapColor(day.hours, day.isFuture)}`} />
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        <div className="text-[11px]">
-                          <div className="font-medium">{format(day.date, "MMM d, yyyy")}</div>
-                          <div className="text-muted-foreground">{day.hours.toFixed(1)} hr</div>
+                        <div className="text-[12px]">
+                          <div className="font-semibold">{format(day.date, "MMM d, yyyy")}</div>
+                          <div className="text-muted-foreground">{day.hours > 0 ? `${day.hours.toFixed(1)} hr logged` : "No activity"}</div>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -352,19 +393,37 @@ function ProgressPageInner() {
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_TABS.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveFilter(tab.id)}
-            className={`px-3 py-1 text-[12px] font-medium rounded-full transition-colors capitalize ${activeFilter === tab.id ? "bg-accent text-primary" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
-            {(tab as any).label ?? tab.id}
-          </button>
-        ))}
+      {/* Search + Filter */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search learning entries by title, notes, or tool…"
+            className="pl-10 h-11 text-[14px] rounded-xl"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {FILTER_TABS.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveFilter(tab.id)}
+              className={`px-4 py-1.5 text-[13px] font-semibold rounded-full transition-colors ${activeFilter === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Results count */}
+      {!isLoading && entries.length > 0 && (
+        <p className="text-[13px] text-muted-foreground -mt-4">
+          {filtered.length} {filtered.length === 1 ? "entry" : "entries"}{search ? ` matching "${search}"` : ""}
+        </p>
+      )}
 
       {/* Entry cards */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{[1,2,3,4].map((i) => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}</div>
       ) : filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filtered.map((entry, index) => {
@@ -374,7 +433,6 @@ function ProgressPageInner() {
             const notesLong = (entry.description?.length ?? 0) > 120;
             const linkedGoal = entry.goalId ? goals.find((g) => g.id === entry.goalId) : null;
 
-            // Days taken calculation
             let daysTaken: number | null = null;
             if (entry.startDate && entry.completedAt) {
               daysTaken = differenceInDays(new Date(entry.completedAt), new Date(entry.startDate));
@@ -385,13 +443,15 @@ function ProgressPageInner() {
             return (
               <motion.div key={entry.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, delay: Math.min(index * 0.04, 0.3), ease: [0.25, 0.1, 0.25, 1] }}>
-                <div className="group bg-card border border-border rounded-2xl p-5 flex flex-col h-full hover:border-muted-foreground/30 transition-colors duration-150">
+                <div className="group bg-white border border-border rounded-2xl p-5 flex flex-col h-full hover:border-primary/30 hover:shadow-md transition-all duration-150 shadow-sm">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${cat.bg} ${cat.text}`}>{cat.label}</span>
-                      <span className="text-[11px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                        {entry.durationHours.toFixed(entry.durationHours % 1 === 0 ? 0 : 1)} hr
-                      </span>
+                      <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${cat.bg} ${cat.text}`}>{cat.label}</span>
+                      {entry.durationHours > 0 && (
+                        <span className="text-[12px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full font-medium">
+                          {entry.durationHours.toFixed(entry.durationHours % 1 === 0 ? 0 : 1)} hr
+                        </span>
+                      )}
                       {entry.resourceUrl && (
                         <a href={entry.resourceUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -404,12 +464,12 @@ function ProgressPageInner() {
                     </div>
                   </div>
 
-                  <h3 className="text-[14px] font-medium text-foreground leading-snug line-clamp-2 mb-1">{entry.title}</h3>
-                  {entry.toolOrResource && <p className="text-[11px] text-muted-foreground mb-2">{entry.toolOrResource}</p>}
+                  <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-2 mb-1.5">{entry.title}</h3>
+                  {entry.toolOrResource && <p className="text-[12px] text-muted-foreground mb-2 font-medium">{entry.toolOrResource}</p>}
 
                   {linkedGoal && (
                     <div className="mb-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary">↗ {linkedGoal.targetRole}</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">↗ {linkedGoal.targetRole}</span>
                     </div>
                   )}
 
@@ -417,27 +477,26 @@ function ProgressPageInner() {
                     <div className="mb-4 flex-1">
                       <p className={`text-[13px] text-muted-foreground leading-relaxed ${!isExpanded && notesLong ? "line-clamp-2" : ""}`}>{entry.description}</p>
                       {notesLong && (
-                        <button onClick={() => toggleCard(entry.id)} className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1">
+                        <button onClick={() => toggleCard(entry.id)} className="flex items-center gap-1 text-[12px] text-primary hover:underline mt-1 font-medium">
                           {isExpanded ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Read more</>}
                         </button>
                       )}
                     </div>
                   )}
-                  {!entry.description && <p className="text-[13px] text-muted-foreground flex-1 mb-4">No notes yet.</p>}
+                  {!entry.description && <div className="flex-1 mb-4" />}
 
-                  {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-border">
-                    {/* ✅ FIX: use actual status from data */}
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusMeta.bg} ${statusMeta.text}`}>
+                    <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${statusMeta.bg} ${statusMeta.text}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
                       {statusMeta.label}
                     </span>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
                       {daysTaken !== null && (
-                        <span className="px-2 py-0.5 rounded-full bg-secondary">
+                        <span className="px-2 py-0.5 rounded-full bg-secondary font-medium">
                           {entry.status === "completed" ? `${daysTaken}d to complete` : `${daysTaken}d in progress`}
                         </span>
                       )}
-                      <span>{format(new Date(entry.completedAt ?? entry.startDate ?? entry.createdAt), "MMM d, yyyy")}</span>
+                      <span className="font-medium">{format(new Date(entry.completedAt ?? entry.startDate ?? entry.createdAt), "MMM d, yyyy")}</span>
                     </div>
                   </div>
                 </div>
@@ -446,10 +505,20 @@ function ProgressPageInner() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl">
-          <p className="text-[15px] font-medium text-foreground mb-1">No learning entries yet</p>
-          <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Track courses, tools, and projects you're working on.</p>
-          <Button onClick={openCreate} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Log your first entry</Button>
+        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border rounded-2xl bg-secondary/30">
+          {search ? (
+            <>
+              <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-[15px] font-semibold text-foreground mb-1">No results found</p>
+              <p className="text-[13px] text-muted-foreground">Try a different search term or filter.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-[16px] font-semibold text-foreground mb-1">No entries yet</p>
+              <p className="text-[13px] text-muted-foreground mb-6 max-w-xs">Track courses, tools, and projects you're working on.</p>
+              <Button onClick={openCreate} className="gap-2 text-[13px]"><Plus className="h-3.5 w-3.5" />Log your first entry</Button>
+            </>
+          )}
         </div>
       )}
     </div>
