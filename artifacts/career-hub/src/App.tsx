@@ -45,7 +45,18 @@ function PageLoader() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  // Wait for /auth/me to resolve before deciding which view to show.
+  // This prevents a flash of the sign-in page for users who have a valid
+  // session cookie.
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

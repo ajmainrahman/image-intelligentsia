@@ -154,7 +154,7 @@ export function TopNav() {
                     {user.email}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-red-600 dark:text-red-400 cursor-pointer">
+                  <DropdownMenuItem onClick={() => void logout()} className="text-red-600 dark:text-red-400 cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign out
                   </DropdownMenuItem>

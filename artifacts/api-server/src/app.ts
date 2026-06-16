@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import pinoHttp_ from "pino-http";
+import { rateLimit } from "express-rate-limit";
 import { logger } from "./lib/logger.js";
 import router from "./routes/index.js";
 
@@ -15,7 +17,9 @@ app.use(pinoHttp({ logger }));
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
   : [];
-const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+const vercelOrigin = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : null;
 
 app.use(
   cors({
@@ -28,8 +32,37 @@ app.use(
     credentials: true,
   }),
 );
+
+// Parse cookies before routes so requireAuth can read the HttpOnly token
+app.use(cookieParser());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Rate limiting ──────────────────────────────────────────────────────────────
+
+// Strict limit on auth endpoints: 10 requests per 15 minutes per IP
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many auth attempts. Please try again in 15 minutes." },
+});
+
+// General API safeguard: 100 requests per 15 minutes per IP
+const apiRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+
+app.use("/api/auth", authRateLimit);
+app.use("/api", apiRateLimit);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Strip null values from request bodies so optional Zod fields receive undefined
 app.use((req, _res, next) => {
@@ -38,7 +71,10 @@ app.use((req, _res, next) => {
       for (const key of Object.keys(obj)) {
         if (obj[key] === null) {
           delete obj[key];
-        } else if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
+        } else if (
+          typeof obj[key] === "object" &&
+          !Array.isArray(obj[key])
+        ) {
           strip(obj[key] as Record<string, unknown>);
         }
       }
