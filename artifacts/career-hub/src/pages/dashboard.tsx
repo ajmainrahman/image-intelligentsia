@@ -1,34 +1,48 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, CheckCircle2, UserRound, Route, BookOpen, MessageSquare, CheckCheck, Bell, ChevronRight, X, Save } from "lucide-react";
-import { format } from "date-fns";
+import {
+  AlertTriangle, Clock, Briefcase, CircleCheckBig, Clock3, XCircle, Sparkles, CheckCircle2,
+  Route, BookOpen, Bell, Flame, Target, TrendingUp, GraduationCap, CalendarClock,
+  ChevronRight, BarChart3, Zap,
+} from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 
 type Summary = { totalGoals: number; activeGoals: number; progressCompleted: number; progressInProgress: number; totalJobs: number; appliedJobs: number; pendingReminders: number; roadmapCompleted: number; roadmapTotal: number; pinnedJobs?: number; };
-type Goal = { id: number; title: string; progress: number; status: string; skills: string[] };
+type Goal = { id: number; title: string; progress: number; status: string; skills: string[]; targetRole?: string; targetYear?: number; targetDate?: string | null; };
 type ResearchItem = { id: number; title: string; type: string; status: string; tags: string[]; authors: string | null; source: string | null; };
 type ProgressEntry = { id: number; title: string; category: string; durationHours: number; status: string; createdAt: string; goalId: number | null; };
 type Job = { id: number; title: string; company: string | null; status: string; pinned: boolean; interviewQuestions: string[]; applyDate: string | null; };
 type RoadmapItem = { id: number; title: string; description: string | null; yearTarget: number; phase: string; status: string; goalId: number | null; order: number; pinned: boolean; archived: boolean; reflection: string | null; createdAt: string; updatedAt: string; };
 type Analytics = { totalJobs: number; pinned: number; interviewCount: number; questionsCount: number; topSkills: { skill: string; count: number }[]; };
-type InterviewQuestion = { id: number; question: string; answer: string | null; category: string | null; createdAt: string; };
 type Reminder = { id: number; title: string; dueDate: string | null; priority: string; completed: boolean; category: string; };
-type Profile = { tagline: string; about: string; expertise: string[]; skills: string[]; interests: string[]; };
-
-const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  not_started: { bg: "bg-slate-100", text: "text-slate-600", dot: "bg-slate-400" },
-  in_progress:  { bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-400" },
-  completed:    { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-};
 
 function getGreeting(): string { const h = new Date().getHours(); if (h < 12) return "Good morning"; if (h < 17) return "Good afternoon"; return "Good evening"; }
+
+function getNow() { return new Date(); }
+
+function computeStreak(entries: ProgressEntry[]): number {
+  const days = new Set<string>();
+  for (const e of entries) {
+    const d = new Date(e.createdAt); d.setHours(0, 0, 0, 0);
+    days.add(d.toISOString());
+  }
+  let streak = 0;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 365; i++) {
+    const day = new Date(today); day.setDate(today.getDate() - i);
+    if (days.has(day.toISOString())) streak++;
+    else if (i === 0) continue;
+    else break;
+  }
+  return streak;
+}
 
 function DueWarningBanner() {
   const { user } = useAuth();
@@ -85,16 +99,58 @@ function DueWarningBanner() {
   );
 }
 
-function StatCard({ label, value, tone, sub, href }: { label: string; value: string | number; tone: string; sub?: string; href: string }) {
+function LiveClock() {
+  const [time, setTime] = useState(() => getNow());
+  useEffect(() => {
+    const id = setInterval(() => setTime(getNow()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{format(time, "h:mm a")}</span>;
+}
+
+function StatCard({ label, value, tone, sub, href, icon: Icon }: {
+  label: string; value: string | number; tone: string; sub?: string; href: string; icon?: React.ElementType;
+}) {
   return (
     <Link href={href}>
-      <div className="rounded-[24px] border border-[#e4ddd2] bg-white p-4 shadow-sm min-h-[120px] cursor-pointer hover:border-emerald-200 transition-colors">
-        <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${tone}`}><CheckCircle2 className="h-4 w-4" /></div>
-        <p className="mt-3 text-[11px] uppercase tracking-wider text-slate-400 font-medium">{label}</p>
-        <div className="mt-1 text-[30px] font-bold text-slate-800 leading-none">{value}</div>
-        {sub && <p className="mt-1.5 text-[12px] text-muted-foreground">{sub}</p>}
+      <div className="rounded-[24px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all group">
+        <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${tone} group-hover:scale-105 transition-transform`}>
+          {Icon ? <Icon className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+        </div>
+        <p className="mt-4 text-[12px] uppercase tracking-wider text-slate-400 font-semibold">{label}</p>
+        <div className="mt-1 text-[32px] font-bold text-slate-800 leading-none">{value}</div>
+        {sub && <p className="mt-1.5 text-[13px] text-muted-foreground">{sub}</p>}
+        <div className="mt-3 flex items-center gap-1 text-[12px] text-emerald-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+          <span>View</span><ChevronRight className="h-3 w-3" />
+        </div>
       </div>
     </Link>
+  );
+}
+
+function StreakCard({ streak }: { streak: number }) {
+  const level = streak === 0 ? "Start your streak!" : streak < 3 ? "Keep going!" : streak < 7 ? "Building momentum 🔥" : streak < 14 ? "On fire! 🔥🔥" : "Unstoppable! 🏆";
+  return (
+    <div className="rounded-[24px] border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[12px] uppercase tracking-wider text-orange-500 font-semibold">Daily Streak</p>
+          <div className="flex items-end gap-2 mt-1">
+            <span className="text-[40px] font-bold text-orange-600 leading-none">{streak}</span>
+            <span className="text-[15px] text-orange-500 pb-1">day{streak !== 1 ? "s" : ""}</span>
+          </div>
+          <p className="text-[13px] text-orange-600 mt-1 font-medium">{level}</p>
+        </div>
+        <div className="h-16 w-16 rounded-2xl bg-orange-100 flex items-center justify-center">
+          <Flame className="h-8 w-8 text-orange-500" />
+        </div>
+      </div>
+      <div className="mt-3 flex gap-1">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className={`flex-1 h-1.5 rounded-full ${i < Math.min(streak, 7) ? "bg-orange-400" : "bg-orange-100"}`} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -106,54 +162,55 @@ export default function Dashboard() {
   const { data: research = [] } = useQuery<ResearchItem[]>({ queryKey: ["research"], queryFn: () => api<ResearchItem[]>("/research") });
   const { data: progressEntries = [], isLoading: loadingProgress } = useQuery<ProgressEntry[]>({ queryKey: ["progress"], queryFn: () => api<ProgressEntry[]>("/progress") });
   const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({ queryKey: ["jobs"], queryFn: () => api<Job[]>("/jobs") });
-  const { data: skillGap } = useQuery<any>({ queryKey: ["skill-gap"], queryFn: () => api<any>("/dashboard/skill-gap") });
   const { data: analytics } = useQuery<Analytics>({ queryKey: ["jobs-analytics"], queryFn: () => api<Analytics>("/jobs/analytics") });
-  const { data: interviewQuestions = [] } = useQuery<InterviewQuestion[]>({ queryKey: ["interview-questions"], queryFn: () => api<InterviewQuestion[]>("/interview-questions") });
   const { data: reminders = [] } = useQuery<Reminder[]>({ queryKey: ["reminders"], queryFn: () => api<Reminder[]>("/reminders") });
-  const { data: profile } = useQuery<Profile>({ queryKey: ["profile"], queryFn: () => api<Profile>("/profile") });
 
   const activeGoals = goals.filter(g => g.status === "active");
   const completedRoadmap = roadmap.filter((item) => item.status === "completed");
   const firstName = user?.name?.split(" ")[0] ?? "there";
-  const initials = user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
-  const dateLabel = format(new Date(), "EEEE, d MMM yyyy");
-  const skillsSet = useMemo(() => { const s = new Set<string>(); for (const g of goals) for (const sk of g.skills ?? []) s.add(sk.toLowerCase().trim()); return s; }, [goals]);
-  const researchCount = research.length;
-  const learningCount = summary?.progressCompleted ?? 0;
+  const dateLabel = format(getNow(), "EEEE, d MMM yyyy");
 
-  // Recent learning with status
-  const recentProgress = useMemo(() =>
-    [...progressEntries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6),
-    [progressEntries]
-  );
+  const streak = useMemo(() => computeStreak(progressEntries), [progressEntries]);
 
-  // In-progress learning items (for dashboard highlight)
   const inProgressLearning = useMemo(() =>
     progressEntries.filter((e) => e.status === "in_progress").slice(0, 4),
     [progressEntries]
   );
 
-  // Goals with computed progress from linked learning entries
+  const recentLearning = useMemo(() =>
+    [...progressEntries].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4),
+    [progressEntries]
+  );
+
   const goalsWithProgress = useMemo(() => {
-    return goals.slice(0, 3).map((goal) => {
+    return goals.slice(0, 4).map((goal) => {
       const linked = progressEntries.filter((e) => e.goalId === goal.id);
       const linkedRoadmap = roadmap.filter((r) => r.goalId === goal.id);
       const total = linked.length + linkedRoadmap.length;
+      let effectiveProgress = goal.progress;
       if (total > 0) {
         const done = linked.filter((e) => e.status === "completed").length + linkedRoadmap.filter((r) => r.status === "completed").length;
-        return { ...goal, effectiveProgress: Math.round((done / total) * 100) };
+        effectiveProgress = Math.round((done / total) * 100);
       }
-      return { ...goal, effectiveProgress: goal.progress };
+      const now = getNow(); now.setHours(0, 0, 0, 0);
+      let daysLeft: number | null = null;
+      if (goal.targetDate) {
+        const d = new Date(goal.targetDate); d.setHours(0, 0, 0, 0);
+        daysLeft = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+      } else if (goal.targetYear) {
+        const d = new Date(goal.targetYear, 11, 31); d.setHours(0, 0, 0, 0);
+        daysLeft = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+      }
+      return { ...goal, effectiveProgress, daysLeft };
     });
   }, [goals, progressEntries, roadmap]);
 
-  // Upcoming job deadlines (top 3 soonest)
   const upcomingDeadlines = useMemo(() => {
-    const now = new Date(); now.setHours(0,0,0,0);
+    const now = getNow(); now.setHours(0, 0, 0, 0);
     return jobs
       .filter(j => j.applyDate)
       .map(j => {
-        const d = new Date(j.applyDate!); d.setHours(0,0,0,0);
+        const d = new Date(j.applyDate!); d.setHours(0, 0, 0, 0);
         return { ...j, daysLeft: Math.ceil((d.getTime() - now.getTime()) / 86400000) };
       })
       .filter(j => j.daysLeft >= 0)
@@ -170,257 +227,291 @@ export default function Dashboard() {
         if (!b.dueDate) return -1;
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       })
-      .slice(0, 4),
+      .slice(0, 5),
     [reminders]
   );
 
-  // Interview prep stats
-  const answeredCount = interviewQuestions.filter((q) => q.answer).length;
-  const unansweredCount = interviewQuestions.length - answeredCount;
-  const iqByCategory = useMemo(() => {
-    const map = new Map<string, number>();
-    interviewQuestions.forEach((q) => { const cat = q.category || "Other"; map.set(cat, (map.get(cat) ?? 0) + 1); });
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
-  }, [interviewQuestions]);
+  const careerHighlights = useMemo(() =>
+    roadmap
+      .filter(r => r.status !== "completed" && !r.archived)
+      .sort((a, b) => a.yearTarget - b.yearTarget || a.order - b.order)
+      .slice(0, 3),
+    [roadmap]
+  );
+
+  const totalHours = useMemo(() =>
+    Math.round(progressEntries.reduce((s, e) => s + (e.durationHours || 0), 0) * 10) / 10,
+    [progressEntries]
+  );
 
   return (
-    <div className="space-y-6 page-enter pb-8">
+    <div className="space-y-6 page-enter pb-10">
       {/* Hero greeting */}
-      <div className="flex items-center justify-between rounded-[28px] border border-[#e4ddd2] bg-[#fdfcf8] px-6 py-5 shadow-sm">
+      <div className="flex items-center justify-between rounded-[28px] border border-[#e4ddd2] bg-gradient-to-br from-[#fdfcf8] to-emerald-50/40 px-6 py-6 shadow-sm">
         <div>
-          <h1 className="text-[24px] md:text-[27px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName}</h1>
-          <p className="text-[13px] text-slate-400 mt-0.5">{dateLabel}{activeGoals.length > 0 && ` · ${activeGoals.length} active goal${activeGoals.length !== 1 ? "s" : ""}`}</p>
+          <h1 className="text-[26px] md:text-[30px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName} 👋</h1>
+          <p className="text-[14px] text-slate-500 mt-1">
+            {dateLabel} · <LiveClock />
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {activeGoals.length > 0 && (
+              <span className="text-[12px] px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">{activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""}</span>
+            )}
+            {streak > 0 && (
+              <span className="text-[12px] px-3 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">🔥 {streak} day streak</span>
+            )}
+            {summary?.pendingReminders ? (
+              <span className="text-[12px] px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">⏰ {summary.pendingReminders} due</span>
+            ) : null}
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2 text-right">
-          <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[13px] flex items-center justify-center shrink-0">{initials}</div>
-          <div className="text-[12px] text-slate-400"><p>{summary?.pendingReminders ?? 0} due</p><p>{summary?.roadmapCompleted ?? 0}/{summary?.roadmapTotal ?? 0} roadmap</p></div>
+        <div className="hidden sm:flex flex-col items-end gap-2 text-right">
+          <div className="h-14 w-14 rounded-full bg-emerald-600 text-white font-bold text-[16px] flex items-center justify-center shrink-0 shadow-md">
+            {user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+          </div>
+          <div className="text-[12px] text-slate-400">
+            <p>{summary?.roadmapCompleted ?? 0}/{summary?.roadmapTotal ?? 0} milestones</p>
+            <p>{totalHours} hrs logged</p>
+          </div>
         </div>
       </div>
 
       <DueWarningBanner />
 
-      {/* Stat cards */}
+      {/* Top stats row */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {loadingSummary ? [1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-[24px]" />) : (
+        {loadingSummary ? [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36 rounded-[24px]" />) : (
           <>
-            <StatCard label="Research items" value={researchCount} tone="bg-emerald-100 text-emerald-700" sub={researchCount > 0 ? "tracked" : "add your reading"} href="/research" />
-            <StatCard label="Active goals" value={summary?.activeGoals ?? 0} tone="bg-amber-100 text-amber-700" sub={`of ${summary?.totalGoals ?? 0} total`} href="/goals" />
-            <StatCard label="Learning done" value={learningCount} tone="bg-sky-100 text-sky-700" sub={`${summary?.progressInProgress ?? 0} in progress`} href="/progress" />
-            <StatCard label="Skills tracked" value={skillsSet.size} tone="bg-orange-100 text-orange-700" sub={`from ${goals.length} goal${goals.length !== 1 ? "s" : ""}`} href="/goals" />
+            <StatCard
+              label="Total Goals"
+              value={summary?.totalGoals ?? 0}
+              tone="bg-emerald-100 text-emerald-700"
+              sub={`${summary?.activeGoals ?? 0} active`}
+              href="/goals"
+              icon={Target}
+            />
+            <StatCard
+              label="Learning Done"
+              value={summary?.progressCompleted ?? 0}
+              tone="bg-sky-100 text-sky-700"
+              sub={`${summary?.progressInProgress ?? 0} in progress`}
+              href="/progress"
+              icon={GraduationCap}
+            />
+            <StatCard
+              label="Research Items"
+              value={research.length}
+              tone="bg-amber-100 text-amber-700"
+              sub={`${research.filter(r => r.status === "reading").length} reading now`}
+              href="/research"
+              icon={BookOpen}
+            />
+            <StatCard
+              label="Hours Logged"
+              value={`${totalHours}`}
+              tone="bg-violet-100 text-violet-700"
+              sub={`across ${progressEntries.length} entries`}
+              href="/progress"
+              icon={BarChart3}
+            />
           </>
         )}
       </div>
 
-      {/* Upcoming job deadlines */}
-      {upcomingDeadlines.length > 0 && (
-        <Link href="/jobs">
-          <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 dark:bg-amber-900/10 dark:border-amber-800/40 px-5 py-4 cursor-pointer hover:border-amber-300 transition-colors">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-amber-600" />
-                <h2 className="text-[14px] font-semibold text-amber-800 dark:text-amber-300">Upcoming Deadlines</h2>
-              </div>
-              <span className="text-[12px] text-amber-600 dark:text-amber-400">see all →</span>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              {upcomingDeadlines.map(j => (
-                <div key={j.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium ${j.daysLeft <= 7 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : j.daysLeft <= 30 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
-                  <Briefcase className="h-3.5 w-3.5 shrink-0" />
-                  <span className="line-clamp-1 max-w-[140px]">{j.title}</span>
-                  <span className="shrink-0 font-bold">{j.daysLeft === 0 ? "Today!" : `${j.daysLeft}d`}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Link>
-      )}
+      {/* Streak + Upcoming deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <StreakCard streak={streak} />
 
-      {/* Goals progress + Research */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        <Link href="/goals" className="h-full block">
-          <div className="h-full min-h-[230px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Goals progress</h2>
-              <span className="text-[12px] text-slate-400">{summary?.activeGoals ?? 0} active</span>
-            </div>
-            {goalsWithProgress.length ? (
-              <div className="space-y-4">
-                {goalsWithProgress.map((goal) => (
-                  <div key={goal.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-700 line-clamp-1">{goal.title}</p>
-                      <span className="text-sm text-slate-400 shrink-0">{goal.effectiveProgress}%</span>
+        {upcomingDeadlines.length > 0 ? (
+          <Link href="/jobs">
+            <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 px-5 py-5 cursor-pointer hover:border-amber-300 transition-colors h-full">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5 text-amber-600" />
+                  <h2 className="text-[15px] font-semibold text-amber-800">Upcoming Job Deadlines</h2>
+                </div>
+                <span className="text-[12px] text-amber-600">see all →</span>
+              </div>
+              <div className="space-y-2">
+                {upcomingDeadlines.map(j => (
+                  <div key={j.id} className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-[13px] font-medium ${j.daysLeft <= 7 ? "bg-red-100 text-red-700" : j.daysLeft <= 30 ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-700"}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Briefcase className="h-4 w-4 shrink-0" />
+                      <span className="line-clamp-1">{j.title}{j.company ? ` · ${j.company}` : ""}</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden">
-                      <div className="h-full rounded-full bg-emerald-600 transition-all duration-500" style={{ width: `${goal.effectiveProgress}%` }} />
-                    </div>
+                    <span className="shrink-0 font-bold">{j.daysLeft === 0 ? "Today!" : `${j.daysLeft}d`}</span>
                   </div>
                 ))}
               </div>
-            ) : <p className="text-sm text-muted-foreground">No goals yet.</p>}
-          </div>
-        </Link>
-
-        <Link href="/research" className="h-full block">
-          <div className="h-full min-h-[230px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Research items</h2>
-              <span className="text-[12px] text-slate-400">see all</span>
             </div>
-            <div className="space-y-3">
-              {research.slice(0, 3).map((item) => (
-                <div key={item.id} className="rounded-[20px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 flex items-start gap-3">
-                  <div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium text-slate-800 truncate">{item.title}</p>
-                      <span className="text-xs text-muted-foreground shrink-0">{item.status.replace(/_/g, " ")}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{item.type} · {item.source ?? "No source"}</p>
+          </Link>
+        ) : (
+          <Link href="/jobs">
+            <div className="rounded-[24px] border border-[#e4ddd2] bg-white p-5 cursor-pointer hover:border-emerald-200 transition-colors h-full flex flex-col justify-between">
+              <div className="flex items-center gap-2 mb-3">
+                <Briefcase className="h-5 w-5 text-slate-400" />
+                <h2 className="text-[15px] font-semibold text-slate-800">Job Pipeline</h2>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Applied", count: jobs.filter(j => j.status === "applied").length, color: "text-sky-600 bg-sky-50" },
+                  { label: "Interviewing", count: jobs.filter(j => j.status === "interviewing").length, color: "text-amber-600 bg-amber-50" },
+                  { label: "Offered", count: jobs.filter(j => j.status === "offered").length, color: "text-emerald-600 bg-emerald-50" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-xl ${s.color} p-3 text-center`}>
+                    <p className="text-[22px] font-bold">{s.count}</p>
+                    <p className="text-[11px] font-medium mt-0.5">{s.label}</p>
                   </div>
-                </div>
-              ))}
-              {research.length === 0 && <p className="text-sm text-muted-foreground">No research items yet.</p>}
+                ))}
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        )}
       </div>
 
-      {/* Current learning (in-progress) + Skill gap */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        <Link href="/progress" className="h-full block">
-          <div className="h-full min-h-[230px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Currently learning</h2>
-              <div className="flex items-center gap-2">
-                {inProgressLearning.length > 0 && (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">{inProgressLearning.length} in progress</span>
-                )}
-                <span className="text-[12px] text-slate-400">see all</span>
+      {/* Goals progress */}
+      <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-emerald-600" />
+            <h2 className="text-[17px] font-semibold text-slate-800">Goals Progress</h2>
+          </div>
+          <Link href="/goals">
+            <span className="text-[13px] text-emerald-600 font-medium hover:underline">{summary?.totalGoals ?? 0} total →</span>
+          </Link>
+        </div>
+        {goalsWithProgress.length > 0 ? (
+          <div className="space-y-5">
+            {goalsWithProgress.map((goal) => (
+              <div key={goal.id} className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${goal.status === "active" ? "bg-emerald-500" : goal.status === "completed" ? "bg-blue-400" : "bg-slate-300"}`} />
+                    <p className="text-[14px] font-semibold text-slate-700 line-clamp-1">{goal.title}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {goal.daysLeft !== null && (
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${goal.daysLeft < 0 ? "bg-red-100 text-red-600" : goal.daysLeft <= 30 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                        {goal.daysLeft < 0 ? `${Math.abs(goal.daysLeft)}d overdue` : goal.daysLeft === 0 ? "Due today" : `${goal.daysLeft}d left`}
+                      </span>
+                    )}
+                    <span className="text-[14px] font-bold text-slate-600">{goal.effectiveProgress}%</span>
+                  </div>
+                </div>
+                <div className="h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700"
+                    style={{ width: `${goal.effectiveProgress}%` }}
+                  />
+                </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Target className="h-10 w-10 text-slate-200 mx-auto mb-2" />
+            <p className="text-[14px] text-muted-foreground">No goals yet. Add your first career goal.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Career plan highlights + Current learning */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+        {/* Career plan highlights */}
+        <Link href="/roadmap" className="h-full block">
+          <div className="h-full min-h-[240px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Route className="h-5 w-5 text-violet-500" />
+                <h2 className="text-[17px] font-semibold text-slate-800">Career Plan</h2>
+              </div>
+              <span className="text-[12px] text-slate-400">{completedRoadmap.length}/{roadmap.length} milestones</span>
             </div>
-            {loadingProgress ? (
-              <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 rounded-xl" />)}</div>
-            ) : inProgressLearning.length > 0 ? (
+            {roadmap.length > 0 && (
+              <div className="mb-4">
+                <div className="h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
+                  <div className="h-full rounded-full bg-violet-400 transition-all" style={{ width: `${roadmap.length ? Math.round((completedRoadmap.length / roadmap.length) * 100) : 0}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">{Math.round((completedRoadmap.length / roadmap.length) * 100)}% complete</p>
+              </div>
+            )}
+            {careerHighlights.length > 0 ? (
               <div className="space-y-2">
-                {inProgressLearning.map((entry) => {
-                  const linkedGoal = goals.find(g => g.id === entry.goalId);
-                  return (
-                    <div key={entry.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[13px] font-medium text-slate-800 line-clamp-1">{entry.title}</p>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 shrink-0">In Progress</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-muted-foreground capitalize">{entry.category.replace("_", " ")}</span>
-                        {entry.durationHours > 0 && <span className="text-[11px] text-muted-foreground">· {entry.durationHours}h</span>}
-                        {linkedGoal && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-accent text-primary">↗ {linkedGoal.title}</span>}
-                      </div>
+                {careerHighlights.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
+                    <div className="h-2 w-2 rounded-full bg-violet-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.phase.replace(/_/g, " ")} · {item.yearTarget}</p>
                     </div>
-                  );
-                })}
-                {recentProgress.filter(e => e.status !== "in_progress").slice(0, 2).map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0">
-                    <span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ml-2 ${entry.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                      {entry.status === "completed" ? "Done" : "Not started"}
-                    </span>
                   </div>
                 ))}
               </div>
-            ) : recentProgress.length > 0 ? (
-              <div className="space-y-2.5">
-                {recentProgress.slice(0, 5).map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between border-b border-[#f0ebe0] pb-2.5 last:border-0">
-                    <span className="text-[13px] text-slate-600 line-clamp-1">{entry.title}</span>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ml-2 ${entry.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+            ) : (
+              <p className="text-[13px] text-muted-foreground">No roadmap items yet. Plan your trajectory.</p>
+            )}
+          </div>
+        </Link>
+
+        {/* Current learning */}
+        <Link href="/progress" className="h-full block">
+          <div className="h-full min-h-[240px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-sky-500" />
+                <h2 className="text-[17px] font-semibold text-slate-800">Currently Learning</h2>
+              </div>
+              {inProgressLearning.length > 0 && (
+                <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-100">{inProgressLearning.length} active</span>
+              )}
+            </div>
+            {loadingProgress ? (
+              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+            ) : inProgressLearning.length > 0 ? (
+              <div className="space-y-2">
+                {inProgressLearning.map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
+                    <div className="h-8 w-8 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
+                      <Zap className="h-4 w-4 text-sky-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{entry.title}</p>
+                      <p className="text-[11px] text-muted-foreground capitalize">{entry.category.replace("_", " ")}{entry.durationHours > 0 ? ` · ${entry.durationHours}h` : ""}</p>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 shrink-0 font-medium">In Progress</span>
+                  </div>
+                ))}
+              </div>
+            ) : recentLearning.length > 0 ? (
+              <div className="space-y-2">
+                {recentLearning.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between gap-3 border-b border-[#f0ebe0] pb-2.5 last:border-0">
+                    <span className="text-[13px] font-medium text-slate-700 line-clamp-1">{entry.title}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ml-2 font-medium ${entry.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                       {entry.status === "completed" ? "Done" : entry.status.replace("_", " ")}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No learning entries yet. Log your first course or project.</p>
-            )}
-          </div>
-        </Link>
-
-        <Link href="/skill-map" className="h-full block">
-          <div className="h-full min-h-[230px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Skill gap analyzer</h2>
-              <span className="text-[12px] text-slate-400">Goals vs learning vs jobs</span>
-            </div>
-            {!skillGap ? (
-              <Skeleton className="h-36 w-full rounded-[24px]" />
-            ) : skillGap.goalSkills.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <Sparkles className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                <p className="text-[13px] font-medium text-slate-700">No skills to analyze yet</p>
-                <p className="text-[12px] text-muted-foreground mt-1 max-w-[200px]">Add skills to your goals to unlock gap analysis.</p>
-                <span className="mt-3 text-[12px] text-primary font-medium">Go to Skill Map →</span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-[20px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Coverage</p><p className="text-2xl font-bold text-slate-800">{skillGap.coveragePercent}%</p></div>
-                  <div className="rounded-[20px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Gaps</p><p className="text-2xl font-bold text-slate-800">{skillGap.gaps.length}</p></div>
-                  <div className="rounded-[20px] bg-[#fdfcf8] border border-[#ebe5d8] p-4"><p className="text-xs text-slate-400">Covered</p><p className="text-2xl font-bold text-slate-800">{skillGap.covered.length}</p></div>
-                </div>
-                <div className="flex flex-wrap gap-2">{skillGap.gaps.slice(0, 8).map((gap: string) => <Badge key={gap} variant="outline" className="text-xs">{gap}</Badge>)}</div>
-              </div>
+              <p className="text-[13px] text-muted-foreground">No learning entries yet. Log your first course or project.</p>
             )}
           </div>
         </Link>
       </div>
 
-      {/* Profile + Reminders + Roadmap */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
-        {/* Profile */}
-        <Link href="/profile" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Profile</h2>
-              <UserRound className="h-4 w-4 text-slate-400" />
-            </div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[14px] flex items-center justify-center shrink-0">{initials}</div>
-              <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-slate-800 truncate">{user?.name}</p>
-                {profile?.tagline
-                  ? <p className="text-[12px] text-muted-foreground truncate">{profile.tagline}</p>
-                  : <p className="text-[12px] text-muted-foreground italic">No tagline yet</p>
-                }
-              </div>
-            </div>
-            {(profile?.skills?.length ?? 0) > 0 ? (
-              <div className="flex-1">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Skills</p>
-                <div className="flex flex-wrap gap-1">
-                  {profile!.skills.slice(0, 5).map(s => <span key={s} className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-primary">{s}</span>)}
-                  {profile!.skills.length > 5 && <span className="text-[11px] text-muted-foreground self-center">+{profile!.skills.length - 5}</span>}
-                </div>
-              </div>
-            ) : (
-              <p className="text-[12px] text-muted-foreground flex-1">Complete your profile to showcase your skills and expertise.</p>
-            )}
-            <div className="mt-3 pt-3 border-t border-[#f0ebe0]">
-              <span className="text-[12px] text-primary font-medium">Edit profile →</span>
-            </div>
-          </div>
-        </Link>
-
-        {/* Reminders & Tasks */}
+      {/* Reminders + Research */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
         <Link href="/reminders" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <h2 className="text-[16px] font-semibold text-slate-800">Reminders & Tasks</h2>
-                {upcomingReminders.length > 0 && (
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-100">{upcomingReminders.length}</span>
-                )}
+                <Bell className="h-5 w-5 text-amber-500" />
+                <h2 className="text-[17px] font-semibold text-slate-800">Reminders & Tasks</h2>
               </div>
-              <Bell className="h-4 w-4 text-slate-400" />
+              {upcomingReminders.length > 0 && (
+                <span className="text-[12px] px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">{upcomingReminders.length}</span>
+              )}
             </div>
             {upcomingReminders.length > 0 ? (
               <div className="space-y-2 flex-1">
@@ -429,11 +520,11 @@ export default function Dashboard() {
                   const isOverdue = daysLeft !== null && daysLeft < 0;
                   const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 2;
                   return (
-                    <div key={r.id} className="flex items-center gap-2.5 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2.5">
-                      <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority === "high" ? "bg-red-400" : r.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
-                      <span className="text-[13px] font-medium text-slate-800 line-clamp-1 flex-1 min-w-0">{r.title}</span>
+                    <div key={r.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${r.priority === "high" ? "bg-red-400" : r.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
+                      <span className="text-[13px] font-semibold text-slate-800 line-clamp-1 flex-1 min-w-0">{r.title}</span>
                       {r.dueDate && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${isOverdue ? "bg-red-100 text-red-600" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 font-semibold ${isOverdue ? "bg-red-100 text-red-600" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
                           {isOverdue ? `${Math.abs(daysLeft!)}d ago` : daysLeft === 0 ? "Today" : `${daysLeft}d`}
                         </span>
                       )}
@@ -444,52 +535,56 @@ export default function Dashboard() {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 text-center py-4">
                 <CheckCircle2 className="h-8 w-8 text-emerald-400 mb-2" />
-                <p className="text-[13px] text-slate-600 font-medium">All caught up!</p>
+                <p className="text-[14px] text-slate-600 font-semibold">All caught up!</p>
                 <p className="text-[12px] text-muted-foreground mt-0.5">No pending reminders.</p>
               </div>
             )}
           </div>
         </Link>
 
-        {/* Roadmap */}
-        <Link href="/roadmap" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+        <Link href="/research" className="h-full block">
+          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-semibold text-slate-800">Roadmap</h2>
-              <Route className="h-4 w-4 text-slate-400" />
-            </div>
-            {roadmap.length ? (
-              <div className="space-y-2 flex-1">
-                {completedRoadmap.length > 0 && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.round((completedRoadmap.length / roadmap.length) * 100)}%` }} />
-                    </div>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{completedRoadmap.length}/{roadmap.length} done</span>
-                  </div>
-                )}
-                {roadmap.slice(0, 3).map((item) => (
-                  <div key={item.id} className="rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] p-3">
-                    <p className="text-[13px] font-medium text-slate-800 line-clamp-1">{item.title}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{item.phase.replace("_", " ")} · {item.yearTarget}</p>
-                  </div>
-                ))}
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-teal-500" />
+                <h2 className="text-[17px] font-semibold text-slate-800">Research Library</h2>
               </div>
-            ) : <p className="text-sm text-muted-foreground flex-1">No roadmap items yet. Plan your trajectory.</p>}
+              <span className="text-[12px] text-slate-400">{research.length} items</span>
+            </div>
+            <div className="space-y-2 flex-1">
+              {research.slice(0, 3).map((item) => (
+                <div key={item.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
+                  <div className="h-2.5 w-2.5 rounded-full bg-teal-400 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.type} · {item.status.replace(/_/g, " ")}</p>
+                  </div>
+                </div>
+              ))}
+              {research.length === 0 && (
+                <p className="text-[13px] text-muted-foreground py-4 text-center">No research items yet.</p>
+              )}
+            </div>
           </div>
         </Link>
       </div>
 
       {/* Pipeline tracker */}
-      <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div><h2 className="text-[16px] font-semibold text-slate-800">Pipeline tracker</h2><p className="text-[12px] text-slate-400">Job application stages at a glance.</p></div>
-          <Link href="/jobs" className="text-[12px] text-slate-400 hover:text-emerald-600 transition-colors">see all</Link>
+      <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-slate-500" />
+            <div>
+              <h2 className="text-[17px] font-semibold text-slate-800">Job Pipeline</h2>
+              <p className="text-[12px] text-slate-400">Application stages at a glance</p>
+            </div>
+          </div>
+          <Link href="/jobs" className="text-[13px] text-emerald-600 font-medium hover:underline">see all →</Link>
         </div>
         {loadingJobs ? (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-28 rounded-[24px]" />)}</div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-28 rounded-[24px]" />)}</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
               { label: "Saved", count: jobs.filter((j) => j.status === "saved").length, icon: Briefcase, tone: "text-slate-600 bg-slate-100" },
               { label: "Applied", count: jobs.filter((j) => j.status === "applied").length, icon: Clock3, tone: "text-sky-600 bg-sky-100" },
@@ -500,10 +595,10 @@ export default function Dashboard() {
               const Icon = item.icon;
               return (
                 <Link key={item.label} href="/jobs">
-                  <div className="rounded-[24px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 hover:border-emerald-200 transition-colors cursor-pointer min-h-[118px]">
-                    <div className={`h-9 w-9 rounded-2xl flex items-center justify-center ${item.tone}`}><Icon className="h-4 w-4" /></div>
-                    <p className="mt-3 text-[13px] font-medium text-slate-700">{item.label}</p>
-                    <p className="text-[24px] font-bold text-slate-800 leading-none mt-1">{item.count}</p>
+                  <div className="rounded-[24px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 hover:border-emerald-200 transition-colors cursor-pointer">
+                    <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${item.tone}`}><Icon className="h-4.5 w-4.5" /></div>
+                    <p className="mt-3 text-[13px] font-semibold text-slate-700">{item.label}</p>
+                    <p className="text-[26px] font-bold text-slate-800 leading-none mt-1">{item.count}</p>
                   </div>
                 </Link>
               );
@@ -512,69 +607,30 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Interview prep tracking */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <Link href="/notepad" className="h-full block">
-          <div className="h-full min-h-[200px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-[16px] font-semibold text-slate-800">Interview prep</h2>
-                <p className="text-[12px] text-slate-400">{interviewQuestions.length} questions saved</p>
-              </div>
-              <MessageSquare className="h-4 w-4 text-slate-400" />
-            </div>
-            {interviewQuestions.length > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-[18px] bg-emerald-50 border border-emerald-100 p-3 text-center">
-                    <p className="text-[22px] font-bold text-emerald-700">{answeredCount}</p>
-                    <p className="text-[11px] text-emerald-600 mt-0.5">Answered</p>
-                  </div>
-                  <div className="rounded-[18px] bg-amber-50 border border-amber-100 p-3 text-center">
-                    <p className="text-[22px] font-bold text-amber-600">{unansweredCount}</p>
-                    <p className="text-[11px] text-amber-600 mt-0.5">Need answers</p>
-                  </div>
-                </div>
-                {iqByCategory.length > 0 && (
-                  <div className="space-y-1.5">
-                    {iqByCategory.map(([cat, count]) => (
-                      <div key={cat} className="flex items-center justify-between rounded-[16px] border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2">
-                        <span className="text-[13px] text-slate-700">{cat}</span>
-                        <span className="text-[12px] font-semibold text-emerald-700">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No interview questions yet. Add them in the Notepad → Interview Prep tab.</p>
-            )}
+      {/* Top required skills */}
+      {(analytics?.topSkills?.length ?? 0) > 0 && (
+        <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-5">
+            <Zap className="h-5 w-5 text-amber-500" />
+            <h2 className="text-[17px] font-semibold text-slate-800">Top Required Skills</h2>
+            <span className="text-[12px] text-slate-400 ml-auto">From your saved jobs</span>
           </div>
-        </Link>
-
-        <Link href="/jobs" className="h-full block">
-          <div className="h-full min-h-[200px] rounded-[30px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-[16px] font-semibold text-slate-800">Top required skills</h2>
-                <p className="text-[12px] text-slate-400">From your saved jobs</p>
-              </div>
-              <BookOpen className="h-4 w-4 text-slate-400" />
-            </div>
-            <div className="space-y-2">
-              {(analytics?.topSkills ?? []).slice(0, 5).map((item) => (
-                <div key={item.skill} className="flex items-center justify-between rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-2.5">
-                  <span className="text-[13px] text-slate-700">{item.skill}</span>
-                  <span className="text-[12px] font-semibold text-emerald-700">{item.count} job{item.count !== 1 ? "s" : ""}</span>
+          <div className="space-y-3">
+            {(analytics?.topSkills ?? []).slice(0, 5).map((item, i) => {
+              const max = analytics!.topSkills[0].count;
+              return (
+                <div key={item.skill} className="flex items-center gap-3">
+                  <span className="text-[13px] font-semibold text-slate-700 w-32 truncate">{item.skill}</span>
+                  <div className="flex-1 h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
+                    <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.round((item.count / max) * 100)}%` }} />
+                  </div>
+                  <span className="text-[12px] font-bold text-emerald-700 w-12 text-right">{item.count} job{item.count !== 1 ? "s" : ""}</span>
                 </div>
-              ))}
-              {!analytics?.topSkills?.length && (
-                <p className="text-sm text-muted-foreground">Save jobs with required skills to see what's most in demand.</p>
-              )}
-            </div>
+              );
+            })}
           </div>
-        </Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

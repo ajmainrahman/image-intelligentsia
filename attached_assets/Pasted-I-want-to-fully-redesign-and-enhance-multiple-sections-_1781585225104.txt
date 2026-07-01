@@ -1,0 +1,57 @@
+I want to fully redesign and enhance multiple sections of my website. Please implement all the changes below carefully without breaking existing functionality.
+
+### 🐛 Global Bug Fix
+
+**Date & Time Sync**
+- All dates and times across the entire app are incorrect and not syncing in real time
+- Fix this globally — use the user's local system time via `new Date()` and ensure real-time updates wherever timestamps are displayed
+
+### 📊 Dashboard
+
+- Remove all unnecessary or redundant cards
+- Add a **daily streak tracker** for consistency (increment on daily login/activity)
+- Add a **Total Goals count** with deadline visibility
+- Add **Career Plan highlights** — show key milestones at a glance
+- Add **Current Learning summary** — what I'm actively learning right now
+- Show **deadlines** on recent learnings and goals directly on the dashboard
+- Make it more **visual and interactive** — use progress bars, charts, or summary cards with icons
+- Overall layout should give a full snapshot of my progress at a glance
+
+### 📚 Section (General)
+
+- Increase font size across all sections — current size is too small and hard to read
+- Make each section more **interactive and easier to understand**
+- Improve spacing, hierarchy, and visual clarity throughout
+
+### 🎓 Learning
+
+- The current Learning section is overly complex — **simplify the UI and UX significantly**
+- Keep all existing features but redesign them to be cleaner and easier to navigate
+- Add a **Search bar** to find learning entries quickly
+- Add a **Daily Learning Activity tracker** (similar to a GitHub contribution graph or calendar heatmap)
+- Add an **Hours Log** — ability to log how many hours I studied each day
+- Redesign fonts, colors, and layout to feel modern and less cluttered
+
+### 🔬 Research
+
+- When adding a description, it currently saves as a plain paragraph — **change this so descriptions support bullet points** and render them properly
+- Add a **deadline field** for each research entry
+- Add an option to link **social/academic profiles** per entry or globally:
+  - GitHub
+  - ResearchGate
+  - Kaggle
+  - Google Scholar
+
+### ⏰ Reminders
+
+- Expand the Reminders section with more features — add **priority levels**, **categories**, and **recurring reminder** options
+- Add an **Edit option for completed tasks** — currently completed tasks cannot be edited
+
+### 📝 Notepad
+
+- **Remove the Interview Prep section** from Notepad entirely
+- Redesign the Notepad to make it easier to write and organize information
+- Add better **text formatting support** (bullet points, bold, headers, or a simple rich-text feel)
+- Improve the overall layout so entries are clearly structured and easy to read
+
+Do not change any backend logic or database schema unless it is strictly required by one of the above features. Preserve all existing data and routing. Implement changes section by section and confirm each one works before moving to the next.

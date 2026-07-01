@@ -1,0 +1,40 @@
+I want to fix several critical issues and improve the overall code quality of my project. Please implement all the changes below carefully without breaking any existing functionality.
+
+### 🔐 1. Fix Auth Security
+
+- Move session/auth tokens from **localStorage to HttpOnly cookies** to prevent XSS vulnerabilities
+- Pin JWT secret to a single environment variable — use only `JWT_SECRET` and throw a clear error on startup if it is missing in production
+- Remove the fallback chain that accepts `AUTH_SECRET` or `NEXTAUTH_SECRET` as alternatives
+
+---
+
+### ⏰ 2. Fix Date & Time Bug Globally
+
+- All dates and times across the app are currently incorrect and not syncing in real time
+- Fix this globally — on the server, always use `new Date()` and return **ISO 8601 strings** from all API responses
+- On the client, parse ISO strings and format them using the **user's local timezone** via `Intl.DateTimeFormat` or `date-fns`
+- Do not hardcode any timezone or date format anywhere in the codebase
+- Ensure all timestamps update in real time wherever they are displayed
+
+---
+
+### 🛡️ 3. Add Rate Limiting on Auth Endpoints
+
+- Install and configure `express-rate-limit`
+- Apply a strict rate limit on all `/api/auth` routes — for example, maximum 10 requests per 15 minutes per IP
+- Return a clear `429 Too Many Requests` error response when the limit is exceeded
+- Add a separate, slightly more lenient rate limit on all other `/api` routes as a general safeguard
+
+---
+
+### 🧹 4. Add ESLint + Husky
+
+- Install and configure **ESLint** with TypeScript support (`@typescript-eslint/parser` and `@typescript-eslint/eslint-plugin`)
+- Add **Prettier** integration with ESLint so formatting and linting work together
+- Install **Husky** and **lint-staged**
+- Configure a `pre-commit` hook that automatically runs ESLint and Prettier on all staged files before every commit
+- Add an `lint` script to `package.json` so I can also run it manually
+
+---
+
+Do not change any existing features, UI, or database schema unless strictly required by one of the above changes. Implement and test each section independently before moving to the next. If any step requires a new environment variable, add it to `.env.example` with a placeholder value and a comment explaining what it is.

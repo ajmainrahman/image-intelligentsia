@@ -146,7 +146,7 @@ export function Sidebar() {
 
         {/* Sign out */}
         <button
-          onClick={logout}
+          onClick={() => void logout()}
           className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
         >
           <LogOut className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
