@@ -10,7 +10,7 @@ const router = Router();
 const JobBody = z.object({
   title: z.string().min(1),
   company: z.string().nullable().optional(),
-  description: z.string().min(1),
+  description: z.string().optional().default(""),
   keywords: z.array(z.string()).default([]),
   skills: z.array(z.string()).default([]),
   notes: z.string().nullable().optional(),
