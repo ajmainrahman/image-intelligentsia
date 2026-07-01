@@ -297,7 +297,7 @@ function RemindersPageInner() {
                       {reminder.dueDate && (
                         <span className={`text-[12px] font-semibold flex items-center gap-1 px-2.5 py-0.5 rounded-full ${isOverdue ? "bg-red-100 text-red-700" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
                           <Clock className="h-3 w-3" />
-                          {format(new Date(reminder.dueDate), "MMM d, h:mm a")}
+                          {format(reminder.dueDate.includes("T") ? new Date(reminder.dueDate) : new Date(reminder.dueDate + "T00:00:00"), "MMM d, h:mm a")}
                           {isOverdue && " · overdue"}
                           {isSoon && !isOverdue && " · soon"}
                         </span>

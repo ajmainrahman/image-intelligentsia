@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
@@ -112,9 +113,13 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+function parseLocalDate(str: string): Date {
+  return str.includes("T") || str.includes(" ") ? new Date(str) : new Date(str + "T00:00:00");
+}
+
 function getDeadlineInfo(applyDate: string | null) {
   if (!applyDate) return null;
-  const deadline = new Date(applyDate);
+  const deadline = parseLocalDate(applyDate);
   const now = new Date(); now.setHours(0, 0, 0, 0); deadline.setHours(0, 0, 0, 0);
   const days = Math.ceil((deadline.getTime() - now.getTime()) / 86400000);
   if (days < 0) return { label: `${Math.abs(days)}d overdue`, cls: "bg-red-100 text-red-600" };
@@ -574,7 +579,7 @@ export default function JobsPage() {
                           {job.applyDate && (
                             <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                               <CalendarDays className="h-3.5 w-3.5" />
-                              Deadline: {new Date(job.applyDate).toLocaleDateString()}
+                              Deadline: {format(parseLocalDate(job.applyDate!), "MMM d, yyyy")}
                             </div>
                           )}
                           <Button variant="ghost" size="sm" className="h-7 text-[12px] gap-1.5 ml-auto" onClick={() => togglePin.mutate(job.id)}>
@@ -630,7 +635,7 @@ export default function JobsPage() {
                         {job.applyDate && (
                           <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
                             <CalendarDays className="h-3 w-3" />
-                            {new Date(job.applyDate).toLocaleDateString()}
+                            {format(parseLocalDate(job.applyDate!), "MMM d, yyyy")}
                           </div>
                         )}
                         {di && <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${di.cls}`}>{di.label}</span>}
