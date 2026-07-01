@@ -113,16 +113,16 @@ function StatCard({ label, value, tone, sub, href, icon: Icon }: {
 }) {
   return (
     <Link href={href}>
-      <div className="rounded-[24px] border border-[#e4ddd2] bg-white p-5 shadow-sm cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all group">
-        <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${tone} group-hover:scale-105 transition-transform`}>
-          {Icon ? <Icon className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+      <div className="rounded-2xl border border-[#e4ddd2] bg-white px-4 py-3.5 shadow-sm cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all group flex items-center gap-3">
+        <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0 ${tone} group-hover:scale-105 transition-transform`}>
+          {Icon ? <Icon className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
         </div>
-        <p className="mt-4 text-[12px] uppercase tracking-wider text-slate-400 font-semibold">{label}</p>
-        <div className="mt-1 text-[32px] font-bold text-slate-800 leading-none">{value}</div>
-        {sub && <p className="mt-1.5 text-[13px] text-muted-foreground">{sub}</p>}
-        <div className="mt-3 flex items-center gap-1 text-[12px] text-emerald-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-          <span>View</span><ChevronRight className="h-3 w-3" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">{label}</p>
+          <div className="text-[22px] font-bold text-slate-800 leading-tight">{value}</div>
+          {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
         </div>
+        <ChevronRight className="h-3.5 w-3.5 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       </div>
     </Link>
   );
@@ -131,24 +131,24 @@ function StatCard({ label, value, tone, sub, href, icon: Icon }: {
 function StreakCard({ streak }: { streak: number }) {
   const level = streak === 0 ? "Start your streak!" : streak < 3 ? "Keep going!" : streak < 7 ? "Building momentum 🔥" : streak < 14 ? "On fire! 🔥🔥" : "Unstoppable! 🏆";
   return (
-    <div className="rounded-[24px] border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[12px] uppercase tracking-wider text-orange-500 font-semibold">Daily Streak</p>
-          <div className="flex items-end gap-2 mt-1">
-            <span className="text-[40px] font-bold text-orange-600 leading-none">{streak}</span>
-            <span className="text-[15px] text-orange-500 pb-1">day{streak !== 1 ? "s" : ""}</span>
+    <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-3.5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+          <Flame className="h-5 w-5 text-orange-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] uppercase tracking-wider text-orange-500 font-semibold">Daily Streak</p>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[24px] font-bold text-orange-600 leading-tight">{streak}</span>
+            <span className="text-[12px] text-orange-500">day{streak !== 1 ? "s" : ""}</span>
           </div>
-          <p className="text-[13px] text-orange-600 mt-1 font-medium">{level}</p>
+          <p className="text-[11px] text-orange-600 font-medium">{level}</p>
         </div>
-        <div className="h-16 w-16 rounded-2xl bg-orange-100 flex items-center justify-center">
-          <Flame className="h-8 w-8 text-orange-500" />
+        <div className="flex gap-0.5 shrink-0">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className={`w-2 h-5 rounded-sm ${i < Math.min(streak, 7) ? "bg-orange-400" : "bg-orange-100"}`} />
+          ))}
         </div>
-      </div>
-      <div className="mt-3 flex gap-1">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className={`flex-1 h-1.5 rounded-full ${i < Math.min(streak, 7) ? "bg-orange-400" : "bg-orange-100"}`} />
-        ))}
       </div>
     </div>
   );
@@ -245,31 +245,29 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-6 page-enter pb-10">
+    <div className="space-y-4 page-enter pb-8">
       {/* Hero greeting */}
-      <div className="flex items-center justify-between rounded-[28px] border border-[#e4ddd2] bg-gradient-to-br from-[#fdfcf8] to-emerald-50/40 px-6 py-6 shadow-sm">
+      <div className="flex items-center justify-between rounded-2xl border border-[#e4ddd2] bg-gradient-to-br from-[#fdfcf8] to-emerald-50/40 px-5 py-4 shadow-sm">
         <div>
-          <h1 className="text-[26px] md:text-[30px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName} 👋</h1>
-          <p className="text-[14px] text-slate-500 mt-1">
-            {dateLabel} · <LiveClock />
-          </p>
-          <div className="flex flex-wrap gap-2 mt-3">
+          <h1 className="text-[20px] md:text-[22px] font-bold text-slate-800 leading-tight">{getGreeting()}, {firstName} 👋</h1>
+          <p className="text-[12px] text-slate-500 mt-0.5">{dateLabel} · <LiveClock /></p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {activeGoals.length > 0 && (
-              <span className="text-[12px] px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">{activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""}</span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">{activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""}</span>
             )}
             {streak > 0 && (
-              <span className="text-[12px] px-3 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">🔥 {streak} day streak</span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">🔥 {streak} day streak</span>
             )}
             {summary?.pendingReminders ? (
-              <span className="text-[12px] px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">⏰ {summary.pendingReminders} due</span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">⏰ {summary.pendingReminders} due</span>
             ) : null}
           </div>
         </div>
-        <div className="hidden sm:flex flex-col items-end gap-2 text-right">
-          <div className="h-14 w-14 rounded-full bg-emerald-600 text-white font-bold text-[16px] flex items-center justify-center shrink-0 shadow-md">
+        <div className="hidden sm:flex flex-col items-end gap-1.5 text-right">
+          <div className="h-10 w-10 rounded-full bg-emerald-600 text-white font-bold text-[13px] flex items-center justify-center shrink-0 shadow-md">
             {user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
           </div>
-          <div className="text-[12px] text-slate-400">
+          <div className="text-[11px] text-slate-400">
             <p>{summary?.roadmapCompleted ?? 0}/{summary?.roadmapTotal ?? 0} milestones</p>
             <p>{totalHours} hrs logged</p>
           </div>
@@ -279,8 +277,8 @@ export default function Dashboard() {
       <DueWarningBanner />
 
       {/* Top stats row */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {loadingSummary ? [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36 rounded-[24px]" />) : (
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {loadingSummary ? [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 rounded-2xl" />) : (
           <>
             <StatCard
               label="Total Goals"
@@ -319,24 +317,24 @@ export default function Dashboard() {
       </div>
 
       {/* Streak + Upcoming deadlines */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <StreakCard streak={streak} />
 
         {upcomingDeadlines.length > 0 ? (
           <Link href="/jobs">
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 px-5 py-5 cursor-pointer hover:border-amber-300 transition-colors h-full">
-              <div className="flex items-center justify-between mb-4">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3.5 cursor-pointer hover:border-amber-300 transition-colors h-full">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <CalendarClock className="h-5 w-5 text-amber-600" />
-                  <h2 className="text-[15px] font-semibold text-amber-800">Upcoming Job Deadlines</h2>
+                  <CalendarClock className="h-4 w-4 text-amber-600" />
+                  <h2 className="text-[13px] font-semibold text-amber-800">Upcoming Job Deadlines</h2>
                 </div>
-                <span className="text-[12px] text-amber-600">see all →</span>
+                <span className="text-[11px] text-amber-600">see all →</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {upcomingDeadlines.map(j => (
-                  <div key={j.id} className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-[13px] font-medium ${j.daysLeft <= 7 ? "bg-red-100 text-red-700" : j.daysLeft <= 30 ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-700"}`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Briefcase className="h-4 w-4 shrink-0" />
+                  <div key={j.id} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-[12px] font-medium ${j.daysLeft <= 7 ? "bg-red-100 text-red-700" : j.daysLeft <= 30 ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-700"}`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Briefcase className="h-3.5 w-3.5 shrink-0" />
                       <span className="line-clamp-1">{j.title}{j.company ? ` · ${j.company}` : ""}</span>
                     </div>
                     <span className="shrink-0 font-bold">{j.daysLeft === 0 ? "Today!" : `${j.daysLeft}d`}</span>
@@ -347,20 +345,20 @@ export default function Dashboard() {
           </Link>
         ) : (
           <Link href="/jobs">
-            <div className="rounded-[24px] border border-[#e4ddd2] bg-white p-5 cursor-pointer hover:border-emerald-200 transition-colors h-full flex flex-col justify-between">
-              <div className="flex items-center gap-2 mb-3">
-                <Briefcase className="h-5 w-5 text-slate-400" />
-                <h2 className="text-[15px] font-semibold text-slate-800">Job Pipeline</h2>
+            <div className="rounded-2xl border border-[#e4ddd2] bg-white px-4 py-3.5 cursor-pointer hover:border-emerald-200 transition-colors h-full">
+              <div className="flex items-center gap-2 mb-2.5">
+                <Briefcase className="h-4 w-4 text-slate-400" />
+                <h2 className="text-[13px] font-semibold text-slate-800">Job Pipeline</h2>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: "Applied", count: jobs.filter(j => j.status === "applied").length, color: "text-sky-600 bg-sky-50" },
-                  { label: "Interviewing", count: jobs.filter(j => j.status === "interviewing").length, color: "text-amber-600 bg-amber-50" },
-                  { label: "Offered", count: jobs.filter(j => j.status === "offered").length, color: "text-emerald-600 bg-emerald-50" },
+                  { label: "Interview", count: jobs.filter(j => j.status === "interviewing").length, color: "text-amber-600 bg-amber-50" },
+                  { label: "Waiting", count: jobs.filter(j => j.status === "offered").length, color: "text-purple-600 bg-purple-50" },
                 ].map(s => (
-                  <div key={s.label} className={`rounded-xl ${s.color} p-3 text-center`}>
-                    <p className="text-[22px] font-bold">{s.count}</p>
-                    <p className="text-[11px] font-medium mt-0.5">{s.label}</p>
+                  <div key={s.label} className={`rounded-xl ${s.color} p-2.5 text-center`}>
+                    <p className="text-[18px] font-bold">{s.count}</p>
+                    <p className="text-[10px] font-medium mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -370,161 +368,158 @@ export default function Dashboard() {
       </div>
 
       {/* Goals progress */}
-      <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
+      <div className="rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-emerald-600" />
-            <h2 className="text-[17px] font-semibold text-slate-800">Goals Progress</h2>
+            <Target className="h-4 w-4 text-emerald-600" />
+            <h2 className="text-[14px] font-semibold text-slate-800">Goals Progress</h2>
           </div>
           <Link href="/goals">
-            <span className="text-[13px] text-emerald-600 font-medium hover:underline">{summary?.totalGoals ?? 0} total →</span>
+            <span className="text-[12px] text-emerald-600 font-medium hover:underline">{summary?.totalGoals ?? 0} total →</span>
           </Link>
         </div>
         {goalsWithProgress.length > 0 ? (
-          <div className="space-y-5">
+          <div className="space-y-3">
             {goalsWithProgress.map((goal) => (
-              <div key={goal.id} className="space-y-2">
+              <div key={goal.id} className="space-y-1">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${goal.status === "active" ? "bg-emerald-500" : goal.status === "completed" ? "bg-blue-400" : "bg-slate-300"}`} />
-                    <p className="text-[14px] font-semibold text-slate-700 line-clamp-1">{goal.title}</p>
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${goal.status === "active" ? "bg-emerald-500" : goal.status === "completed" ? "bg-blue-400" : "bg-slate-300"}`} />
+                    <p className="text-[13px] font-semibold text-slate-700 line-clamp-1">{goal.title}</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {goal.daysLeft !== null && (
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${goal.daysLeft < 0 ? "bg-red-100 text-red-600" : goal.daysLeft <= 30 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
-                        {goal.daysLeft < 0 ? `${Math.abs(goal.daysLeft)}d overdue` : goal.daysLeft === 0 ? "Due today" : `${goal.daysLeft}d left`}
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${goal.daysLeft < 0 ? "bg-red-100 text-red-600" : goal.daysLeft <= 30 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                        {goal.daysLeft < 0 ? `${Math.abs(goal.daysLeft)}d overdue` : goal.daysLeft === 0 ? "today" : `${goal.daysLeft}d`}
                       </span>
                     )}
-                    <span className="text-[14px] font-bold text-slate-600">{goal.effectiveProgress}%</span>
+                    <span className="text-[12px] font-bold text-slate-600 w-9 text-right">{goal.effectiveProgress}%</span>
                   </div>
                 </div>
-                <div className="h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700"
-                    style={{ width: `${goal.effectiveProgress}%` }}
-                  />
+                <div className="h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700" style={{ width: `${goal.effectiveProgress}%` }} />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Target className="h-10 w-10 text-slate-200 mx-auto mb-2" />
-            <p className="text-[14px] text-muted-foreground">No goals yet. Add your first career goal.</p>
+          <div className="text-center py-6">
+            <Target className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+            <p className="text-[13px] text-muted-foreground">No goals yet. Add your first career goal.</p>
           </div>
         )}
       </div>
 
       {/* Career plan highlights + Current learning */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
         {/* Career plan highlights */}
         <Link href="/roadmap" className="h-full block">
-          <div className="h-full min-h-[240px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-5">
+          <div className="h-full rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <Route className="h-5 w-5 text-violet-500" />
-                <h2 className="text-[17px] font-semibold text-slate-800">Career Plan</h2>
+                <Route className="h-4 w-4 text-violet-500" />
+                <h2 className="text-[14px] font-semibold text-slate-800">Career Plan</h2>
               </div>
-              <span className="text-[12px] text-slate-400">{completedRoadmap.length}/{roadmap.length} milestones</span>
+              <span className="text-[11px] text-slate-400">{completedRoadmap.length}/{roadmap.length} milestones</span>
             </div>
             {roadmap.length > 0 && (
-              <div className="mb-4">
-                <div className="h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
+              <div className="mb-3">
+                <div className="h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden">
                   <div className="h-full rounded-full bg-violet-400 transition-all" style={{ width: `${roadmap.length ? Math.round((completedRoadmap.length / roadmap.length) * 100) : 0}%` }} />
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">{Math.round((completedRoadmap.length / roadmap.length) * 100)}% complete</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{Math.round((completedRoadmap.length / roadmap.length) * 100)}% complete</p>
               </div>
             )}
             {careerHighlights.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {careerHighlights.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
-                    <div className="h-2 w-2 rounded-full bg-violet-400 shrink-0" />
+                  <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{item.phase.replace(/_/g, " ")} · {item.yearTarget}</p>
+                      <p className="text-[12px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.phase.replace(/_/g, " ")} · {item.yearTarget}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-muted-foreground">No roadmap items yet. Plan your trajectory.</p>
+              <p className="text-[12px] text-muted-foreground">No roadmap items yet.</p>
             )}
           </div>
         </Link>
 
         {/* Current learning */}
         <Link href="/progress" className="h-full block">
-          <div className="h-full min-h-[240px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
-            <div className="flex items-center justify-between mb-5">
+          <div className="h-full rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-sky-500" />
-                <h2 className="text-[17px] font-semibold text-slate-800">Currently Learning</h2>
+                <TrendingUp className="h-4 w-4 text-sky-500" />
+                <h2 className="text-[14px] font-semibold text-slate-800">Currently Learning</h2>
               </div>
               {inProgressLearning.length > 0 && (
-                <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-100">{inProgressLearning.length} active</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-100">{inProgressLearning.length} active</span>
               )}
             </div>
             {loadingProgress ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+              <div className="space-y-1.5">{[1, 2, 3].map(i => <Skeleton key={i} className="h-9 rounded-xl" />)}</div>
             ) : inProgressLearning.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {inProgressLearning.map((entry) => (
-                  <div key={entry.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
-                    <div className="h-8 w-8 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-                      <Zap className="h-4 w-4 text-sky-600" />
+                  <div key={entry.id} className="flex items-center gap-2.5 rounded-xl border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2">
+                    <div className="h-6 w-6 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
+                      <Zap className="h-3 w-3 text-sky-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{entry.title}</p>
-                      <p className="text-[11px] text-muted-foreground capitalize">{entry.category.replace("_", " ")}{entry.durationHours > 0 ? ` · ${entry.durationHours}h` : ""}</p>
+                      <p className="text-[12px] font-semibold text-slate-800 line-clamp-1">{entry.title}</p>
+                      <p className="text-[10px] text-muted-foreground capitalize">{entry.category.replace("_", " ")}{entry.durationHours > 0 ? ` · ${entry.durationHours}h` : ""}</p>
                     </div>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 shrink-0 font-medium">In Progress</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 shrink-0 font-medium">Active</span>
                   </div>
                 ))}
               </div>
             ) : recentLearning.length > 0 ? (
-              <div className="space-y-2">
+              <div className="divide-y divide-[#f0ebe0]">
                 {recentLearning.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between gap-3 border-b border-[#f0ebe0] pb-2.5 last:border-0">
-                    <span className="text-[13px] font-medium text-slate-700 line-clamp-1">{entry.title}</span>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ml-2 font-medium ${entry.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                  <div key={entry.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                    <span className="text-[12px] font-medium text-slate-700 line-clamp-1">{entry.title}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${entry.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                       {entry.status === "completed" ? "Done" : entry.status.replace("_", " ")}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-muted-foreground">No learning entries yet. Log your first course or project.</p>
+              <p className="text-[12px] text-muted-foreground">No learning entries yet.</p>
             )}
           </div>
         </Link>
       </div>
 
       {/* Reminders + Research */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
         <Link href="/reminders" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
-            <div className="flex items-center justify-between mb-4">
+          <div className="h-full rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-amber-500" />
-                <h2 className="text-[17px] font-semibold text-slate-800">Reminders & Tasks</h2>
+                <Bell className="h-4 w-4 text-amber-500" />
+                <h2 className="text-[14px] font-semibold text-slate-800">Reminders & Tasks</h2>
               </div>
               {upcomingReminders.length > 0 && (
-                <span className="text-[12px] px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">{upcomingReminders.length}</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">{upcomingReminders.length}</span>
               )}
             </div>
             {upcomingReminders.length > 0 ? (
-              <div className="space-y-2 flex-1">
+              <div className="space-y-1.5 flex-1">
                 {upcomingReminders.map(r => {
                   const daysLeft = r.dueDate ? Math.ceil((new Date(r.dueDate).getTime() - Date.now()) / 86400000) : null;
                   const isOverdue = daysLeft !== null && daysLeft < 0;
                   const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 2;
                   return (
-                    <div key={r.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
-                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${r.priority === "high" ? "bg-red-400" : r.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
-                      <span className="text-[13px] font-semibold text-slate-800 line-clamp-1 flex-1 min-w-0">{r.title}</span>
+                    <div key={r.id} className="flex items-center gap-2.5 rounded-xl border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2">
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority === "high" ? "bg-red-400" : r.priority === "medium" ? "bg-amber-400" : "bg-slate-300"}`} />
+                      <span className="text-[12px] font-semibold text-slate-800 line-clamp-1 flex-1 min-w-0">{r.title}</span>
                       {r.dueDate && (
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 font-semibold ${isOverdue ? "bg-red-100 text-red-600" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-semibold ${isOverdue ? "bg-red-100 text-red-600" : isSoon ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
                           {isOverdue ? `${Math.abs(daysLeft!)}d ago` : daysLeft === 0 ? "Today" : `${daysLeft}d`}
                         </span>
                       )}
@@ -533,98 +528,60 @@ export default function Dashboard() {
                 })}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center flex-1 text-center py-4">
-                <CheckCircle2 className="h-8 w-8 text-emerald-400 mb-2" />
-                <p className="text-[14px] text-slate-600 font-semibold">All caught up!</p>
-                <p className="text-[12px] text-muted-foreground mt-0.5">No pending reminders.</p>
+              <div className="flex flex-col items-center justify-center flex-1 text-center py-3">
+                <CheckCircle2 className="h-6 w-6 text-emerald-400 mb-1.5" />
+                <p className="text-[13px] text-slate-600 font-semibold">All caught up!</p>
+                <p className="text-[11px] text-muted-foreground">No pending reminders.</p>
               </div>
             )}
           </div>
         </Link>
 
         <Link href="/research" className="h-full block">
-          <div className="h-full min-h-[220px] rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
-            <div className="flex items-center justify-between mb-4">
+          <div className="h-full rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm cursor-pointer hover:border-emerald-200 transition-colors flex flex-col">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-teal-500" />
-                <h2 className="text-[17px] font-semibold text-slate-800">Research Library</h2>
+                <BookOpen className="h-4 w-4 text-teal-500" />
+                <h2 className="text-[14px] font-semibold text-slate-800">Research Library</h2>
               </div>
-              <span className="text-[12px] text-slate-400">{research.length} items</span>
+              <span className="text-[11px] text-slate-400">{research.length} items</span>
             </div>
-            <div className="space-y-2 flex-1">
-              {research.slice(0, 3).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 rounded-[18px] border border-[#ebe5d8] bg-[#fdfcf8] px-4 py-3">
-                  <div className="h-2.5 w-2.5 rounded-full bg-teal-400 shrink-0" />
+            <div className="space-y-1.5 flex-1">
+              {research.slice(0, 4).map((item) => (
+                <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-[#ebe5d8] bg-[#fdfcf8] px-3 py-2">
+                  <div className="h-2 w-2 rounded-full bg-teal-400 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.type} · {item.status.replace(/_/g, " ")}</p>
+                    <p className="text-[12px] font-semibold text-slate-800 line-clamp-1">{item.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.type} · {item.status.replace(/_/g, " ")}</p>
                   </div>
                 </div>
               ))}
               {research.length === 0 && (
-                <p className="text-[13px] text-muted-foreground py-4 text-center">No research items yet.</p>
+                <p className="text-[12px] text-muted-foreground py-3 text-center">No research items yet.</p>
               )}
             </div>
           </div>
         </Link>
       </div>
 
-      {/* Pipeline tracker */}
-      <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-slate-500" />
-            <div>
-              <h2 className="text-[17px] font-semibold text-slate-800">Job Pipeline</h2>
-              <p className="text-[12px] text-slate-400">Application stages at a glance</p>
-            </div>
-          </div>
-          <Link href="/jobs" className="text-[13px] text-emerald-600 font-medium hover:underline">see all →</Link>
-        </div>
-        {loadingJobs ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-28 rounded-[24px]" />)}</div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { label: "Saved", count: jobs.filter((j) => j.status === "saved").length, icon: Briefcase, tone: "text-slate-600 bg-slate-100" },
-              { label: "Applied", count: jobs.filter((j) => j.status === "applied").length, icon: Clock3, tone: "text-sky-600 bg-sky-100" },
-              { label: "Interviewing", count: jobs.filter((j) => j.status === "interviewing").length, icon: Sparkles, tone: "text-amber-600 bg-amber-100" },
-              { label: "Offered", count: jobs.filter((j) => j.status === "offered").length, icon: CircleCheckBig, tone: "text-emerald-600 bg-emerald-100" },
-              { label: "Rejected", count: jobs.filter((j) => j.status === "rejected").length, icon: XCircle, tone: "text-rose-600 bg-rose-100" },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.label} href="/jobs">
-                  <div className="rounded-[24px] border border-[#ebe5d8] bg-[#fdfcf8] p-4 hover:border-emerald-200 transition-colors cursor-pointer">
-                    <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${item.tone}`}><Icon className="h-4.5 w-4.5" /></div>
-                    <p className="mt-3 text-[13px] font-semibold text-slate-700">{item.label}</p>
-                    <p className="text-[26px] font-bold text-slate-800 leading-none mt-1">{item.count}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Top required skills */}
+      {/* Top required skills (compact) */}
       {(analytics?.topSkills?.length ?? 0) > 0 && (
-        <div className="rounded-[30px] border border-[#e4ddd2] bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-5">
-            <Zap className="h-5 w-5 text-amber-500" />
-            <h2 className="text-[17px] font-semibold text-slate-800">Top Required Skills</h2>
-            <span className="text-[12px] text-slate-400 ml-auto">From your saved jobs</span>
+        <div className="rounded-2xl border border-[#e4ddd2] bg-white px-4 py-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-amber-500" />
+            <h2 className="text-[14px] font-semibold text-slate-800">Top Required Skills</h2>
+            <span className="text-[11px] text-slate-400 ml-auto">From saved jobs</span>
           </div>
-          <div className="space-y-3">
-            {(analytics?.topSkills ?? []).slice(0, 5).map((item, i) => {
+          <div className="space-y-2">
+            {(analytics?.topSkills ?? []).slice(0, 5).map((item) => {
               const max = analytics!.topSkills[0].count;
               return (
                 <div key={item.skill} className="flex items-center gap-3">
-                  <span className="text-[13px] font-semibold text-slate-700 w-32 truncate">{item.skill}</span>
-                  <div className="flex-1 h-2 rounded-full bg-[#f0ebe0] overflow-hidden">
+                  <span className="text-[12px] font-medium text-slate-700 w-28 truncate shrink-0">{item.skill}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-[#f0ebe0] overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.round((item.count / max) * 100)}%` }} />
                   </div>
-                  <span className="text-[12px] font-bold text-emerald-700 w-12 text-right">{item.count} job{item.count !== 1 ? "s" : ""}</span>
+                  <span className="text-[11px] font-bold text-emerald-700 w-8 text-right shrink-0">{item.count}</span>
                 </div>
               );
             })}
