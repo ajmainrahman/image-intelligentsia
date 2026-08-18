@@ -86,7 +86,7 @@ function DueWarningBanner() {
             <div className="flex flex-wrap gap-1.5">
               {overdueItems.slice(0, 5).map((item, i) => (
                 <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
-                  {item.type === "reminder" ? "🔔" : "🎯"} {item.title}
+                    {item.type === "reminder" ? "Reminder" : "Goal"} · {item.title}
                 </span>
               ))}
               {overdueItems.length > 5 && <span className="text-[10px] text-red-500 self-center">+{overdueItems.length - 5} more</span>}
@@ -104,7 +104,7 @@ function DueWarningBanner() {
                 const daysLeft = item.due ? Math.ceil((parseDate(item.due).getTime() - Date.now()) / 86400000) : null;
                 return (
                   <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
-                    {item.type === "reminder" ? "🔔" : "🎯"} {item.title}{daysLeft !== null ? ` · ${daysLeft === 0 ? "today" : `${daysLeft}d`}` : ""}
+                    {item.type === "reminder" ? "Reminder" : "Goal"} · {item.title}{daysLeft !== null ? ` · ${daysLeft === 0 ? "today" : `${daysLeft}d`}` : ""}
                   </span>
                 );
               })}
@@ -380,7 +380,7 @@ function QuickAddFAB() {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: summary, isLoading: loadingSummary } = useQuery<Summary>({ queryKey: ["dashboard-summary"], queryFn: () => api<Summary>("/dashboard/summary") });
+  const { data: summary, isLoading: loadingSummary, isError: summaryError, refetch: refetchSummary } = useQuery<Summary>({ queryKey: ["dashboard-summary"], queryFn: () => api<Summary>("/dashboard/summary") });
   const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["goals"], queryFn: () => api<Goal[]>("/goals") });
   const { data: roadmap = [] } = useQuery<RoadmapItem[]>({ queryKey: ["roadmap"], queryFn: () => api<RoadmapItem[]>("/roadmap") });
   const { data: research = [] } = useQuery<ResearchItem[]>({ queryKey: ["research"], queryFn: () => api<ResearchItem[]>("/research") });
@@ -456,42 +456,62 @@ export default function Dashboard() {
   }, [progressEntries]);
 
   return (
-    <div className="space-y-4 page-enter pb-24">
+    <div className="relative space-y-5 page-enter pb-24">
+      <div className="dashboard-grid pointer-events-none absolute -inset-x-10 -top-8 h-[460px] opacity-45" aria-hidden="true" />
 
       {/* ── Hero greeting ── */}
-      <div className="rounded-2xl border border-[#e4ddd2] bg-gradient-to-br from-[#fdfcf8] to-emerald-50/50 px-5 py-4 shadow-sm">
-        <div className="flex items-start justify-between">
+      <section className="relative overflow-hidden rounded-[24px] border border-border bg-card px-5 py-6 sm:px-7 sm:py-7 shadow-[0_18px_45px_hsl(154_16%_20%/.06)]">
+        <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-accent/60 blur-2xl" aria-hidden="true" />
+        <div className="absolute right-10 bottom-0 h-1 w-24 bg-primary/70 rounded-full" aria-hidden="true" />
+        <div className="relative flex items-start justify-between gap-5">
           <div>
-            <h1 className="text-[20px] font-bold text-slate-800">{getGreeting()}, {firstName} 👋</h1>
-            <p className="text-[12px] text-slate-400 mt-0.5">{dateLabel} · <LiveClock /></p>
+            <p className="eyebrow text-[9px] text-primary mb-2">A clear next step, every day</p>
+            <h1 className="display-font text-[28px] sm:text-[34px] leading-[1.04] font-semibold text-foreground">{getGreeting()}, {firstName}.</h1>
+            <p className="text-[12px] text-muted-foreground mt-2">{dateLabel} <span className="mx-1.5 text-border">/</span> <LiveClock /></p>
             <div className="flex flex-wrap gap-1.5 mt-2.5">
-              {activeGoals.length > 0 && <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">{activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""}</span>}
-              {streak > 0 && <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">🔥 {streak} day streak</span>}
-              {(summary?.pendingReminders ?? 0) > 0 && <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">⏰ {summary!.pendingReminders} due</span>}
-              {totalHours > 0 && <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700 font-medium">📚 {totalHours}h logged</span>}
+              {activeGoals.length > 0 && <span className="text-[10px] px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-semibold">{activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""}</span>}
+              {streak > 0 && <span className="text-[10px] px-2.5 py-1 rounded-full bg-accent text-accent-foreground font-semibold">{streak} day streak</span>}
+              {(summary?.pendingReminders ?? 0) > 0 && <span className="text-[10px] px-2.5 py-1 rounded-full bg-primary/10 text-primary font-semibold">{summary!.pendingReminders} due soon</span>}
+              {totalHours > 0 && <span className="text-[10px] px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-semibold">{totalHours}h logged</span>}
             </div>
           </div>
           <div className="hidden sm:flex flex-col items-end gap-1 text-right shrink-0 ml-4">
-            <div className="h-10 w-10 rounded-full bg-emerald-600 text-white font-bold text-[13px] flex items-center justify-center shadow-md">
+            <div className="h-12 w-12 rounded-[15px] bg-primary text-primary-foreground font-bold text-[13px] flex items-center justify-center shadow-md">
               {user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
             </div>
-            <p className="text-[10px] text-slate-400">{completedRoadmap.length}/{roadmap.length} milestones</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{completedRoadmap.length}/{roadmap.length} milestones</p>
           </div>
         </div>
-      </div>
+      </section>
 
       <DueWarningBanner />
 
+      {summaryError && (
+        <div className="relative flex flex-col gap-3 rounded-2xl border border-destructive/25 bg-destructive/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="alert" data-testid="status-dashboard-error">
+          <div>
+            <p className="text-[12px] font-semibold text-destructive">Your overview could not load.</p>
+            <p className="mt-1 text-[11px] text-destructive/75">Your saved pages are still available from the navigation.</p>
+          </div>
+          <button
+            onClick={() => void refetchSummary()}
+            className="w-fit rounded-lg border border-destructive/25 px-3 py-2 text-[11px] font-semibold text-destructive hover:bg-destructive/10 transition-colors"
+            data-testid="button-retry-dashboard"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* ── 4 key stats ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="relative grid grid-cols-2 xl:grid-cols-4 gap-3">
         {loadingSummary ? [1,2,3,4].map(i => <Skeleton key={i} className="h-16 rounded-2xl" />) : ([
-          { label: "Active Goals", value: summary?.activeGoals ?? 0, sub: `${summary?.totalGoals ?? 0} total`, href: "/goals", icon: Target, tone: "bg-emerald-100 text-emerald-600" },
-          { label: "Hours Logged", value: `${totalHours}h`, sub: `${progressEntries.length} entries`, href: "/progress", icon: TrendingUp, tone: "bg-sky-100 text-sky-600" },
-          { label: "Applications", value: summary?.appliedJobs ?? 0, sub: `${summary?.totalJobs ?? 0} saved`, href: "/jobs", icon: Briefcase, tone: "bg-violet-100 text-violet-600" },
-          { label: "Reminders", value: summary?.pendingReminders ?? 0, sub: "pending", href: "/reminders", icon: Bell, tone: "bg-amber-100 text-amber-600" },
+          { label: "Active Goals", value: summary?.activeGoals ?? 0, sub: `${summary?.totalGoals ?? 0} total`, href: "/goals", icon: Target, tone: "bg-secondary text-secondary-foreground" },
+          { label: "Hours Logged", value: `${totalHours}h`, sub: `${progressEntries.length} entries`, href: "/progress", icon: TrendingUp, tone: "bg-[#e7f0ee] text-[#287f71]" },
+          { label: "Applications", value: summary?.appliedJobs ?? 0, sub: `${summary?.totalJobs ?? 0} saved`, href: "/jobs", icon: Briefcase, tone: "bg-[#f2e8e2] text-primary" },
+          { label: "Reminders", value: summary?.pendingReminders ?? 0, sub: "pending", href: "/reminders", icon: Bell, tone: "bg-accent text-accent-foreground" },
         ] as const).map(({ label, value, sub, href, icon: Icon, tone }) => (
           <Link key={label} href={href}>
-            <div className="rounded-2xl border border-[#e4ddd2] bg-white px-4 py-3.5 shadow-sm cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all group flex items-center gap-3">
+            <div className="lift-card rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm cursor-pointer group flex items-center gap-3">
               <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0 ${tone} group-hover:scale-105 transition-transform`}>
                 <Icon className="h-4 w-4" />
               </div>

@@ -1,0 +1,1 @@
+- [Zod resolver compatibility](zod-resolver-compatibility.md) — keep form resolver boundaries isolated when workspace packages resolve different Zod major versions.

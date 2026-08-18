@@ -195,11 +195,14 @@ export default function JobsPage() {
   });
 
   const jobForm = useForm<JobFormValues>({
-    resolver: zodResolver(jobSchema),
+    // The workspace contains both Zod v3 and v4 type declarations. The
+    // runtime schema remains unchanged; this keeps the resolver boundary
+    // compatible with the form's inferred values across both versions.
+    resolver: zodResolver(jobSchema as any),
     defaultValues: { title: "", company: "", description: "", keywords: "", skills: "", notes: "", status: "saved", url: "", applyDate: "", interviewQuestions: "", interviewAnswers: "", pinned: false },
   });
   const interviewForm = useForm<InterviewFormValues>({
-    resolver: zodResolver(interviewSchema),
+    resolver: zodResolver(interviewSchema as any),
     defaultValues: { question: "", answer: "", category: "" },
   });
 

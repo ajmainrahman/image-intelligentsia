@@ -4,19 +4,21 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/contexts/theme-context";
 import { BrandLogo } from "@/components/brand-logo";
 import {
-  LayoutDashboard,
-  Target,
-  BookOpen,
-  Map as MapIcon,
-  Briefcase,
-  BellRing,
-  NotebookPen,
   Activity as ActivityIcon,
-  LogOut,
-  Sun,
-  Moon,
+  BellRing,
+  BookOpen,
+  Briefcase,
   CalendarCheck,
+  LayoutDashboard,
+  LogOut,
+  Map as MapIcon,
   Microscope,
+  Moon,
+  NotebookPen,
+  Sparkles,
+  Sun,
+  Target,
+  UserRound,
 } from "lucide-react";
 
 const navSections = [
@@ -38,9 +40,7 @@ const navSections = [
   },
   {
     label: "Discover",
-    items: [
-      { href: "/research", label: "Research", icon: Microscope },
-    ],
+    items: [{ href: "/research", label: "Research", icon: Microscope }],
   },
   {
     label: "Manage",
@@ -48,6 +48,7 @@ const navSections = [
       { href: "/jobs", label: "Opportunities", icon: Briefcase },
       { href: "/reminders", label: "Reminders", icon: BellRing },
       { href: "/notepad", label: "Notepad", icon: NotebookPen },
+      { href: "/skill-map", label: "Skill Map", icon: Sparkles },
     ],
   },
 ];
@@ -58,55 +59,35 @@ export function Sidebar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-56 flex flex-col border-r border-sidebar-border bg-sidebar z-30">
-
-      {/* Brand */}
-      <div className="px-5 pt-6 pb-5 border-b border-sidebar-border flex items-center gap-3">
-        <BrandLogo className="h-9 w-9" iconClassName="h-5 w-5" />
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[248px] flex-col border-r border-sidebar-border bg-sidebar z-30">
+      <div className="px-6 pt-7 pb-6 border-b border-sidebar-border flex items-center gap-3">
+        <BrandLogo className="h-10 w-10 rounded-[14px]" iconClassName="h-5 w-5" />
         <div className="leading-tight">
-          <div className="text-[18px] font-semibold text-sidebar-foreground tracking-tight">
-            Image Intelligentsia
-          </div>
-          <p className="text-[10.5px] text-sidebar-foreground/50 mt-0.5 leading-none">
-            Career &amp; research
-          </p>
+          <div className="text-[18px] font-bold text-sidebar-foreground tracking-tight display-font">intelligentsia</div>
+          <p className="text-[9px] text-sidebar-foreground/45 mt-1 leading-none eyebrow">learning command center</p>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-5">
+      <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-6">
         {navSections.map((section) => (
           <div key={section.label}>
-            <p className="text-[10px] font-medium text-sidebar-foreground/30 uppercase tracking-widest px-3 mb-1.5">
-              {section.label}
-            </p>
-            <div className="space-y-0.5">
+            <p className="text-[9px] font-medium text-sidebar-foreground/35 uppercase tracking-[.18em] px-3 mb-2">{section.label}</p>
+            <div className="space-y-1">
               {section.items.map((item) => {
-                const isActive =
-                  location === item.href ||
-                  (item.href !== "/" && location.startsWith(item.href));
+                const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    data-testid={`link-sidebar-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 relative group",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-200 relative group",
                       isActive
-                        ? "text-sidebar-primary-foreground bg-sidebar-accent font-medium"
-                        : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+                        ? "text-sidebar-primary-foreground bg-sidebar-accent font-semibold shadow-[inset_3px_0_0_hsl(var(--sidebar-primary))]"
+                        : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/70",
                     )}
                   >
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-sidebar-primary rounded-r-full" />
-                    )}
-                    <item.icon
-                      className={cn(
-                        "h-3.5 w-3.5 shrink-0",
-                        isActive
-                          ? "text-sidebar-primary"
-                          : "text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60"
-                      )}
-                    />
+                    <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary" : "text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60")} />
                     {item.label}
                   </Link>
                 );
@@ -116,40 +97,35 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom controls */}
-      <div className="px-4 py-5 border-t border-sidebar-border space-y-3">
-
-        {/* Dark mode toggle */}
+      <div className="px-5 py-5 border-t border-sidebar-border space-y-3">
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
+          data-testid="button-toggle-theme"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
         >
-          {theme === "dark" ? (
-            <Sun className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
-          ) : (
-            <Moon className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
-          )}
+          {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-sidebar-foreground/35" /> : <Moon className="h-3.5 w-3.5 text-sidebar-foreground/35" />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </button>
 
-        {/* User info */}
         {user && (
-          <div className="px-2">
-            <p className="text-[13px] font-medium text-sidebar-foreground truncate">
-              {user.name}
-            </p>
-            <p className="text-[11px] text-sidebar-foreground/50 truncate">
-              {user.email}
-            </p>
-          </div>
+          <Link href="/profile" data-testid="link-profile" className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-sidebar-accent/60 transition-colors">
+            <div className="h-8 w-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center text-[11px] font-bold shrink-0">
+              {user.name?.split(" ").map((name) => name[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{user.name}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">{user.email}</p>
+            </div>
+            <UserRound className="h-3.5 w-3.5 ml-auto text-sidebar-foreground/35" />
+          </Link>
         )}
 
-        {/* Sign out */}
         <button
           onClick={() => void logout()}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[12px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
+          data-testid="button-signout"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-150 group"
         >
-          <LogOut className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
+          <LogOut className="h-3.5 w-3.5 text-sidebar-foreground/35 group-hover:text-sidebar-foreground/60" />
           Sign out
         </button>
       </div>

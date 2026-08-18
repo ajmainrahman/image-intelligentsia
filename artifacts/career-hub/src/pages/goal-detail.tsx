@@ -123,7 +123,7 @@ export default function GoalDetailPage() {
       {goal.reflection && (
         <Card className="border-green-200 bg-green-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-green-700">🎯 Retrospective Note</CardTitle>
+            <CardTitle className="text-sm text-green-700">Retrospective Note</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-green-800 text-sm">{goal.reflection}</p>

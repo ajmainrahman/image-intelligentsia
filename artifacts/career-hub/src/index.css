@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -49,50 +49,103 @@
 }
 
 :root {
-  --elevate-1: rgba(15, 23, 42, 0.03);
-  --elevate-2: rgba(15, 23, 42, 0.06);
-  --background: 60 12% 98%;
-  --foreground: 215 22% 27%;
-  --border: 30 14% 88%;
-  --card: 0 0% 100%;
-  --card-foreground: 215 22% 27%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 215 22% 27%;
-  --primary: 173 78% 32%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 30 22% 92%;
-  --secondary-foreground: 220 30% 18%;
-  --muted: 30 18% 94%;
-  --muted-foreground: 215 12% 42%;
-  --accent: 38 92% 90%;
-  --accent-foreground: 30 70% 25%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --input: 30 14% 88%;
-  --ring: 173 75% 38%;
-  --sidebar: 220 32% 10%;
-  --sidebar-foreground: 30 18% 84%;
-  --sidebar-border: 220 24% 16%;
-  --sidebar-primary: 173 65% 55%;
-  --sidebar-primary-foreground: 220 32% 10%;
-  --sidebar-accent: 220 24% 15%;
-  --sidebar-accent-foreground: 30 15% 90%;
-  --sidebar-ring: 173 65% 50%;
-  --chart-1: 173 78% 32%;
-  --chart-2: 38 92% 50%;
-  --chart-3: 188 78% 38%;
-  --chart-4: 280 50% 58%;
-  --chart-5: 215 16% 50%;
-  --app-font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --app-font-serif: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --app-font-mono: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --app-font-brand: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --radius: 0.9rem;
+  --elevate-1: rgba(43, 51, 45, 0.04);
+  --elevate-2: rgba(43, 51, 45, 0.08);
+  --background: 38 36% 95%;
+  --foreground: 154 16% 20%;
+  --border: 35 22% 86%;
+  --card: 40 40% 98%;
+  --card-foreground: 154 16% 20%;
+  --popover: 40 40% 98%;
+  --popover-foreground: 154 16% 20%;
+  --primary: 11 76% 59%;
+  --primary-foreground: 38 36% 97%;
+  --secondary: 161 28% 90%;
+  --secondary-foreground: 161 31% 23%;
+  --muted: 38 24% 91%;
+  --muted-foreground: 154 9% 45%;
+  --accent: 42 86% 81%;
+  --accent-foreground: 32 42% 25%;
+  --destructive: 4 68% 49%;
+  --destructive-foreground: 38 36% 97%;
+  --input: 35 22% 82%;
+  --ring: 11 76% 59%;
+  --sidebar: 157 20% 18%;
+  --sidebar-foreground: 39 38% 92%;
+  --sidebar-border: 157 17% 26%;
+  --sidebar-primary: 41 83% 69%;
+  --sidebar-primary-foreground: 157 20% 18%;
+  --sidebar-accent: 157 17% 25%;
+  --sidebar-accent-foreground: 39 38% 94%;
+  --sidebar-ring: 41 83% 69%;
+  --chart-1: 11 76% 59%;
+  --chart-2: 161 47% 42%;
+  --chart-3: 42 83% 58%;
+  --chart-4: 192 47% 47%;
+  --chart-5: 154 12% 54%;
+  --app-font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --app-font-serif: 'Fraunces', Georgia, serif;
+  --app-font-mono: 'DM Mono', ui-monospace, monospace;
+  --app-font-brand: 'Fraunces', Georgia, serif;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: 157 20% 12%;
+  --foreground: 39 38% 92%;
+  --border: 157 15% 25%;
+  --card: 157 17% 16%;
+  --card-foreground: 39 38% 92%;
+  --popover: 157 17% 16%;
+  --popover-foreground: 39 38% 92%;
+  --primary: 11 79% 65%;
+  --primary-foreground: 157 20% 12%;
+  --secondary: 157 17% 24%;
+  --secondary-foreground: 39 38% 92%;
+  --muted: 157 17% 20%;
+  --muted-foreground: 39 14% 68%;
+  --accent: 42 45% 30%;
+  --accent-foreground: 42 86% 86%;
+  --input: 157 15% 27%;
+  --ring: 11 79% 65%;
+  --sidebar: 157 21% 9%;
+  --sidebar-foreground: 39 35% 91%;
+  --sidebar-border: 157 17% 18%;
+  --sidebar-accent: 157 17% 17%;
+  --sidebar-accent-foreground: 39 38% 94%;
 }
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground font-sans; }
+  html { background: hsl(var(--background)); }
+  body { @apply bg-background text-foreground font-sans; min-width: 320px; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+}
+
+.app-shell {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 82% 0%, hsl(42 86% 81% / .22), transparent 28rem),
+    hsl(var(--background));
+}
+.dashboard-grid {
+  background-image: linear-gradient(hsl(var(--border) / .28) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / .2) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+.display-font { font-family: var(--app-font-serif); }
+.mono-font { font-family: var(--app-font-mono); }
+.eyebrow { font-family: var(--app-font-mono); letter-spacing: .11em; text-transform: uppercase; }
+.lift-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.lift-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px hsl(154 16% 20% / .08); border-color: hsl(var(--primary) / .38); }
+.bg-white { background-color: hsl(var(--card)); }
+.text-slate-800, .text-slate-700, .text-slate-600 { color: hsl(var(--foreground)); }
+.text-slate-500, .text-slate-400 { color: hsl(var(--muted-foreground)); }
+.page-enter { animation: page-enter .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes page-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
 .ProseMirror:focus { outline: none; }

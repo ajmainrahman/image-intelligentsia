@@ -84,7 +84,9 @@ function RemindersPageInner() {
   });
 
   const form = useForm<ReminderFormValues>({
-    resolver: zodResolver(reminderSchema),
+    // Keep the resolver boundary compatible with the workspace's mixed Zod
+    // v3/v4 declarations without changing runtime validation behavior.
+    resolver: zodResolver(reminderSchema as any),
     defaultValues: { title: "", description: "", dueDate: "", priority: "medium", completed: false, category: "other", recurrence: null },
   });
 

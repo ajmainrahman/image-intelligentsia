@@ -2,34 +2,29 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/contexts/theme-context";
 import { useAuth } from "@/contexts/auth-context";
-import { BrandLogo } from "@/components/brand-logo";
 import {
+  Bell, ChevronDown, Menu, Moon, Search, Sun, X,
   LayoutDashboard, Target, BookOpen, Map as MapIcon, Briefcase,
   BellRing, NotebookPen, CalendarCheck, Microscope, Sparkles,
-  Sun, Moon, LogOut, ChevronDown, Menu, X, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const PRIMARY_LINKS = [
-  { href: "/",         label: "Dashboard", icon: LayoutDashboard },
-  { href: "/goals",    label: "Goals",     icon: Target },
-  { href: "/progress", label: "Learning",  icon: BookOpen },
-  { href: "/research", label: "Research",  icon: Microscope },
-  { href: "/jobs",     label: "Pipeline",  icon: Briefcase },
+const MOBILE_LINKS = [
+  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/progress", label: "Learning", icon: BookOpen },
+  { href: "/roadmap", label: "Roadmap", icon: MapIcon },
+  { href: "/research", label: "Research", icon: Microscope },
+  { href: "/jobs", label: "Opportunities", icon: Briefcase },
+  { href: "/reminders", label: "Reminders", icon: BellRing },
+  { href: "/notepad", label: "Notepad", icon: NotebookPen },
+  { href: "/weekly-review", label: "Weekly review", icon: CalendarCheck },
+  { href: "/skill-map", label: "Skill map", icon: Sparkles },
 ];
-
-const MORE_LINKS = [
-  { href: "/skill-map",     label: "Skill Map",      icon: Sparkles },
-  { href: "/weekly-review", label: "Weekly Review",  icon: CalendarCheck },
-  { href: "/reminders",     label: "Reminders",      icon: BellRing },
-  { href: "/notepad",       label: "Notepad",         icon: NotebookPen },
-];
-
-const ALL_LINKS = [...PRIMARY_LINKS, ...MORE_LINKS];
 
 function openSearch() {
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
@@ -40,178 +35,125 @@ export function TopNav() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const isActive = (href: string) =>
-    href === "/" ? location === "/" : location.startsWith(href);
-
-  const moreActive = MORE_LINKS.some((l) => isActive(l.href));
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const isActive = (href: string) => href === "/" ? location === "/" : location.startsWith(href);
 
   return (
     <>
-      <header className="sticky top-0 z-40 h-14 bg-white/90 dark:bg-card/95 backdrop-blur-md border-b border-slate-200/70 dark:border-border shadow-sm">
-        <div className="max-w-[1180px] mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
-
-          {/* Brand */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <BrandLogo className="h-8 w-8" iconClassName="h-4.5 w-4.5" />
-            <span className="hidden sm:block text-[15px] font-bold text-slate-700 dark:text-slate-200 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-              image.intelligentsia
-            </span>
-          </Link>
-
-          {/* Desktop primary nav */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-1 mx-4">
-            {PRIMARY_LINKS.map((link) => {
-              const active = isActive(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "relative px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors",
-                    active
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
-                  )}
-                >
-                  {active && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-emerald-500 rounded-full" />
-                  )}
-                  {link.label}
-                </Link>
-              );
-            })}
-
-            {/* More dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors",
-                    moreActive
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
-                  )}
-                >
-                  More <ChevronDown className="h-3 w-3 mt-0.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                {MORE_LINKS.map((link) => (
-                  <DropdownMenuItem key={link.href} asChild>
-                    <Link
-                      href={link.href}
-                      className={cn(
-                        "flex items-center gap-2.5 cursor-pointer",
-                        isActive(link.href) && "text-emerald-600 dark:text-emerald-400"
-                      )}
-                    >
-                      <link.icon className="h-4 w-4 shrink-0" />
-                      {link.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
-
-          {/* Search trigger (desktop) */}
-          <button
-            onClick={openSearch}
-            aria-label="Search (Ctrl+K)"
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-secondary text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-emerald-300 transition-colors text-[12px] shrink-0"
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span className="hidden xl:inline">Search…</span>
-            <kbd className="hidden xl:inline text-[10px] font-mono bg-white dark:bg-background border border-slate-200 dark:border-border rounded px-1">⌘K</kbd>
-          </button>
-
-          {/* Right actions */}
-          <div className="flex items-center gap-1 shrink-0">
+      <header className="sticky top-0 z-40 h-[72px] border-b border-border/70 bg-background/85 backdrop-blur-xl">
+        <div className="h-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-1">
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
-                      {user.name?.charAt(0).toUpperCase() ?? "U"}
-                    </div>
-                    <span className="hidden sm:block text-[13px] font-medium text-slate-600 dark:text-slate-300 max-w-[100px] truncate">
-                      {user.name}
-                    </span>
-                    <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <div className="px-2 py-1.5 text-[12px] text-muted-foreground">
-                    {user.email}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => void logout()} className="text-red-600 dark:text-red-400 cursor-pointer">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {/* Mobile search */}
-            <button
-              onClick={openSearch}
-              className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-1"
-              aria-label="Menu"
+              onClick={() => setMobileOpen((open) => !open)}
+              className="lg:hidden h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+              data-testid="button-mobile-menu"
             >
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
+            <div className="hidden sm:block">
+              <p className="eyebrow text-[9px] text-muted-foreground">your workspace</p>
+              <p className="text-[13px] font-semibold text-foreground mt-1">Career command center</p>
+            </div>
+            <div className="sm:hidden">
+              <p className="display-font text-[18px] font-semibold">intelligentsia</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openSearch}
+              aria-label="Search workspace"
+              data-testid="button-global-search"
+              className="hidden sm:flex items-center gap-2 h-10 px-3.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors text-[11px]"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Search workspace</span>
+              <kbd className="hidden lg:inline text-[9px] mono-font bg-muted px-1.5 py-0.5 rounded-md">⌘ K</kbd>
+            </button>
+            <button
+              onClick={openSearch}
+              aria-label="Search workspace"
+              data-testid="button-mobile-search"
+              className="sm:hidden h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setNotificationsOpen((open) => !open)}
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+                data-testid="button-notifications"
+                className="relative h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+              </button>
+              {notificationsOpen && (
+                <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-border bg-card p-4 shadow-xl">
+                  <p className="text-[12px] font-semibold">You are up to date</p>
+                  <p className="mt-1 text-[11px] leading-5 text-muted-foreground">New activity and due work will appear here as your workspace changes.</p>
+                  <button onClick={() => setNotificationsOpen(false)} className="mt-3 text-[11px] font-semibold text-primary hover:underline" data-testid="button-dismiss-notifications">Dismiss</button>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              data-testid="button-topbar-theme"
+              className="hidden sm:flex h-10 w-10 rounded-xl border border-border bg-card items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-xl pl-1 pr-2 py-1 border border-transparent hover:border-border hover:bg-card transition-colors" data-testid="button-user-menu">
+                    <span className="h-8 w-8 rounded-[10px] bg-primary text-primary-foreground flex items-center justify-center text-[11px] font-bold">
+                      {user.name?.split(" ").map((name) => name[0]).join("").slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="hidden md:block text-[12px] font-semibold max-w-[100px] truncate">{user.name}</span>
+                    <ChevronDown className="hidden md:block h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 p-1.5">
+                  <div className="px-2.5 py-2">
+                    <p className="text-[12px] font-semibold truncate">{user.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer" data-testid="link-topbar-profile">Profile settings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void logout()} className="text-destructive cursor-pointer" data-testid="button-topbar-signout">Sign out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Mobile slide-down menu */}
       {mobileOpen && (
         <>
-          <div
-            className="lg:hidden fixed inset-0 top-14 bg-black/20 z-30"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="lg:hidden fixed top-14 left-0 right-0 z-40 bg-white dark:bg-card border-b border-slate-200 dark:border-border shadow-lg px-3 py-3">
-            <div className="grid grid-cols-2 gap-1.5">
-              {ALL_LINKS.map((link) => {
-                const active = isActive(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-3 rounded-xl text-[13px] transition-colors min-h-[44px]",
-                      active
-                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <link.icon className={cn("h-4 w-4 shrink-0", active ? "text-emerald-600" : "text-slate-400")} />
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </div>
+          <button className="lg:hidden fixed inset-0 top-[72px] z-30 bg-foreground/20 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />
+          <div className="lg:hidden fixed top-[72px] left-0 right-0 z-40 border-b border-border bg-card p-3 shadow-xl">
+            <nav className="grid grid-cols-2 gap-1.5">
+              {MOBILE_LINKS.map(({ href, label, icon: Icon }) => (
+                <Link
+                  href={href}
+                  key={href}
+                  onClick={() => setMobileOpen(false)}
+                  data-testid={`link-mobile-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-xl px-3 py-3 text-[12px] min-h-[44px] transition-colors",
+                    isActive(href) ? "bg-secondary text-secondary-foreground font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" /> {label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </>
       )}

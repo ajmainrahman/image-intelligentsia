@@ -16,6 +16,7 @@ const GoalDetailPage = lazy(() => import("@/pages/goal-detail"));
 const JobsPage = lazy(() => import("@/pages/jobs"));
 const NotepadPage = lazy(() => import("@/pages/notepad"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
+const ActivityPage = lazy(() => import("@/pages/activity"));
 const RoadmapPage = lazy(() => import("@/pages/roadmap"));
 const RemindersPage = lazy(() => import("@/pages/reminders"));
 const WeeklyReviewPage = lazy(() => import("@/pages/weekly-review"));
@@ -74,6 +75,7 @@ function AppRoutes() {
           <Route path="/goals" component={() => <PageErrorBoundary message="Could not load your goals — please refresh"><GoalsPage /></PageErrorBoundary>} />
           <Route path="/goals/:id" component={() => <PageErrorBoundary message="Could not load your goal — please refresh"><GoalDetailPage /></PageErrorBoundary>} />
           <Route path="/progress" component={() => <PageErrorBoundary message="Could not load your progress — please refresh"><ProgressPage /></PageErrorBoundary>} />
+          <Route path="/activity" component={() => <PageErrorBoundary message="Could not load your activity — please refresh"><ActivityPage /></PageErrorBoundary>} />
           <Route path="/roadmap" component={() => <PageErrorBoundary message="Could not load your roadmap — please refresh"><RoadmapPage /></PageErrorBoundary>} />
           <Route path="/jobs" component={() => <PageErrorBoundary message="Could not load your jobs — please refresh"><JobsPage /></PageErrorBoundary>} />
           <Route path="/notepad" component={() => <PageErrorBoundary message="Could not load your notepad — please refresh"><NotepadPage /></PageErrorBoundary>} />
